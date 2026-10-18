@@ -9,6 +9,7 @@ import { useAuth } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 import { spring } from '@/lib/fx';
 import { sfx } from '@/lib/sound';
+import { burst } from '@/lib/burst';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -377,7 +378,12 @@ export const CheckList = ({ checks = [] }) => (
   </ul>
 );
 
-export const copyText = (text, message) => { navigator.clipboard?.writeText(text); toast(message); };
+export const copyText = async (text, message) => {
+  const button = document.activeElement?.matches('button') ? document.activeElement : null;
+  try { await navigator.clipboard.writeText(text); } catch { return toast('Could not copy. Select the text and copy it by hand.', 'error'); }
+  toast(message);
+  if (button) burst(button, { size: 0.6 });
+};
 
 export function BackupCodes({ codes }) {
   return (

@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { BadgeCheck, Clock, FileSearch, FolderLock, Loader2, ShieldX, XCircle } from 'lucide-react';
+import { BadgeCheck, Clock, FileSearch, FolderLock, Loader2, QrCode, ShieldX, XCircle } from 'lucide-react';
 import { api, fmtDate } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import { burst } from '@/lib/burst';
+import { burst, pulse } from '@/lib/burst';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -77,6 +77,21 @@ const FAQ = [
   ['Are PAN / Aadhaar checked against the government database?', 'TrustVault checks format, checksums and the document text, and a human verifier makes the final decision. Direct NSDL / UIDAI lookups need licensed government access.'],
 ];
 
+// Shown while the server looks up a code or a file's fingerprint (the free server can take a while to wake).
+function Checking({ file }) {
+  const rings = useRef(null);
+  useEffect(() => pulse(rings.current), []);
+  return (
+    <Card className="grid place-items-center gap-3 py-12 text-center" aria-live="polite">
+      <span ref={rings} className="relative grid size-20 place-items-center rounded-2xl bg-linear-to-br from-primary to-violet text-ink shadow-glow">
+        {file ? <FileSearch className="size-9" /> : <QrCode className="size-9" />}
+      </span>
+      <b className="mt-4 text-xl">{file ? 'Checking the fingerprint…' : 'Checking this document…'}</b>
+      <span className="text-sm text-muted-foreground">Looking it up in the TrustVault ledger. This can take up to a minute if the server was asleep.</span>
+    </Card>
+  );
+}
+
 export default function PublicVerify() {
   const { code } = useParams();
   const navigate = useNavigate();
@@ -102,6 +117,7 @@ export default function PublicVerify() {
   };
 
   const reset = () => { setResult(null); if (code) navigate('/verify'); };
+  const checking = busy || Boolean(code && !result && !error);
 
   return (
     <PublicShell brandTo="/">
@@ -120,7 +136,7 @@ export default function PublicVerify() {
 
       <div className="grid gap-4">
         <ErrorText>{error}</ErrorText>
-        {result ? <Result r={result} onReset={reset} /> : (
+        {result ? <Result r={result} onReset={reset} /> : checking ? <Checking file={busy} /> : (
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <form className="grid gap-3" onSubmit={(e) => { e.preventDefault(); const c = new FormData(e.currentTarget).get('code').trim(); if (c) navigate(`/verify/${c.split('/').pop()}`); }}>

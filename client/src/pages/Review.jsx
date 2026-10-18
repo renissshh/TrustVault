@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ClipboardCheck, Eye, Check, X, PartyPopper, GraduationCap } from 'lucide-react';
 import { api, fmtDate, TYPE_LABELS } from '@/lib/api';
@@ -14,6 +14,8 @@ export default function Review() {
   // Optimistic: the card leaves the queue at once; if the server refuses, it comes back.
   const [gone, setGone] = useState([]);
   const queue = (data ?? []).filter((d) => !gone.includes(d.id));
+  const cleared = Boolean(data) && !queue.length && done > 0;
+  useEffect(() => { if (cleared) setTimeout(() => burst('.es-emblem', { size: 1.5 }), 300); }, [cleared]);
 
   const decide = async (doc, decision, button) => {
     const note = decision === 'rejected'

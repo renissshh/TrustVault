@@ -1,5 +1,7 @@
 // Dashboard charts drawn in SVG: a status donut and a 14-day activity line. Both animate in.
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
+import { store } from '@/lib/theme';
+import { burst } from '@/lib/burst';
 import { Link } from 'react-router-dom';
 import { Check, Clock, KeyRound, Plus, X } from 'lucide-react';
 
@@ -87,9 +89,16 @@ export function IdentityRing({ docs, user }) {
   const score = rows.reduce((n, r) => n + r.points, 0) + (user.hasVaultPin ? 10 : 0);
   const [shown, setShown] = useState(0);
   useEffect(() => { const t = setTimeout(() => setShown(score), 60); return () => clearTimeout(t); }, [score]);
+  const ring = useRef(null);
+  useEffect(() => { // celebrate once, when this browser sees the score climb to 100
+    const key = `tv-identity:${user.id}`;
+    const before = store.get(key);
+    store.set(key, String(score));
+    if (score === 100 && before != null && +before < 100) { const t = setTimeout(() => burst(ring.current, { size: 1.6 }), 1300); return () => clearTimeout(t); }
+  }, [score, user.id]);
   return (
     <div className="idr">
-      <div className="idr-ring" role="img" aria-label={`Identity ${score} percent complete`}>
+      <div ref={ring} className="idr-ring" role="img" aria-label={`Identity ${score} percent complete`}>
         <svg viewBox="0 0 42 42">
           <defs><linearGradient id={id} x1="0" x2="1"><stop offset="0" stopColor="var(--primary)" /><stop offset="0.6" stopColor="var(--violet)" /><stop offset="1" stopColor="var(--pink)" /></linearGradient></defs>
           <circle cx="21" cy="21" r="17" fill="none" className="stroke-muted" strokeWidth="3.4" />

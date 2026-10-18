@@ -28,3 +28,23 @@ export async function burst(target, { size = 1, colors } = {}) {
   for (const p of parts) Object.assign(p.el.style, { zIndex: '160', pointerEvents: 'none' });
   new mojs.Timeline({ onComplete: () => parts.forEach((p) => p.el.remove()) }).add(...parts).play();
 }
+
+// Rings that keep growing out of an element until stop() is called (for "checking..." moments).
+// The rings are placed inside `target`, which needs position: relative.
+export function pulse(target, { colors } = {}) {
+  let stopped = false;
+  let parts = [];
+  if (target && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    (async () => {
+      mojs ??= (await import('@mojs/core')).default;
+      if (stopped) return;
+      const palette = colors ?? tokens();
+      parts = [0, 1, 2].map((i) => new mojs.Shape({
+        parent: target, left: '50%', top: '50%', shape: 'circle', fill: 'none', stroke: palette[i % palette.length],
+        strokeWidth: { 4: 1 }, radius: { 10: 90 }, opacity: { 1: 0 }, duration: 1500, delay: i * 500, repeat: 999, easing: 'cubic.out', isForce3d: true,
+      }));
+      for (const p of parts) { p.el.style.pointerEvents = 'none'; p.play(); }
+    })();
+  }
+  return () => { stopped = true; for (const p of parts) { p.stop(); p.el.remove(); } };
+}
