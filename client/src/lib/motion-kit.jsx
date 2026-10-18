@@ -30,14 +30,17 @@ export function useMotionKit() {
         el.style.transition = 'transform 0.18s ease-out';
         el.style.transform = `perspective(1000px) rotateX(${(-ny * max).toFixed(2)}deg) rotateY(${(nx * max).toFixed(2)}deg) ${el.dataset.tilt}`;
       }
-      // magnetic buttons: pulled toward the pointer when it is close
+      // magnetic buttons: pulled a few pixels toward the pointer when it is within 40px of the edge.
+      // Buttons that sit next to another button never move, so a pair can't slide into each other.
       for (const m of document.querySelectorAll('[data-magnetic], main .lp-btn')) {
+        if (m.parentElement?.querySelectorAll(':scope > .lp-btn, :scope > a, :scope > button').length > 1) continue;
         const r = m.getBoundingClientRect();
         if (!r.width) continue;
-        const dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
-        const reach = Math.max(r.width, r.height) * 0.75 + 40;
-        if (Math.abs(dx) < reach && Math.abs(dy) < reach) {
-          m.style.translate = `${(dx * 0.22).toFixed(1)}px ${(dy * 0.3).toFixed(1)}px`;
+        const near = e.clientX > r.left - 40 && e.clientX < r.right + 40 && e.clientY > r.top - 40 && e.clientY < r.bottom + 40;
+        if (near) {
+          const pull = (d, half) => Math.max(-8, Math.min(8, (d / (half + 40)) * 8));
+          const dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+          m.style.translate = `${pull(dx, r.width / 2).toFixed(1)}px ${pull(dy, r.height / 2).toFixed(1)}px`;
           magnets.add(m);
         } else if (magnets.has(m)) { m.style.translate = ''; magnets.delete(m); }
       }
