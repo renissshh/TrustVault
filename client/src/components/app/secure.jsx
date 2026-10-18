@@ -2,7 +2,7 @@
 //  1. VaultLock - after signing in, the vault PIN is entered once; then the whole site works without it.
 //  2. SecureFlow - before a sensitive change: password -> email code -> Google Authenticator -> the change.
 //     Passing it once keeps you verified for 10 minutes (server: requireStepUp).
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { KeyRound, Mail, Smartphone, Check, Lock, Unlock, ShieldCheck, LogOut } from 'lucide-react';
@@ -11,6 +11,7 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 import { Aurora, ease } from '@/lib/fx';
+import { burst } from '@/lib/burst';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Modal, OtpInput, PasswordInput, ErrorText, Field, Callout, toast } from './kit';
@@ -47,10 +48,12 @@ export function VaultLock() {
   const navigate = useNavigate();
   const first = user.name.split(' ')[0];
 
+  const padlock = useRef(null);
   const unlock = run(async ({ pin }) => {
     if (!/^\d{6}$/.test(pin)) throw new Error('Enter all 6 digits.');
     await api('/auth/vault/unlock', { method: 'POST', body: { pin } });
     setOpening(true); // show the open padlock for a beat, then reveal the site
+    burst(padlock.current, { size: 1.1 });
     setTimeout(() => setVault(true), 700);
   });
 
@@ -62,7 +65,7 @@ export function VaultLock() {
         initial={{ opacity: 0, y: 40, scale: 0.94 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ type: 'spring', stiffness: 220, damping: 22 }}>
         <span className="relative mx-auto grid size-20 place-items-center">
           <span className={cn('absolute inset-0 rounded-full border', opening ? 'border-success' : 'animate-pulse-ring border-primary')} />
-          <motion.span className={cn('grid size-16 place-items-center rounded-2xl text-ink shadow-glow', opening ? 'bg-success' : 'bg-linear-to-br from-primary to-violet')}
+          <motion.span ref={padlock} className={cn('grid size-16 place-items-center rounded-2xl text-ink shadow-glow', opening ? 'bg-success' : 'bg-linear-to-br from-primary to-violet')}
             animate={opening ? { rotate: [0, -12, 12, 0], scale: [1, 1.2, 1] } : { rotate: 0 }} transition={{ duration: 0.5 }}>
             <AnimatePresence mode="wait" initial={false}>
               <motion.span key={opening ? 'open' : 'shut'} initial={{ scale: 0, rotate: -90 }} animate={{ scale: 1, rotate: 0 }} exit={{ scale: 0, rotate: 90 }} transition={{ duration: 0.2 }}>

@@ -5,6 +5,7 @@ import { api, fmtDate, fmtDay, fmtSize, TYPE_LABELS, SECTIONS, NUMBER_FIELD } fr
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth';
 import { useVerifiedCelebration } from '@/lib/confetti';
+import { burst } from '@/lib/burst';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -117,6 +118,7 @@ function UploadModal({ onClose, onDone, initialType = 'pan' }) {
   const submit = async (e) => {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
+    const button = e.currentTarget.querySelector('[type=submit]');
     form.set('type', type);
     form.set('file', file);
     if (twoSided && back) form.set('back', back);
@@ -124,6 +126,7 @@ function UploadModal({ onClose, onDone, initialType = 'pan' }) {
     setError('');
     try {
       await api('/documents', { method: 'POST', form });
+      burst(button?.getBoundingClientRect(), { size: 0.9 });
       toast('Uploaded and encrypted. Automatic checks are running.');
       onDone();
     } catch (err) {

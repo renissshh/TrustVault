@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { BadgeCheck, Clock, FileSearch, FolderLock, Loader2, ShieldX, XCircle } from 'lucide-react';
 import { api, fmtDate } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { burst } from '@/lib/burst';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -20,6 +21,8 @@ const HEADINGS = {
 
 function Result({ r, onReset }) {
   const [Icon, heading, text, tone] = r.status ? HEADINGS[r.status] : [XCircle, 'No match found', '', 'bg-destructive'];
+  const icon = useRef(null);
+  useEffect(() => { if (r.status === 'verified') setTimeout(() => burst(icon.current, { size: 1.2 }), 200); }, [r]);
   const facts = r.title && [
     ['Document', `${r.title}${r.title !== r.type ? ` (${r.type})` : ''}`],
     ['Holder', `${r.holder}${r.studentId ? ` · ${r.studentId}` : ''}`],
@@ -31,7 +34,7 @@ function Result({ r, onReset }) {
   return (
     <section className="animate-pop overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-brutal-lg" aria-live="polite">
       <div className={cn('flex flex-wrap items-center justify-between gap-4 border-b border-border p-5 text-ink', tone)}>
-        <h2 className="flex items-center gap-3 text-2xl sm:text-3xl"><Icon className="size-8 shrink-0" /> {heading}</h2>
+        <h2 className="flex items-center gap-3 text-2xl sm:text-3xl"><span ref={icon} className="grid shrink-0"><Icon className="size-8" /></span> {heading}</h2>
         <Button size="sm" variant="outline" onClick={onReset}>Check another</Button>
       </div>
       <div className="grid gap-4 p-5">

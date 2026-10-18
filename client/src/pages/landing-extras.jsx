@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { BadgeCheck, Check, FolderLock, History, LayoutDashboard, Link2, Play, RotateCcw, ShieldCheck, User } from 'lucide-react';
 import { sfx } from '@/lib/sound';
+import { burst } from '@/lib/burst';
 import '../landing-extras.css';
 
 const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -62,6 +63,7 @@ export function TryDemo() {
     STEPS.forEach((_, i) => timers.current.push(setTimeout(() => { setStep(i + 1); sfx('tick'); }, gap * (i + 1))));
     timers.current.push(setTimeout(() => {
       setState('done'); sfx('success');
+      setTimeout(() => burst('.demo-stamp', { size: 1.3 }), 250); // after the stamp lands
       const t0 = performance.now();
       const tick = () => { const p = Math.min(1, (performance.now() - t0) / 900); setScore(Math.round(96 * (1 - (1 - p) ** 3))); if (p < 1) requestAnimationFrame(tick); };
       requestAnimationFrame(tick);

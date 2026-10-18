@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ClipboardCheck, Eye, Check, X, PartyPopper, GraduationCap } from 'lucide-react';
 import { api, fmtDate, TYPE_LABELS } from '@/lib/api';
+import { burst } from '@/lib/burst';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAsync, ErrorText, DocViewer, ScoreBar, CheckList, ask, toast, PageHeader, EmptyState, Initials } from '@/components/app/kit';
@@ -14,15 +15,17 @@ export default function Review() {
   const [gone, setGone] = useState([]);
   const queue = (data ?? []).filter((d) => !gone.includes(d.id));
 
-  const decide = async (doc, decision) => {
+  const decide = async (doc, decision, button) => {
     const note = decision === 'rejected'
       ? await ask({ title: `Reject "${doc.title}"?`, message: 'The student receives this reason by email.', input: { label: 'Reason', placeholder: 'e.g. Photo is blurry, please upload a clearer scan', minLength: 5 }, confirmText: 'Reject', danger: true })
       : await ask({ title: `Approve "${doc.title}"?`, message: `${doc.owner.name} gets a QR code anyone can use to confirm this document. This is recorded in the ledger.`, confirmText: 'Approve' });
     if (!note) return;
+    const spot = button?.getBoundingClientRect(); // remembered before the card leaves
     setGone((g) => [...g, doc.id]);
     try {
       await api(`/admin/documents/${doc.id}/review`, { method: 'POST', body: { decision, note: decision === 'rejected' ? note : '' } });
       toast(`"${doc.title}" ${decision}.`);
+      if (decision === 'verified') burst(spot);
       setDone((n) => n + 1);
     } catch (e) {
       toast(e.message, 'error');
@@ -53,7 +56,7 @@ export default function Review() {
             {d.tampered && <ErrorText>This file failed its integrity check.</ErrorText>}
             <div className="flex flex-wrap gap-2">
               <Button size="sm" variant="outline" onClick={() => setViewing(d)}><Eye /> View document</Button>
-              <Button size="sm" variant="success" onClick={() => decide(d, 'verified')}><Check /> Approve</Button>
+              <Button size="sm" variant="success" onClick={(e) => decide(d, 'verified', e.currentTarget)}><Check /> Approve</Button>
               <Button size="sm" variant="destructive" onClick={() => decide(d, 'rejected')}><X /> Reject</Button>
             </div>
           </article>
