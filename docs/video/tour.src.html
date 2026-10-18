@@ -1,0 +1,630 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>TrustVault - 60 second tour</title>
+<style>
+/*FONTS*/
+* { box-sizing: border-box; margin: 0; }
+html, body { background: #000; overflow: hidden; }
+body { font-family: 'Inter', sans-serif; color: #f2f4fa; }
+#stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; background: #05060a; transform-origin: 0 0; }
+#silk { position: absolute; inset: 0; }
+.layer { position: absolute; inset: 0; visibility: hidden; }
+.cam { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; }
+.abs { position: absolute; white-space: nowrap; }
+/* title lines */
+.tline { position: absolute; left: 960px; top: 540px; transform: translate(-50%, -50%); white-space: nowrap; isolation: isolate;
+  font: 700 30px 'Inter Tight', sans-serif; letter-spacing: -0.02em; color: #f4f6fb; }
+.tline .w { display: inline-block; }
+.hl { position: relative; display: inline-block; }
+.hlbox { position: absolute; left: -7px; right: -7px; top: 6%; bottom: 2%; border-radius: 7px; z-index: -1; transform-origin: left center;
+  background: linear-gradient(90deg, rgba(25,230,255,.38), rgba(181,107,255,.38)); }
+/* product UI */
+.card { position: absolute; background: #0c0e16; border: 1px solid #23273a; border-radius: 28px; box-shadow: 0 40px 90px -40px rgba(25,230,255,.35); }
+.label { position: absolute; font: 500 16px Inter; color: #8a90a2; white-space: nowrap; }
+.field { position: absolute; height: 64px; border: 1px solid #2a2f45; border-radius: 14px; background: #080a12; font: 500 22px Inter; color: #f2f4fa;
+  padding: 0 20px; display: flex; align-items: center; white-space: nowrap; }
+.field.focus { border-color: #19e6ff; box-shadow: 0 0 0 4px rgba(25,230,255,.16); }
+.caret { display: inline-block; width: 2px; height: 28px; background: #19e6ff; margin-left: 2px; }
+.btn { position: absolute; height: 64px; border-radius: 999px; background: linear-gradient(90deg, #19e6ff, #b56bff); color: #05060a; font: 700 21px Inter;
+  display: grid; place-items: center; overflow: hidden; white-space: nowrap; }
+.digit { position: absolute; width: 72px; height: 86px; border: 1px solid #2a2f45; border-radius: 16px; background: #080a12; display: grid; place-items: center;
+  font: 600 38px 'JetBrains Mono', monospace; color: #f2f4fa; }
+.digit.focus { border-color: #19e6ff; box-shadow: 0 0 0 4px rgba(25,230,255,.16); }
+.step { position: absolute; width: 34px; height: 34px; border-radius: 50%; border: 2px solid #343a55; display: grid; place-items: center; background: #0c0e16; }
+.step.done { border-color: #39ff9c; background: #39ff9c; box-shadow: 0 0 18px -2px #39ff9c; }
+.step.now { border-color: #19e6ff; box-shadow: 0 0 0 5px rgba(25,230,255,.15); }
+.stepline { position: absolute; height: 2px; background: #2a2f45; }
+.stepfill { position: absolute; left: 0; top: 0; height: 2px; background: #39ff9c; }
+.chip { position: absolute; height: 52px; border-radius: 999px; border: 1px solid #2a2f45; background: #0f1220; font: 600 18px Inter; display: grid; place-items: center; color: #c9cede; }
+.chip.on { border-color: #19e6ff; color: #fff; background: rgba(25,230,255,.12); box-shadow: 0 0 0 3px rgba(25,230,255,.12); }
+.row { position: absolute; height: 68px; width: 600px; border: 1px solid #23273a; border-radius: 16px; background: #0c0e16; display: flex; align-items: center; gap: 16px; padding: 0 20px;
+  font: 600 21px Inter; }
+.row .ic { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; flex: none; }
+.row .dt { margin-left: auto; font: 500 16px 'JetBrains Mono', monospace; color: #39ff9c; }
+.mono { font-family: 'JetBrains Mono', monospace; }
+/* mini PAN card (540 x 340 at scale 1) */
+.pan { position: absolute; width: 540px; height: 340px; border-radius: 22px; background: linear-gradient(160deg, #141a2e, #0b0e18); border: 1px solid #2c3352; overflow: hidden; transform-origin: 0 0; }
+.pan .band { position: absolute; left: 0; top: 0; right: 0; height: 64px; background: linear-gradient(90deg, #1f4e9c, #3b2f8f); }
+.pan .band b { position: absolute; left: 0; right: 0; top: 12px; text-align: center; font: 800 21px 'Inter Tight'; letter-spacing: .06em; color: #fff; }
+.pan .band span { position: absolute; left: 0; right: 0; top: 38px; text-align: center; font: 500 12px Inter; color: #c9d4ff; }
+.pan .ph { position: absolute; left: 30px; top: 92px; width: 108px; height: 132px; border-radius: 14px; background: linear-gradient(160deg, #19e6ff, #b56bff); opacity: .9; }
+.pan .ph i { position: absolute; left: 34px; top: 26px; width: 40px; height: 40px; border-radius: 50%; background: #0b0e18; opacity: .55; }
+.pan .ph em { position: absolute; left: 22px; top: 76px; width: 64px; height: 44px; border-radius: 32px 32px 8px 8px; background: #0b0e18; opacity: .55; }
+.pan .nm { position: absolute; left: 164px; top: 100px; font: 700 22px Inter; color: #fff; }
+.pan .dob { position: absolute; left: 164px; top: 136px; font: 500 15px Inter; color: #8a90a2; }
+.pan .no { position: absolute; left: 164px; top: 174px; font: 600 34px 'JetBrains Mono'; letter-spacing: .04em; color: #fff; }
+.pan .ft { position: absolute; left: 30px; bottom: 22px; font: 600 12px 'JetBrains Mono'; letter-spacing: .14em; color: #8a90a2; }
+/* stamp */
+.stamp { position: absolute; padding: 10px 26px; border: 5px solid #39ff9c; border-radius: 14px; color: #39ff9c; font: 800 52px 'Inter Tight'; letter-spacing: .12em;
+  text-shadow: 0 0 22px rgba(57,255,156,.6); box-shadow: 0 0 30px -4px rgba(57,255,156,.55), inset 0 0 22px -6px rgba(57,255,156,.5); background: rgba(5,6,10,.55); white-space: nowrap; }
+/* phone */
+.phone { position: absolute; border-radius: 64px; background: #111522; border: 2px solid #2c3352; box-shadow: 0 50px 100px -40px rgba(181,107,255,.45); }
+.screen { position: absolute; left: 16px; top: 16px; right: 16px; bottom: 16px; border-radius: 50px; overflow: hidden; background: #05060a; }
+.vrow { position: absolute; left: 26px; right: 26px; height: 74px; border-bottom: 1px solid #1d2133; }
+.vrow small { position: absolute; left: 0; top: 12px; font: 500 15px Inter; color: #8a90a2; }
+.vrow b { position: absolute; left: 0; top: 36px; font: 600 21px Inter; color: #f2f4fa; white-space: nowrap; }
+#cursor { position: absolute; left: 0; top: 0; width: 34px; height: 34px; pointer-events: none; transform-origin: 4px 4px; }
+/* preview controls */
+#ui { position: fixed; left: 0; right: 0; bottom: 0; display: flex; gap: 12px; align-items: center; padding: 10px 16px; background: rgba(0,0,0,.7); font: 14px Inter; }
+#ui button { font: 600 14px Inter; padding: 6px 14px; border-radius: 8px; border: 0; background: #19e6ff; cursor: pointer; }
+#ui input { flex: 1; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="silk" width="1920" height="1080"></canvas>
+
+  <!-- 1. open -->
+  <div class="layer" id="L_intro"><div class="cam">
+    <div class="tline" id="introWord" style="font-weight:500;font-size:44px;color:#c9cede">Introducing</div>
+  </div></div>
+  <div class="layer" id="L_brand"><div class="cam">
+    <div class="abs" id="brandRow" style="left:960px;top:540px;transform:translate(-50%,-50%);display:flex;align-items:center;gap:22px">
+      <svg id="brandLogo" width="96" height="96" viewBox="0 0 64 64"></svg>
+      <span style="font:800 78px 'Inter Tight';letter-spacing:-.03em">Trust<span style="background:linear-gradient(90deg,#19e6ff,#b56bff,#ff4fd8);-webkit-background-clip:text;background-clip:text;color:transparent">Vault</span></span>
+    </div>
+  </div></div>
+
+  <!-- title lines are built by script -->
+  <div class="layer" id="L_t0"><div class="cam"><div class="tline" data-text="Still carrying [photocopies] of your ID?"></div></div></div>
+  <div class="layer" id="L_t1"><div class="cam"><div class="tline" data-text="Sign in with [three locks.]"></div></div></div>
+  <div class="layer" id="L_t2"><div class="cam"><div class="tline" data-text="Upload once. [Encrypted instantly.]"></div></div></div>
+  <div class="layer" id="L_t3"><div class="cam"><div class="tline" data-text="Checked in [seconds.]"></div></div></div>
+  <div class="layer" id="L_t4"><div class="cam"><div class="tline" data-text="Anyone can confirm it. [No account needed.]"></div></div></div>
+
+  <!-- 4. sign in -->
+  <div class="layer" id="L_ui1"><div class="cam">
+    <div class="card" style="left:660px;top:190px;width:600px;height:700px"></div>
+    <div class="abs" style="left:700px;top:228px;display:flex;align-items:center;gap:14px"><svg class="logo" width="44" height="44" viewBox="0 0 64 64"></svg>
+      <span style="font:700 28px 'Inter Tight';letter-spacing:-.02em">Sign in to TrustVault</span></div>
+    <div class="stepline" style="left:777px;top:316px;width:166px"><div class="stepfill" id="sf1"></div></div>
+    <div class="stepline" style="left:977px;top:316px;width:166px"><div class="stepfill" id="sf2"></div></div>
+    <div class="step" id="st1" style="left:743px;top:300px"></div>
+    <div class="step" id="st2" style="left:943px;top:300px"></div>
+    <div class="step" id="st3" style="left:1143px;top:300px"></div>
+    <div class="label" style="left:760px;top:346px;transform:translateX(-50%)">Password</div>
+    <div class="label" style="left:960px;top:346px;transform:translateX(-50%)">Email code</div>
+    <div class="label" style="left:1160px;top:346px;transform:translateX(-50%)">Authenticator</div>
+    <div id="pA" class="abs" style="left:0;top:0">
+      <div class="label" style="left:700px;top:400px">Email</div>
+      <div class="field" id="fEmail" style="left:700px;top:428px;width:520px"></div>
+      <div class="label" style="left:700px;top:512px">Password</div>
+      <div class="field" id="fPass" style="left:700px;top:540px;width:520px"></div>
+      <div class="btn" id="bCont" style="left:700px;top:640px;width:520px">Continue</div>
+    </div>
+    <div id="pB" class="abs" style="left:0;top:0">
+      <div class="abs" style="left:700px;top:410px;font:500 20px Inter;color:#c9cede">We sent a 6-digit code to <b class="mono" style="color:#fff">r****@demo.test</b></div>
+    </div>
+    <div id="pC" class="abs" style="left:0;top:0">
+      <div class="abs" style="left:700px;top:410px;font:500 20px Inter;color:#c9cede">Open <b style="color:#fff">Google Authenticator</b> and enter the code</div>
+    </div>
+    <div id="digits" class="abs" style="left:0;top:0"></div>
+    <div id="pD" class="abs" style="left:0;top:0">
+      <div class="abs" id="okCircle" style="left:912px;top:420px;width:96px;height:96px;border-radius:50%;background:#39ff9c;box-shadow:0 0 40px -6px #39ff9c;display:grid;place-items:center">
+        <svg width="50" height="50" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#05060a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="abs" style="left:960px;top:548px;transform:translateX(-50%);font:700 32px 'Inter Tight'">Welcome back, Rahul</div>
+      <div class="abs" style="left:960px;top:600px;transform:translateX(-50%);font:500 20px Inter;color:#8a90a2">Signed in with password, email code and Authenticator</div>
+    </div>
+  </div></div>
+
+  <!-- 6. upload -->
+  <div class="layer" id="L_ui2"><div class="cam">
+    <div class="card" style="left:610px;top:150px;width:700px;height:790px"></div>
+    <div class="abs" style="left:650px;top:186px;font:700 30px 'Inter Tight';letter-spacing:-.02em">Upload a document</div>
+    <div class="abs" style="left:650px;top:232px;font:500 18px Inter;color:#8a90a2">Locked with AES-256 before it is stored</div>
+    <div class="chip" id="c0" style="left:650px;top:290px;width:140px">Aadhaar</div>
+    <div class="chip" id="c1" style="left:800px;top:290px;width:140px">PAN card</div>
+    <div class="chip" id="c2" style="left:950px;top:290px;width:190px">Driving licence</div>
+    <div class="chip" id="c3" style="left:1150px;top:290px;width:120px">Other</div>
+    <div class="label" style="left:650px;top:372px">PAN number</div>
+    <div class="field mono" id="fPan" style="left:650px;top:400px;width:620px;font-family:'JetBrains Mono';letter-spacing:.04em"></div>
+    <div class="abs" id="drop" style="left:650px;top:490px;width:620px;height:210px;border:2px dashed #2f3550;border-radius:18px"></div>
+    <div class="abs" id="dropHint" style="left:960px;top:578px;transform:translateX(-50%);font:500 19px Inter;color:#8a90a2">Drop the file here, or click to choose</div>
+    <div class="abs" id="thumbWrap" style="left:0;top:0"><div class="pan" id="thumb"></div></div>
+    <div class="abs" id="fileInfo" style="left:960px;top:556px">
+      <div style="font:600 22px Inter">PAN-card.png</div><div style="font:500 17px Inter;color:#8a90a2;margin-top:6px">214 KB · image</div></div>
+    <div class="btn" id="bUp" style="left:650px;top:730px;width:620px;height:68px">
+      <div id="upFill" style="position:absolute;left:0;top:0;bottom:0;background:rgba(5,6,10,.28)"></div>
+      <span id="upText" style="position:relative">Upload &amp; encrypt</span></div>
+    <div class="abs" id="lockBadge" style="left:960px;top:830px;transform:translateX(-50%);display:flex;align-items:center;gap:12px;font:600 20px Inter;color:#39ff9c">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#39ff9c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+      Encrypted with AES-256 and stored</div>
+    <svg class="burst" id="burst2" width="1920" height="1080" style="position:absolute;left:0;top:0;overflow:visible"></svg>
+  </div></div>
+
+  <!-- 8. automatic checks -->
+  <div class="layer" id="L_ui3"><div class="cam">
+    <div class="pan" id="pan3" style="left:330px;top:330px"></div>
+    <div class="abs" style="left:990px;top:240px;font:700 28px 'Inter Tight';letter-spacing:-.02em">Automatic checks</div>
+    <div id="rows" class="abs" style="left:0;top:0"></div>
+    <div class="abs" id="score" style="left:990px;top:738px;display:flex;align-items:baseline;gap:16px">
+      <b id="scoreN" style="font:800 110px 'Inter Tight';letter-spacing:-.04em;line-height:1">0</b>
+      <span class="mono" style="font-size:18px;letter-spacing:.16em;color:#39ff9c">/ 100 SCORE</span></div>
+    <div class="stamp" id="stamp3" style="left:600px;top:500px">VERIFIED</div>
+    <div class="abs" id="approved" style="left:600px;top:700px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;font:600 19px Inter;color:#c9cede">
+      <span style="width:30px;height:30px;border-radius:50%;background:linear-gradient(160deg,#19e6ff,#b56bff);display:grid;place-items:center;font:700 13px Inter;color:#05060a">PV</span>
+      Approved by a verifier · sealed in the ledger</div>
+    <svg class="burst" id="burst3" width="1920" height="1080" style="position:absolute;left:0;top:0;overflow:visible"></svg>
+  </div></div>
+
+  <!-- 10. QR verify -->
+  <div class="layer" id="L_ui4"><div class="cam">
+    <div class="abs" style="left:300px;top:250px;width:600px;height:600px;border-radius:26px;background:#0c0e16;border:1px solid #23273a"></div>
+    <div class="pan" id="pan4" style="left:330px;top:290px"></div>
+    <svg id="qrDoc" class="abs" style="left:700px;top:648px" width="170" height="170"></svg>
+    <div class="abs" style="left:340px;top:700px;font:600 19px Inter;color:#c9cede">Scan to verify</div>
+    <div class="abs mono" style="left:340px;top:734px;font-size:15px;color:#8a90a2">trustvault-5lgg.onrender.com/verify</div>
+    <div class="phone" style="left:1160px;top:100px;width:420px;height:880px">
+      <div class="screen">
+        <div id="finder" class="abs" style="left:0;top:0;width:388px;height:848px;background:#0a0c14">
+          <svg id="qrCam" class="abs" style="left:74px;top:294px" width="240" height="240"></svg>
+          <svg class="abs" style="left:54px;top:274px" width="280" height="280" fill="none" stroke="#19e6ff" stroke-width="5" stroke-linecap="round">
+            <path d="M4 50V4h46M230 4h46v46M276 230v46h-46M50 276H4v-46"/></svg>
+          <div id="scanLine" class="abs" style="left:64px;width:260px;height:3px;background:#19e6ff;box-shadow:0 0 18px 3px rgba(25,230,255,.7)"></div>
+          <div id="found" class="abs" style="left:194px;top:600px;transform:translateX(-50%);padding:10px 20px;border-radius:999px;background:#19e6ff;color:#05060a;font:700 18px Inter">QR code found</div>
+        </div>
+        <div id="result" class="abs" style="left:0;top:0;width:388px;height:848px;background:#05060a">
+          <div class="abs" style="left:0;top:0;width:388px;height:230px;background:#39ff9c"></div>
+          <svg id="badge" class="abs" style="left:30px;top:90px" width="62" height="62" viewBox="0 0 24 24" fill="none" stroke="#05060a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m9 12 2 2 4-4"/></svg>
+          <div class="abs" style="left:30px;top:166px;font:800 31px 'Inter Tight';letter-spacing:-.02em;color:#05060a">Verified document</div>
+          <div id="vrows"></div>
+        </div>
+      </div>
+    </div>
+    <svg class="burst" id="burst4" width="1920" height="1080" style="position:absolute;left:0;top:0;overflow:visible"></svg>
+  </div></div>
+
+  <!-- 11. closer -->
+  <div class="layer" id="L_close"><div class="cam">
+    <div class="tline" id="closeLine" style="font-size:34px">Your documents. <span class="hl" id="closeHl"><i class="hlbox" id="closeBox"></i><span id="closeWord">Encrypted.</span></span></div>
+    <div class="abs" id="closeMeasure" style="left:-4000px;top:0;font:700 34px 'Inter Tight';letter-spacing:-.02em"></div>
+  </div></div>
+
+  <!-- 12. end card -->
+  <div class="layer" id="L_end"><div class="cam">
+    <div class="abs" style="left:960px;top:470px;transform:translate(-50%,-50%);display:flex;align-items:center;gap:24px">
+      <svg id="endLogo" width="120" height="120" viewBox="0 0 64 64"></svg>
+      <span style="font:800 92px 'Inter Tight';letter-spacing:-.03em">Trust<span style="background:linear-gradient(90deg,#19e6ff,#b56bff,#ff4fd8);-webkit-background-clip:text;background-clip:text;color:transparent">Vault</span></span>
+    </div>
+    <div class="abs mono" id="endUrl" style="left:960px;top:590px;transform:translateX(-50%);font-size:28px;color:#19e6ff">trustvault-5lgg.onrender.com</div>
+    <div class="abs" id="endSub" style="left:960px;top:646px;transform:translateX(-50%);font:500 21px Inter;color:#8a90a2">Free · open source on GitHub</div>
+  </div></div>
+
+  <svg id="cursor" viewBox="0 0 24 24"><path d="M4 2.5l15.5 9.3-6.8 1.4 4 7.6-3 1.6-4-7.7-5 4.6z" fill="#fff" stroke="#05060a" stroke-width="1.4" stroke-linejoin="round"/></svg>
+</div>
+<div id="ui"><button id="playBtn">Play</button><input id="scrub" type="range" min="0" max="60" step="0.01" value="0"><span id="clock">0.00</span></div>
+
+<script>
+/* BEAT SHEET (seconds)                                         sound
+   0.0  "Introducing" fades up                                  pad enters
+   1.7  brand gradient + TrustVault logo (check draws on)       soft whoosh
+   4.2  "Still carrying [photocopies] of your ID?"              kick enters
+   8.6  "Sign in with [three locks.]"                           whoosh
+  11.4  sign-in card: email + password typed, Continue          key ticks, click
+  13.9  email code typed, step 2 ticks                          ticks
+  15.6  Authenticator code typed, step 3 ticks                  ticks
+  17.3  "Welcome back, Rahul", camera pulls back                chime-tick
+  20.5  "Upload once. [Encrypted instantly.]"                   whoosh, hats enter
+  23.2  upload window: PAN chosen, number typed, file dropped   click, key ticks, pop
+  26.9  Upload & encrypt -> progress -> "Encrypted" + burst      click, rise, tick
+  31.5  "Checked in [seconds.]"                                 whoosh
+  34.2  five checks tick, score counts to 100                   tick per check
+  40.5  VERIFIED stamp + burst, "Approved by a verifier"        impact-pop
+  42.5  "Anyone can confirm it. [No account needed.]"          whoosh
+  45.4  phone scans QR on the printed card                      scan sweep
+  47.9  public result: Verified document + burst, details       chime, ticks
+  53.4  closer on brand gradient: Your documents. [Encrypted./Verified./Shared safely.]   lift
+  57.6  end card: logo, URL                                     chime
+*/
+const VIDEO = { w: 1920, h: 1080, duration: 60 };
+window.VIDEO = VIDEO;
+
+// ---------- helpers (from the explainer-default skill) ----------
+function spring(t, w = 14, z = 0.82) {
+  if (t <= 0) return 0;
+  if (z >= 1) return 1 - Math.exp(-w * t) * (1 + w * t);
+  const wd = w * Math.sqrt(1 - z * z);
+  return 1 - Math.exp(-z * w * t) * (Math.cos(wd * t) + (z * w / wd) * Math.sin(wd * t));
+}
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const ease = (x) => (x = clamp(x), x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const easeOut = (x) => 1 - Math.pow(1 - clamp(x), 3);
+const lerp = (a, b, k) => a + (b - a) * k;
+const seg = (t, a, b) => clamp((t - a) / (b - a));
+const kf = (keys) => (t) => { if (t <= keys[0][0]) return keys[0][1]; for (let i = 1; i < keys.length; i++) { const [a, va] = keys[i - 1], [b, vb, e = ease] = keys[i]; if (t <= b) return lerp(va, vb, e((t - a) / (b - a))); } return keys[keys.length - 1][1]; };
+const rng = (s) => () => (s = (s + 0x6D2B79F5) | 0, s = Math.imul(s ^ (s >>> 15), 1 | s), s ^= s + Math.imul(s ^ (s >>> 7), 61 | s), ((s ^ (s >>> 14)) >>> 0) / 4294967296);
+const $ = (id) => document.getElementById(id);
+const C = { bg: '#05060a', cyan: '#19e6ff', violet: '#b56bff', pink: '#ff4fd8', green: '#39ff9c' };
+
+// ---------- timeline ----------
+const S = {
+  intro: [0, 1.75], brand: [1.75, 4.2], t0: [4.2, 8.6], t1: [8.6, 11.4], ui1: [11.4, 20.5], t2: [20.5, 23.2], ui2: [23.2, 31.5],
+  t3: [31.5, 34.2], ui3: [34.2, 42.5], t4: [42.5, 45.4], ui4: [45.4, 53.4], close: [53.4, 57.6], end: [57.6, 60.5],
+};
+const FADE = 0.38;
+// typing: [scene, local start, text, seconds per character]
+const TYPE = {
+  email: ['ui1', 0.45, 'rahul@demo.test', 0.04], pass: ['ui1', 1.3, '••••••••••', 0.04],
+  code1: ['ui1', 2.9, '730418', 0.15], code2: ['ui1', 4.6, '291604', 0.15], pan: ['ui2', 1.25, 'ABCPS1234F', 0.045],
+};
+const typed = (k, lt) => { const [, a, s, cps] = TYPE[k]; return s.slice(0, clamp(Math.floor((lt - a) / cps + 1e-6) + 1, 0, s.length) * (lt >= a ? 1 : 0)); };
+const typing = (k, lt) => { const [, a, s, cps] = TYPE[k]; return lt >= a - 0.25 && lt <= a + s.length * cps + 0.3; };
+const caret = (t) => (Math.floor(t * 2.2) % 2 === 0 ? '<i class="caret"></i>' : '<i class="caret" style="opacity:0"></i>');
+const UI1 = { click: 2.25, step1: 2.45, B: 2.5, step2: 3.95, C: 4.2, step3: 5.65, D: 5.9 };
+const UI2 = { chip: 0.7, drop: 2.35, click: 3.75, prog: [3.9, 5.0], done: 5.15 };
+const UI3 = { rows: [0, 1, 2, 3, 4].map((i) => [0.4 + i * 0.62, 0.9 + i * 0.62]), count: [4.3, 5.4], stamp: 6.3 };
+const UI4 = { found: 1.9, result: 2.5, rows: 3.0 };
+
+// ---------- shared drawings ----------
+const SHIELD = 'M32 5c7 3.4 14 5.4 21 6v18c0 13.6-8.6 24.2-21 30-12.4-5.8-21-16.4-21-30V11c7-.6 14-2.6 21-6z';
+let gid = 0;
+function logo(svg) {
+  const id = 'lg' + gid++;
+  svg.innerHTML = `<defs><linearGradient id="${id}" x1="10" y1="5" x2="54" y2="60" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#5eead4"/><stop offset=".55" stop-color="#14b8a6"/><stop offset="1" stop-color="#3b82f6"/></linearGradient></defs>
+    <path d="${SHIELD}" fill="url(#${id})"/><path d="${SHIELD}" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="1.5"/>
+    <path class="tick" d="M22 31l7.5 7.5L43 24" fill="none" stroke="#04141c" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pathLength="1" stroke-dasharray="1"/>`;
+}
+document.querySelectorAll('svg.logo').forEach(logo); logo($('brandLogo')); logo($('endLogo'));
+const panHTML = `<div class="band"><b>INCOME TAX DEPARTMENT</b><span>Permanent Account Number Card</span></div><div class="ph"><i></i><em></em></div>
+  <div class="nm">RAHUL SHARMA</div><div class="dob">Date of birth · 14/08/2003</div><div class="no">ABCPS1234F</div><div class="ft">DEMO SAMPLE · NOT A REAL CARD</div>`;
+['thumb', 'pan3', 'pan4'].forEach((id) => { $(id).innerHTML = panHTML; });
+// a QR-looking grid (decorative), same pattern on the paper and in the phone
+function qr(svg, size, light, dark) {
+  const n = 25, cell = size / n, r = rng(7); let d = '';
+  const finder = (x, y) => (x < 7 && y < 7) || (x >= n - 7 && y < 7) || (x < 7 && y >= n - 7);
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    let on = r() > 0.52;
+    if (finder(x, y)) { const fx = x >= n - 7 ? x - (n - 7) : x, fy = y >= n - 7 ? y - (n - 7) : y; on = fx === 0 || fy === 0 || fx === 6 || fy === 6 || (fx >= 2 && fx <= 4 && fy >= 2 && fy <= 4); }
+    else if ((x < 8 && y < 8) || (x >= n - 8 && y < 8) || (x < 8 && y >= n - 8)) on = false;
+    if (on) d += `M${x * cell} ${y * cell}h${cell}v${cell}h-${cell}z`;
+  }
+  svg.innerHTML = `<rect width="${size}" height="${size}" rx="${size * 0.06}" fill="${light}"/><g transform="translate(${size * 0.08} ${size * 0.08}) scale(0.84)"><path d="${d}" fill="${dark}"/></g>`;
+}
+qr($('qrDoc'), 170, '#f2f4fa', '#05060a'); qr($('qrCam'), 240, '#f2f4fa', '#05060a');
+// burst: ring + 12 spark lines + 8 dots, drawn for progress p (0..1)
+function makeBurst(svg) {
+  let h = '<circle class="ring" fill="none"/>';
+  for (let i = 0; i < 12; i++) h += '<line class="ln" stroke-linecap="round"/>';
+  for (let i = 0; i < 8; i++) h += '<circle class="dt"/>';
+  svg.innerHTML = h;
+}
+['burst2', 'burst3', 'burst4'].forEach((id) => makeBurst($(id)));
+function drawBurst(svg, x, y, p, size = 1) {
+  const cols = [C.cyan, C.violet, C.pink, C.green], on = p > 0 && p < 1, R = 90 * size;
+  const ring = svg.querySelector('.ring');
+  const pr = easeOut(seg(p, 0, 0.7));
+  ring.setAttribute('cx', x); ring.setAttribute('cy', y); ring.setAttribute('r', lerp(R * 0.2, R, pr));
+  ring.setAttribute('stroke', C.cyan); ring.setAttribute('stroke-width', lerp(7 * size, 0, pr)); ring.style.opacity = on ? 1 - pr : 0;
+  svg.querySelectorAll('.ln').forEach((l, i) => {
+    const a = (i / 12) * Math.PI * 2, k = easeOut(seg(p, 0, 0.75)), r1 = lerp(R * 0.35, R * 1.25, k), len = lerp(16, 3, k) * size;
+    l.setAttribute('x1', x + Math.cos(a) * r1); l.setAttribute('y1', y + Math.sin(a) * r1);
+    l.setAttribute('x2', x + Math.cos(a) * (r1 + len)); l.setAttribute('y2', y + Math.sin(a) * (r1 + len));
+    l.setAttribute('stroke', cols[i % 4]); l.setAttribute('stroke-width', lerp(4.5, 0, k) * size); l.style.opacity = on ? 1 : 0;
+  });
+  svg.querySelectorAll('.dt').forEach((c, i) => {
+    const a = (i / 8) * Math.PI * 2 + 0.4, k = easeOut(seg(p, 0.05 + i * 0.02, 1)), r1 = lerp(R * 0.25, R * 1.6, k);
+    c.setAttribute('cx', x + Math.cos(a) * r1); c.setAttribute('cy', y + Math.sin(a) * r1); c.setAttribute('r', lerp(6, 0, k) * size);
+    c.setAttribute('fill', cols[(i + 1) % 4]); c.style.opacity = on ? 1 : 0;
+  });
+}
+
+// ---------- title lines ----------
+document.querySelectorAll('.tline[data-text]').forEach((el) => {
+  const src = el.dataset.text, m = src.match(/^(.*?)\[(.*?)\](.*)$/);
+  const words = (s) => s.split(' ').filter(Boolean).map((w) => `<span class="w">${w}</span>`).join(' ');
+  el.innerHTML = `${words(m[1])} <span class="hl"><i class="hlbox"></i>${words(m[2])}</span> ${words(m[3])}`.trim();
+});
+function titleUpdate(layer, lt, dur) {
+  const line = layer.querySelector('.tline'), cam = layer.querySelector('.cam');
+  line.querySelectorAll('.w').forEach((w, i) => {
+    const k = spring(lt - 0.12 - i * 0.085, 16, 0.9);
+    w.style.opacity = clamp(k * 1.4); w.style.transform = `translateY(${(1 - k) * 16}px)`;
+  });
+  const target = Math.min(3.2, (0.74 * 1920) / line.offsetWidth);
+  const s = kf([[0.55, 1], [1.75, target]])(lt) * (1 + 0.035 * seg(lt, 1.75, dur));
+  cam.style.transform = `translate(960px,540px) scale(${s}) translate(-960px,-540px)`;
+  const box = line.querySelector('.hlbox');
+  if (box) box.style.transform = `scaleX(${ease(seg(lt, 1.45, 2.0))})`;
+}
+
+// ---------- camera ----------
+function camera(layer, fx, fy, s) {
+  layer.querySelector('.cam').style.transform = `translate(960px,540px) scale(${s}) translate(${-fx}px,${-fy}px)`;
+}
+const toScreen = (x, y, fx, fy, s) => [(x - fx) * s + 960, (y - fy) * s + 540];
+let cursorOn = false;
+function cursor(x, y, press = 0) {
+  const c = $('cursor'); cursorOn = true;
+  c.style.display = 'block';
+  c.style.transform = `translate(${x - 4}px,${y - 4}px) scale(${1 - 0.15 * press})`;
+}
+
+const CAM1 = { s: kf([[0, 1.75], [1.15, 1.75], [1.45, 1.7], [2.1, 1.6], [2.55, 1.7], [5.95, 1.7], [6.4, 1.6], [7.4, 1.0]]),
+  x: kf([[0, 840], [0.45, 840], [1.1, 1010], [1.45, 960], [7.4, 960]]),
+  y: kf([[0, 460], [1.15, 460], [1.45, 572], [1.8, 572], [2.15, 660], [2.55, 513], [6.4, 513], [7.4, 540]]) };
+const CUR1 = { x: kf([[1.7, 1180], [2.15, 1000]]), y: kf([[1.7, 760], [2.15, 672]]) };
+const CAM2 = { s: kf([[0, 1.6], [1.0, 1.6], [1.2, 1.75], [1.9, 1.75], [2.3, 1.3], [3.25, 1.3], [3.55, 1.6], [5.7, 1.6], [6.6, 1.0]]),
+  x: kf([[0, 900], [0.9, 900], [1.2, 870], [1.75, 1000], [2.3, 960], [6.6, 960]]),
+  y: kf([[0, 316], [1.0, 316], [1.2, 432], [1.9, 432], [2.3, 600], [3.25, 600], [3.55, 764], [5.7, 764], [6.6, 545]]) };
+const CUR2 = { x: kf([[0.1, 1180], [0.62, 880], [3.3, 900], [3.7, 990]]), y: kf([[0.1, 420], [0.62, 318], [3.3, 900], [3.7, 766]]) };
+const CAM3 = { s: kf([[0, 1.55], [3.9, 1.55], [4.35, 1.7], [5.6, 1.7], [6.05, 1.45], [7.25, 1.45], [8.0, 1.0]]),
+  x: kf([[0, 1290], [3.9, 1290], [4.35, 1160], [5.6, 1160], [6.05, 600], [7.25, 600], [8.0, 960]]),
+  y: kf([[0, 390], [3.4, 560], [3.9, 560], [4.35, 790], [5.6, 790], [6.05, 520], [7.25, 520], [8.0, 545]]) };
+const CAM4 = { s: kf([[0, 1.35], [0.9, 1.35], [1.7, 1.3], [2.6, 1.3], [3.2, 1.7], [4.0, 1.7], [4.8, 1.5], [5.7, 1.5], [6.5, 1.0]]),
+  x: kf([[0, 600], [0.9, 600], [1.7, 1370], [5.7, 1370], [6.5, 960]]),
+  y: kf([[0, 560], [0.9, 560], [1.7, 540], [2.6, 540], [3.2, 300], [4.0, 300], [4.8, 600], [5.7, 600], [6.5, 545]]) };
+
+// sign-in digits and check rows are built once
+let dh = '';
+for (let i = 0; i < 6; i++) dh += `<div class="digit" style="left:${700 + i * 89.6}px;top:470px"></div>`;
+$('digits').innerHTML = dh;
+const ROWS = [['Reading the text (OCR)', '142 chars'], ['PAN format', 'valid'], ['Holder name', 'matches'], ['Editing traces', 'none found'], ['Sealed in the ledger', 'block #45']];
+$('rows').innerHTML = ROWS.map(([a, b], i) => `<div class="row" style="left:990px;top:${300 + i * 84}px"><span class="ic"></span><span>${a}</span><span class="dt">${b}</span></div>`).join('');
+const VROWS = [['Document', 'PAN card'], ['Holder', 'Rahul Sharma'], ['Number', 'AB******4F'], ['Verified by', 'Priya Verifier'], ['Integrity', 'Unchanged since upload']];
+$('vrows').innerHTML = VROWS.map(([a, b], i) => `<div class="vrow" style="top:${262 + i * 82}px"><small>${a}</small><b>${b}</b></div>`).join('');
+const CHECK = '<svg width="20" height="20" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#05060a" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+// ---------- scenes ----------
+const UPDATE = {
+  intro(lt) {
+    const k = spring(lt - 0.25, 10, 1);
+    $('introWord').style.opacity = k; $('introWord').style.transform = `translate(-50%,-50%) scale(${0.96 + 0.04 * k})`;
+  },
+  brand(lt) {
+    const k = spring(lt - 0.1, 9, 1);
+    $('brandRow').style.opacity = k; $('brandRow').style.transform = `translate(-50%,-50%) scale(${0.92 + 0.08 * k})`;
+    $('brandLogo').querySelector('.tick').style.strokeDashoffset = 1 - easeOut(seg(lt, 0.45, 1.05));
+  },
+  t0: (lt) => titleUpdate($('L_t0'), lt, 4.4), t1: (lt) => titleUpdate($('L_t1'), lt, 2.8), t2: (lt) => titleUpdate($('L_t2'), lt, 2.7),
+  t3: (lt) => titleUpdate($('L_t3'), lt, 2.7), t4: (lt) => titleUpdate($('L_t4'), lt, 2.9),
+  ui1(lt, t) {
+    const L = $('L_ui1'), s = CAM1.s(lt), fx = CAM1.x(lt), fy = CAM1.y(lt);
+    camera(L, fx, fy, s);
+    const stage = lt < UI1.B ? 'A' : lt < UI1.C ? 'B' : lt < UI1.D ? 'C' : 'D';
+    const show = (id, from, to) => { const k = clamp(seg(lt, from, from + 0.3)) * (1 - seg(lt, to, to + 0.25)); const el = $(id); el.style.opacity = k; el.style.transform = `translateX(${(1 - clamp(seg(lt, from, from + 0.3))) * 30 - seg(lt, to, to + 0.25) * 30}px)`; };
+    show('pA', -1, UI1.B - 0.1); show('pB', UI1.B, UI1.C - 0.1); show('pC', UI1.C, UI1.D - 0.1); show('pD', UI1.D, 99);
+    $('digits').style.opacity = clamp(seg(lt, UI1.B, UI1.B + 0.3)) * (1 - seg(lt, UI1.D - 0.1, UI1.D + 0.15));
+    const e = typed('email', lt), p = typed('pass', lt);
+    $('fEmail').innerHTML = e + (typing('email', lt) ? caret(t) : ''); $('fEmail').classList.toggle('focus', typing('email', lt));
+    $('fPass').innerHTML = (p ? `<span style="letter-spacing:.12em">${p}</span>` : '') + (typing('pass', lt) ? caret(t) : ''); $('fPass').classList.toggle('focus', typing('pass', lt));
+    const press = seg(lt, UI1.click - 0.06, UI1.click) * (1 - seg(lt, UI1.click, UI1.click + 0.12));
+    $('bCont').style.transform = `scale(${1 - 0.04 * press})`;
+    const code = stage === 'C' ? typed('code2', lt) : typed('code1', lt);
+    $('digits').querySelectorAll('.digit').forEach((d, i) => { d.textContent = code[i] ?? ''; d.classList.toggle('focus', i === code.length && stage !== 'D'); });
+    const st = [UI1.step1, UI1.step2, UI1.step3];
+    st.forEach((at, i) => { const el = $('st' + (i + 1)); const done = lt >= at; el.className = 'step' + (done ? ' done' : (i === 0 || lt >= st[i - 1]) ? ' now' : ''); el.innerHTML = done ? CHECK : ''; el.style.transform = `scale(${done ? 1 + 0.25 * (1 - spring(lt - at, 18, 0.5)) : 1})`; });
+    $('sf1').style.width = `${166 * ease(seg(lt, UI1.step1, UI1.step1 + 0.4))}px`; $('sf2').style.width = `${166 * ease(seg(lt, UI1.step2, UI1.step2 + 0.4))}px`;
+    $('okCircle').style.transform = `scale(${spring(lt - UI1.D - 0.1, 14, 0.6)})`;
+    if (lt > 1.6 && lt < 2.7) { const [x, y] = toScreen(CUR1.x(lt), CUR1.y(lt), fx, fy, s); cursor(x, y, press); }
+  },
+  ui2(lt, t) {
+    const L = $('L_ui2'), s = CAM2.s(lt), fx = CAM2.x(lt), fy = CAM2.y(lt);
+    camera(L, fx, fy, s);
+    ['c0', 'c1', 'c2', 'c3'].forEach((id, i) => $(id).classList.toggle('on', i === 1 && lt >= UI2.chip));
+    $('c1').style.transform = `scale(${lt >= UI2.chip ? 1 + 0.08 * (1 - spring(lt - UI2.chip, 18, 0.55)) : 1})`;
+    $('fPan').innerHTML = typed('pan', lt) + (typing('pan', lt) ? caret(t) : ''); $('fPan').classList.toggle('focus', typing('pan', lt));
+    const k = spring(lt - UI2.drop, 9, 0.85), sc = 0.42;
+    $('thumb').style.transform = `translate(${lerp(1480, 680, k)}px,${lerp(980, 516, k)}px) rotate(${lerp(14, -3, k)}deg) scale(${sc})`;
+    $('thumbWrap').style.opacity = clamp(seg(lt, UI2.drop - 0.05, UI2.drop + 0.15));
+    $('dropHint').style.opacity = 1 - seg(lt, UI2.drop, UI2.drop + 0.3);
+    $('fileInfo').style.opacity = seg(lt, UI2.drop + 0.45, UI2.drop + 0.75);
+    $('drop').style.borderColor = lt > UI2.drop + 0.4 ? C.cyan : '#2f3550';
+    const pr = ease(seg(lt, UI2.prog[0], UI2.prog[1]));
+    const press = seg(lt, UI2.click - 0.06, UI2.click) * (1 - seg(lt, UI2.click, UI2.click + 0.12));
+    $('bUp').style.transform = `scale(${1 - 0.04 * press})`;
+    $('upFill').style.width = `${lt >= UI2.prog[0] && lt < UI2.done ? pr * 100 : 0}%`;
+    $('upText').textContent = lt < UI2.prog[0] ? 'Upload & encrypt' : lt < UI2.done ? `Encrypting with AES-256…  ${Math.round(pr * 100)}%` : 'Uploaded';
+    $('bUp').style.background = lt >= UI2.done ? C.green : '';
+    const lb = spring(lt - UI2.done - 0.1, 14, 0.8);
+    $('lockBadge').style.opacity = clamp(lb); $('lockBadge').style.transform = `translateX(-50%) translateY(${(1 - lb) * 14}px)`;
+    drawBurst($('burst2'), 1236, 764, seg(lt, UI2.done, UI2.done + 1.0), 0.9);
+    if ((lt > 0.05 && lt < 1.1) || (lt > 3.2 && lt < 4.1)) { const [x, y] = toScreen(CUR2.x(lt), CUR2.y(lt), fx, fy, s); const pc = seg(lt, UI2.chip - 0.06, UI2.chip) * (1 - seg(lt, UI2.chip, UI2.chip + 0.12)); cursor(x, y, Math.max(press, pc)); }
+  },
+  ui3(lt) {
+    const L = $('L_ui3'); camera(L, CAM3.x(lt), CAM3.y(lt), CAM3.s(lt));
+    L.querySelectorAll('.row').forEach((r, i) => {
+      const [a, b] = UI3.rows[i], ic = r.querySelector('.ic'), on = lt >= a;
+      r.style.opacity = 0.35 + 0.65 * clamp(seg(lt, a - 0.2, a + 0.1));
+      r.style.borderColor = lt >= b ? 'rgba(57,255,156,.45)' : on ? C.cyan : '#23273a';
+      r.querySelector('.dt').style.opacity = seg(lt, b, b + 0.2);
+      if (lt >= b) { ic.style.background = C.green; ic.style.border = '0'; ic.innerHTML = CHECK; ic.style.transform = `scale(${1 + 0.3 * (1 - spring(lt - b, 18, 0.5))})`; ic.style.boxShadow = '0 0 16px -2px #39ff9c'; }
+      else { ic.style.background = 'transparent'; ic.style.boxShadow = 'none'; ic.innerHTML = ''; ic.style.border = on ? `3px solid ${C.cyan}` : '3px solid #343a55';
+        ic.style.borderTopColor = on ? 'transparent' : '#343a55'; ic.style.transform = on ? `rotate(${lt * 720}deg)` : 'none'; }
+    });
+    $('scoreN').textContent = Math.round(100 * ease(seg(lt, UI3.count[0], UI3.count[1])));
+    $('score').style.opacity = 0.35 + 0.65 * seg(lt, UI3.count[0] - 0.4, UI3.count[0]);
+    const k = spring(lt - UI3.stamp, 16, 0.62);
+    $('stamp3').style.opacity = clamp(seg(lt, UI3.stamp, UI3.stamp + 0.08));
+    $('stamp3').style.transform = `translate(-50%,-50%) rotate(-9deg) scale(${lerp(1.9, 1, k)})`;
+    const ap = spring(lt - UI3.stamp - 0.55, 14, 0.85);
+    $('approved').style.opacity = clamp(ap); $('approved').style.transform = `translateX(-50%) translateY(${(1 - ap) * 14}px)`;
+    drawBurst($('burst3'), 600, 500, seg(lt, UI3.stamp + 0.08, UI3.stamp + 1.1), 2.2);
+  },
+  ui4(lt) {
+    const L = $('L_ui4'); camera(L, CAM4.x(lt), CAM4.y(lt), CAM4.s(lt));
+    $('scanLine').style.top = `${300 + 228 * (0.5 - 0.5 * Math.cos(Math.PI * 2 * seg(lt, 0.6, 1.95)))}px`;
+    $('scanLine').style.opacity = lt < UI4.found ? 1 : 0;
+    const f = spring(lt - UI4.found, 16, 0.7);
+    $('found').style.opacity = clamp(f); $('found').style.transform = `translateX(-50%) scale(${lerp(0.7, 1, f)})`;
+    const r = clamp(seg(lt, UI4.result, UI4.result + 0.35));
+    $('result').style.opacity = r; $('result').style.transform = `translateY(${(1 - easeOut(r)) * 40}px)`;
+    $('badge').style.transform = `scale(${lt > UI4.result ? spring(lt - UI4.result - 0.15, 15, 0.55) : 0})`;
+    $('vrows').querySelectorAll('.vrow').forEach((v, i) => { const k = spring(lt - UI4.rows - i * 0.22, 15, 0.9); v.style.opacity = clamp(k); v.style.transform = `translateX(${(1 - k) * 24}px)`; });
+    drawBurst($('burst4'), 1160 + 16 + 61, 100 + 16 + 121, seg(lt, UI4.result + 0.25, UI4.result + 1.25), 1.3);
+  },
+  close(lt) {
+    const words = ['Encrypted.', 'Verified.', 'Shared safely.'], at = [0, 1.35, 2.7];
+    let i = 0; for (let j = 0; j < at.length; j++) if (lt >= at[j]) i = j;
+    const m = $('closeMeasure'), width = (w) => (m.textContent = w, m.offsetWidth);
+    const prevW = width(words[Math.max(0, i - 1)]), curW = width(words[i]);
+    const k = i === 0 ? 1 : ease(seg(lt, at[i], at[i] + 0.35));
+    const wEl = $('closeWord'); wEl.textContent = words[i];
+    const intro = spring(lt - at[i], 16, 0.85);
+    wEl.style.display = 'inline-block'; wEl.style.opacity = clamp(intro * 1.3); wEl.style.transform = `translateY(${(1 - intro) * 18}px)`;
+    $('closeHl').style.width = `${lerp(prevW, curW, k)}px`;
+    $('closeBox').style.transform = `scaleX(${i === 0 ? ease(seg(lt, 0.3, 0.8)) : 1})`;
+    const line = $('closeLine'), base = spring(lt - 0.05, 12, 1);
+    line.style.opacity = clamp(base * 1.2);
+    const s = 2.3 + 0.12 * seg(lt, 0, 4.2);
+    $('L_close').querySelector('.cam').style.transform = `translate(960px,540px) scale(${s}) translate(-960px,-540px)`;
+  },
+  end(lt) {
+    const k = spring(lt - 0.05, 10, 1);
+    const cam = $('L_end').querySelector('.cam');
+    cam.style.transform = `translate(960px,540px) scale(${0.94 + 0.06 * k}) translate(-960px,-540px)`;
+    cam.style.opacity = k;
+    $('endLogo').querySelector('.tick').style.strokeDashoffset = 1 - easeOut(seg(lt, 0.25, 0.85));
+    $('endUrl').style.opacity = seg(lt, 0.5, 0.9); $('endSub').style.opacity = seg(lt, 0.75, 1.15);
+  },
+};
+
+// ---------- brand gradient: diagonal silk bands drawn on canvas ----------
+const silk = $('silk').getContext('2d');
+function drawSilk(t, alpha) {
+  silk.setTransform(1, 0, 0, 1, 0, 0); silk.clearRect(0, 0, 1920, 1080);
+  if (alpha <= 0) return;
+  silk.globalAlpha = alpha;
+  const g0 = silk.createRadialGradient(960, 540, 60, 960, 540, 1100);
+  g0.addColorStop(0, 'rgba(40,30,80,0.55)'); g0.addColorStop(1, 'rgba(5,6,10,0)');
+  silk.fillStyle = g0; silk.fillRect(0, 0, 1920, 1080);
+  silk.translate(960, 540); silk.rotate(-0.55);
+  const cols = ['25,230,255', '181,107,255', '255,79,216'];
+  for (let i = 0; i < 7; i++) {
+    const w = 260 + (i % 3) * 90, x = ((i * 430 + t * (26 + i * 4)) % 3000) - 1500;
+    const g = silk.createLinearGradient(x - w, 0, x + w, 0);
+    g.addColorStop(0, `rgba(${cols[i % 3]},0)`); g.addColorStop(0.5, `rgba(${cols[i % 3]},${0.16 + 0.05 * (i % 2)})`); g.addColorStop(1, `rgba(${cols[i % 3]},0)`);
+    silk.fillStyle = g; silk.fillRect(x - w, -1400, w * 2, 2800);
+  }
+  silk.globalAlpha = 1;
+}
+
+// ---------- seek: a pure function of time ----------
+const LAYERS = Object.fromEntries(Object.keys(S).map((k) => [k, $('L_' + k)]));
+function seek(t) {
+  t = clamp(t, 0, VIDEO.duration - 1e-4);
+  cursorOn = false;
+  for (const [k, [a, b]] of Object.entries(S)) {
+    const el = LAYERS[k];
+    const alpha = clamp(seg(t, a, a + FADE)) * (1 - seg(t, b, b + FADE)) * (k === 'intro' ? 1 : 1);
+    const vis = alpha > 0.001 && t >= a - 0.001;
+    el.style.visibility = vis ? 'visible' : 'hidden';
+    if (!vis) continue;
+    el.style.opacity = k === 'end' ? 1 : alpha;
+    const blur = (1 - alpha) * 6;
+    el.style.filter = blur > 0.3 && k !== 'end' ? `blur(${blur.toFixed(1)}px)` : 'none';
+    UPDATE[k](t - a, t);
+  }
+  // fade to black over the last half second
+  $('stage').style.opacity = 1 - seg(t, 59.4, 60);
+  if (!cursorOn) $('cursor').style.display = 'none';
+  const silkA = Math.max(seg(t, 1.6, 2.3) * (1 - seg(t, 4.1, 4.7)), seg(t, 53.2, 53.9));
+  drawSilk(t, silkA);
+}
+window.seek = seek;
+
+// ---------- soundtrack (synthesised, same timeline) ----------
+window.buildAudio = async function (ctx) {
+  const out = ctx.createGain(); out.gain.value = 0.9;
+  const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -18; comp.ratio.value = 3;
+  out.connect(comp); comp.connect(ctx.destination);
+  const r = rng(42), nb = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate), nd = nb.getChannelData(0);
+  for (let i = 0; i < nd.length; i++) nd[i] = r() * 2 - 1;
+  const env = (g, t, a, peak, d) => { g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(peak, t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + a + d); };
+  const tone = (f, t, d, type, peak, a = 0.005, dest = out, f2) => {
+    const o = ctx.createOscillator(), g = ctx.createGain(); o.type = type; o.frequency.setValueAtTime(f, t);
+    if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d);
+    env(g, t, a, peak, d); o.connect(g); g.connect(dest); o.start(t); o.stop(t + a + d + 0.05);
+  };
+  const noise = (t, d, peak, type, freq, q = 1, f2) => {
+    const s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+    s.buffer = nb; f.type = type; f.frequency.setValueAtTime(freq, t); f.Q.value = q;
+    if (f2) f.frequency.exponentialRampToValueAtTime(f2, t + d);
+    env(g, t, 0.004, peak, d); s.connect(f); f.connect(g); g.connect(out); s.start(t, r() * 0.5); s.stop(t + d + 0.05);
+  };
+  // music: 104 BPM, I-V-vi-IV in C
+  const beat = 60 / 104, bar = beat * 4, mtof = (m) => 440 * Math.pow(2, (m - 69) / 12);
+  const chords = [[60, 64, 67], [55, 59, 62], [57, 60, 64], [53, 57, 60]];
+  const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2200; lp.connect(out);
+  for (let b = 0; b * bar < 59.5; b++) {
+    const t = b * bar, ch = chords[b % 4], lift = t >= 53.2;
+    for (const n of ch) { tone(mtof(n - 12), t, bar * 1.05, 'sine', 0.035, 0.35, lp); tone(mtof(n), t, bar, 'triangle', 0.012, 0.4, lp); }
+    if (t >= 1.7) for (let e = 0; e < 8; e++) {
+      const n = ch[[0, 1, 2, 1, 2, 0, 1, 2][e]] + (e % 4 === 3 || lift ? 12 : 0);
+      tone(mtof(n), t + e * beat / 2, 0.38, 'triangle', lift ? 0.03 : 0.022, 0.004, lp);
+    }
+    for (let q = 0; q < 4; q++) {
+      const tq = t + q * beat; if (tq > 57.4) break;
+      if (tq >= 4.2 && (q === 0 || q === 2)) tone(120, tq, 0.28, 'sine', 0.28, 0.002, out, 42);
+      if (tq >= 20.5) noise(tq + beat / 2, 0.06, lift ? 0.05 : 0.03, 'highpass', 7000);
+      if (tq >= 31.5 && (q === 1 || q === 3)) noise(tq, 0.12, 0.05, 'bandpass', 1800, 0.8);
+    }
+  }
+  // sound effects
+  const whoosh = (t) => noise(t, 0.45, 0.07, 'bandpass', 400, 0.8, 3200);
+  const click = (t) => { tone(1900, t, 0.03, 'square', 0.03); noise(t, 0.025, 0.05, 'highpass', 3000); };
+  const tick = (t) => tone(1320, t, 0.09, 'sine', 0.07);
+  const key = (t) => noise(t, 0.018, 0.04, 'highpass', 2500);
+  [1.75, 4.2, 8.6, 20.5, 31.5, 42.5, 53.4].forEach((t) => whoosh(t - 0.15));
+  for (const [k, [sc, a, s, cps]] of Object.entries(TYPE)) for (let i = 0; i < s.length; i++) key(S[sc][0] + a + i * cps);
+  click(S.ui1[0] + UI1.click); click(S.ui2[0] + UI2.chip); click(S.ui2[0] + UI2.click);
+  [UI1.step1, UI1.step2, UI1.step3].forEach((x) => tick(S.ui1[0] + x));
+  tone(880, S.ui1[0] + UI1.D + 0.1, 0.5, 'sine', 0.06); tone(1320, S.ui1[0] + UI1.D + 0.18, 0.6, 'sine', 0.04);
+  noise(S.ui2[0] + UI2.drop + 0.35, 0.08, 0.06, 'lowpass', 900);
+  tone(300, S.ui2[0] + UI2.prog[0], UI2.prog[1] - UI2.prog[0], 'sine', 0.03, 0.2, out, 900);
+  tick(S.ui2[0] + UI2.done); tone(1760, S.ui2[0] + UI2.done + 0.06, 0.25, 'sine', 0.04);
+  UI3.rows.forEach(([, b]) => tick(S.ui3[0] + b));
+  tone(90, S.ui3[0] + UI3.stamp, 0.35, 'sine', 0.3, 0.002, out, 40); noise(S.ui3[0] + UI3.stamp, 0.18, 0.08, 'lowpass', 1200);
+  noise(S.ui4[0] + 0.6, 1.35, 0.025, 'bandpass', 1500, 2, 3500);
+  tick(S.ui4[0] + UI4.found);
+  [0, 0.09].forEach((d, i) => tone([1046, 1568][i], S.ui4[0] + UI4.result + 0.2 + d, 0.7, 'sine', 0.06));
+  VROWS.forEach((_, i) => key(S.ui4[0] + UI4.rows + i * 0.22));
+  [0, 1.35, 2.7].forEach((d) => tick(S.close[0] + d));
+  [523, 784, 1046].forEach((f, i) => tone(f, 57.8 + i * 0.08, 1.8, 'sine', 0.05));
+};
+
+// ---------- preview (no ?render) ----------
+const RENDER = location.search.includes('render');
+if (RENDER) { $('ui').remove(); }
+else {
+  const fit = () => { const k = Math.min(innerWidth / 1920, (innerHeight - 50) / 1080); $('stage').style.transform = `scale(${k})`; };
+  addEventListener('resize', fit); fit();
+  let buf, ac, src, startAt = 0, offset = 0, playing = false;
+  async function play() {
+    ac ??= new AudioContext();
+    if (!buf) { const off = new OfflineAudioContext(2, Math.ceil(48000 * VIDEO.duration), 48000); await buildAudio(off); buf = await off.startRendering(); }
+    src = ac.createBufferSource(); src.buffer = buf; src.connect(ac.destination);
+    src.start(0, offset % VIDEO.duration); startAt = ac.currentTime; playing = true; $('playBtn').textContent = 'Pause';
+  }
+  function pause() { if (!playing) return; offset += ac.currentTime - startAt; src.stop(); playing = false; $('playBtn').textContent = 'Play'; }
+  const now = () => (playing ? (offset + ac.currentTime - startAt) % VIDEO.duration : offset);
+  $('playBtn').onclick = () => (playing ? pause() : play());
+  $('scrub').oninput = (e) => { const was = playing; pause(); offset = +e.target.value; if (was) play(); };
+  (function loop() { const t = now(); seek(t); $('scrub').value = t; $('clock').textContent = t.toFixed(2); requestAnimationFrame(loop); })();
+}
+seek(0);
+</script>
+</body>
+</html>

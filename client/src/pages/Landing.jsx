@@ -10,6 +10,7 @@ import { ThemeToggle } from '@/components/app/account';
 import { useAsync, CountUp } from '@/components/app/kit';
 import { SoundToggle } from '@/components/app/fx-global';
 import { VaultIntro, TryDemo, ProductPreview } from './landing-extras';
+import { TourVideo } from '@/components/app/tour-video';
 import '../landing.css';
 
 const STANDARDS = ['AES-256-GCM', 'SHA-256 ledger', 'TOTP · RFC 6238', 'Verhoeff checksum', 'Tesseract OCR', 'Have I Been Pwned', 'DPDP Act 2023', 'WCAG accessible'];
@@ -376,6 +377,16 @@ export default function Landing() {
           </ol>
         </section>
 
+        <section className="lp-sec lp-center" id="tour">
+          <div className="rv lp-center">
+            <span className="lp-eyebrow">60-second tour</span>
+            <h2 className="lp-h2" style={{ maxWidth: '16ch' }}>Watch it <span className="lp-neon" style={{ animation: 'shimmer 5s linear infinite' }}>work.</span></h2>
+            <p className="lp-lead">Sign in, upload, automatic checks and QR proof, start to finish.</p>
+          </div>
+          <div className="rv zoom mt-10 w-full max-w-5xl"><TourVideo /></div>
+          <div className="lp-cta rv mt-8"><Link to="/tutorial" className="lp-btn ghost">Step-by-step tutorial <ArrowRight className="size-5" /></Link></div>
+        </section>
+
         <section className="lp-final rv zoom">
           <div className="floor" aria-hidden="true" />
           <h2 className="lp-h2" style={{ maxWidth: '16ch', marginTop: 0 }}>Stop carrying <span className="lp-neon" style={{ animation: 'shimmer 5s linear infinite' }}>photocopies.</span></h2>
@@ -388,7 +399,7 @@ export default function Landing() {
         <span className="font-mono text-xs uppercase">TrustVault · AES-256 · SHA-256 ledger · TOTP 2FA</span>
         <span className="flex flex-wrap gap-6 font-semibold">
           {!navigator.userAgent.includes('TrustVaultApp') && <a href="https://github.com/SriNithish-JK/TrustVault/releases/latest/download/TrustVault.apk">Android app</a>}
-          <Link to="/privacy">Privacy policy</Link><Link to="/verify">Public verifier</Link>
+          <Link to="/tutorial">Tutorial</Link><Link to="/privacy">Privacy policy</Link><Link to="/verify">Public verifier</Link>
         </span>
       </footer>
     </div>

@@ -20,6 +20,12 @@ Store identity documents in an encrypted vault, have them verified, and let anyo
 
 </div>
 
+## 60-second tour
+
+[![Watch the TrustVault tour](client/public/media/trustvault-tour.jpg)](client/public/media/trustvault-tour.mp4)
+
+Sign in with three locks, upload and encrypt, automatic checks, and QR proof anyone can check. Made from code with the [motion-graphics](https://github.com/Barty-Bart/motion-graphics) explainer skill ([how](docs/video/README.md)). New here? Follow the [step-by-step tutorial](https://trustvault-5lgg.onrender.com/tutorial), which includes demo documents to try.
+
 ## What it does
 
 - **Encrypted vault.** Every file is locked with AES-256-GCM before it touches the disk. Document numbers are shown masked.

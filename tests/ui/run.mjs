@@ -129,7 +129,7 @@ async function browser() {
 }
 
 // ---------- 4. every page, every role, both themes, three sizes ----------
-const PUBLIC = ['/welcome', '/login', '/register', '/verify', '/privacy', '/no-such-page'];
+const PUBLIC = ['/welcome', '/login', '/register', '/verify', '/privacy', '/tutorial', '/no-such-page'];
 const STUDENT_PAGES = ['/', '/documents', '/documents?upload=aadhaar', '/access', '/shares', '/activity', '/security'];
 const ADMIN_PAGES = ['/', '/documents', '/review', '/records', '/shares', '/activity', '/security', '/admin'];
 const SIZES = [[1900, 940], [1366, 700], [390, 844]];
