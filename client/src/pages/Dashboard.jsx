@@ -116,7 +116,7 @@ export default function Dashboard() {
 
   return (
     <div className="grid gap-6">
-      <section data-tour="hero" className="relative grid items-center gap-10 overflow-hidden rounded-[2rem] border border-primary/30 bg-card/70 p-6 shadow-brutal-lg sm:p-10 xl:grid-cols-[1.15fr_1fr]">
+      <section data-tour="hero" className="neon-ring relative grid items-center gap-10 overflow-hidden rounded-[2rem] border border-primary/30 bg-card/70 p-6 shadow-brutal-lg sm:p-10 xl:grid-cols-[1.15fr_1fr]">
         <Aurora />
         <div className="relative grid gap-5">
         <span className="font-mono text-xs font-semibold tracking-widest text-primary uppercase">{today}</span>
@@ -132,7 +132,7 @@ export default function Dashboard() {
           <Button asChild size="lg" variant="outline"><Link to="/documents"><FolderLock /> Open vault</Link></Button>
         </div>
         </div>
-        <div className="relative">{!loading && <Wallet docs={docs} holder={user.name.toUpperCase()} />}</div>
+        <div className="relative" data-tilt="">{!loading && <Wallet docs={docs} holder={user.name.toUpperCase()} />}</div>
       </section>
 
       {!loading && <AwayCard activity={activity} user={user} />}

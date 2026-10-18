@@ -271,7 +271,7 @@ const STAT = {
   sky: 'border-info/40 bg-info/12 [&>b]:text-sky-600 dark:[&>b]:text-info', ink: 'border-border bg-muted', card: 'border-border bg-card',
 };
 export const Stat = ({ label, value, tone = 'card', className, style }) => (
-  <div data-spot className={cn('rounded-xl border p-4 shadow-brutal transition-transform duration-300 ease-[var(--ease-spring)] hover:-translate-y-1', STAT[tone], className)} style={style}>
+  <div data-spot data-tilt="" className={cn('rounded-xl border p-4 shadow-brutal transition-transform duration-300 ease-[var(--ease-spring)] hover:-translate-y-1', STAT[tone], className)} style={style}>
     <b className="block font-mono text-4xl leading-none font-semibold tabular-nums"><CountUp value={value} /></b>
     <span className="mt-2 block text-sm font-medium text-muted-foreground">{label}</span>
   </div>

@@ -2,7 +2,7 @@ import { cn } from '@/lib/utils';
 
 // data-spot: a soft light follows the cursor across the card (see index.css + lib/fx.js)
 function Card({ className, ...props }) {
-  return <div data-slot="card" data-spot className={cn('rounded-xl border border-border bg-card p-5 text-card-foreground shadow-brutal transition-[border-color,box-shadow] duration-300 hover:border-primary/40', className)} {...props} />;
+  return <div data-slot="card" data-spot data-tilt="" className={cn('rounded-xl border border-border bg-card p-5 text-card-foreground shadow-brutal transition-[border-color,box-shadow] duration-300 hover:border-primary/40', className)} {...props} />;
 }
 
 function CardHeader({ className, ...props }) {

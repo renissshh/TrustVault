@@ -11,6 +11,9 @@ import { useAsync, CountUp } from '@/components/app/kit';
 import { SoundToggle } from '@/components/app/fx-global';
 import { VaultIntro, TryDemo, ProductPreview } from './landing-extras';
 import { TourVideo } from '@/components/app/tour-video';
+import { ParticleShield } from '@/lib/motion-kit';
+import { StoryScroll } from './landing-story';
+import '../landing-story.css';
 import '../landing.css';
 
 const STANDARDS = ['AES-256-GCM', 'SHA-256 ledger', 'TOTP · RFC 6238', 'Verhoeff checksum', 'Tesseract OCR', 'Have I Been Pwned', 'DPDP Act 2023', 'WCAG accessible'];
@@ -277,17 +280,17 @@ export default function Landing() {
             <p className="lp-lead">The same protections and checks every document in your vault goes through.</p>
           </div>
           <div className="lp-grid">
-            <article className="lp-panel w4 c-cyan rv left">
+            <article data-tilt="translateY(-10px) scale(1.012)" className="lp-panel w4 c-cyan rv left">
               <span className="tag">AES-256-GCM</span>
               <div className="viz"><CipherViz /></div>
               <div><h3>Encrypted vault</h3><p>Every file is locked before it is saved. Even someone with the database sees only ciphertext.</p></div>
             </article>
-            <article className="lp-panel w2 c-hot rv right" style={{ '--d': 120 }}>
+            <article data-tilt="translateY(-10px) scale(1.012)" className="lp-panel w2 c-hot rv right" style={{ '--d': 120 }}>
               <span className="tag">Changes every 30 s</span>
               <div className="viz"><CodeViz /></div>
               <div><h3>Authenticator</h3><p>Password, email code, and a 6-digit code from your phone.</p></div>
             </article>
-            <article className="lp-panel w3 c-green rv left">
+            <article data-tilt="translateY(-10px) scale(1.012)" className="lp-panel w3 c-green rv left">
               <span className="tag">Automatic checks</span>
               <div className="viz grid w-full items-center gap-6 sm:grid-cols-[auto_1fr]">
                 <div className="viz-ring justify-self-center">
@@ -298,7 +301,7 @@ export default function Landing() {
               </div>
               <div><h3>Real checks</h3><p>Numbers, OCR text and file originality are checked the moment you upload.</p></div>
             </article>
-            <article className="lp-panel w3 c-purple rv right" style={{ '--d': 120 }}>
+            <article data-tilt="translateY(-10px) scale(1.012)" className="lp-panel w3 c-purple rv right" style={{ '--d': 120 }}>
               <span className="tag">No login needed</span>
               <div className="viz">
                 <div className="viz-phone">
@@ -312,7 +315,7 @@ export default function Landing() {
               </div>
               <div><h3>QR verification</h3><p>Employers scan the QR to confirm a document is genuine. No calls, no photocopies.</p></div>
             </article>
-            <article className="lp-panel w2 c-cyan rv left">
+            <article data-tilt="translateY(-10px) scale(1.012)" className="lp-panel w2 c-cyan rv left">
               <span className="tag">Consent first</span>
               <div className="viz">
                 <div className="viz-consent">
@@ -322,7 +325,7 @@ export default function Landing() {
               </div>
               <div><h3>You decide</h3><p>Verifiers must ask first. Every view is watermarked and logged.</p></div>
             </article>
-            <article className="lp-panel w4 c-purple rv right" style={{ '--d': 120 }}>
+            <article data-tilt="translateY(-10px) scale(1.012)" className="lp-panel w4 c-purple rv right" style={{ '--d': 120 }}>
               <span className="tag">SHA-256 hash chain</span>
               <div className="viz">
                 <div className="viz-chain">
@@ -338,6 +341,8 @@ export default function Landing() {
             </article>
           </div>
         </section>
+
+        <StoryScroll />
 
         <section className="lp-sec lp-center">
           <div className="rv lp-center">
@@ -389,6 +394,7 @@ export default function Landing() {
 
         <section className="lp-final rv zoom">
           <div className="floor" aria-hidden="true" />
+          <ParticleShield className="lp-shield" scale={0.9} />
           <h2 className="lp-h2" style={{ maxWidth: '16ch', marginTop: 0 }}>Stop carrying <span className="lp-neon" style={{ animation: 'shimmer 5s linear infinite' }}>photocopies.</span></h2>
           <p className="lp-lead" style={{ marginTop: 0 }}>Set up takes about 3 minutes. You'll need your phone for Google Authenticator.</p>
           <Link to="/register" className="lp-btn">Get started free <ArrowRight className="size-5" /></Link>

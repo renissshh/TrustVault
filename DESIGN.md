@@ -61,3 +61,15 @@ Helpers are in `client/src/lib/fx.jsx` (`Reveal`, `Words`, `Tilt`, `Aurora`, `Sc
 npm run dev      # API on 5000 + the site on http://localhost:5173
 npm run build
 ```
+
+## Motion-graphics layer
+
+Added on top of the neon foundation, never instead of it. All of it is off for "reduce motion" and on touch screens where it depends on a mouse.
+
+- `client/src/lib/motion-kit.jsx`: `useMotionKit()` (one app-wide pointer listener) tilts any `data-tilt` element in 3D and pulls `.lp-btn` / `data-magnetic` buttons toward the cursor. `data-tilt="translateY(-10px)"` keeps the element's own hover transform. Cards and stat tiles carry `data-tilt` by default.
+- `<ParticleShield>`: the logo drawn by glowing particles that assemble, breathe, scatter from the cursor and explode on click. Used on the landing call to action and the sign-in / sign-up pages.
+- Landing scroll story (`pages/landing-story.jsx`): a pinned section where one card goes upload → encrypted → checked → VERIFIED → QR proof as the visitor scrolls.
+- `.neon-ring`: a gradient arc that travels around the border (sign-in card, dashboard hero).
+- Headlines built with `<Words>` flip in letter by letter.
+- App cards and stat tiles rise out of a blur as they scroll into view (CSS scroll timeline, `backwards` fill only, so hover and tilt keep working).
+- Content never depends on an animation to become visible.

@@ -424,3 +424,26 @@
 .tl-item:hover > div { border-color: color-mix(in srgb, var(--primary) 50%, transparent); box-shadow: 0 0 30px -16px var(--primary); }
 .tl-item.other > div { border-color: color-mix(in srgb, #fbbf24 60%, transparent); background: color-mix(in srgb, #fbbf24 9%, var(--card)); }
 .tl-icon { position: relative; z-index: 1; display: grid; place-items: center; flex: none; width: 36px; height: 36px; margin-top: 4px; border-radius: 50%; color: #04141c; box-shadow: 0 0 0 4px var(--background), 0 0 18px -4px currentColor; }
+
+/* Animated neon border: a bright arc of the brand gradient travels around the element (sign-in card, dashboard hero). */
+@property --ring-angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+.neon-ring { isolation: isolate; }
+.neon-ring::before {
+  content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none; border-radius: inherit; padding: 1.5px;
+  background: conic-gradient(from var(--ring-angle), transparent 0 52%, var(--primary) 68%, var(--violet) 80%, var(--pink) 90%, transparent 97%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+  animation: ring-spin 5s linear infinite; filter: drop-shadow(0 0 6px var(--primary));
+}
+@keyframes ring-spin { to { --ring-angle: 360deg; } }
+@media (prefers-reduced-motion: reduce) { .neon-ring::before { animation: none; } }
+
+/* Inside the app, cards and stat tiles rise out of a blur as they scroll into view (CSS scroll timeline, no JS).
+   Only `backwards` fill: once in view the element is back to its own styles, so hover lifts and 3D tilt still work. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    main [data-slot="card"], main [data-tilt] {
+      animation: rise-in linear backwards; animation-timeline: view(); animation-range: entry 0% entry 70%;
+    }
+  }
+}
+@keyframes rise-in { from { opacity: 0; translate: 0 48px; scale: 0.96; filter: blur(6px); } }

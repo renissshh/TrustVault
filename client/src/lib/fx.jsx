@@ -33,17 +33,22 @@ export function Reveal({ children, delay = 0, y = 28, className, as = 'div' }) {
   );
 }
 
-// Headline that builds word by word.
+// Headline that builds letter by letter: each letter flips up out of a blur, words stay together.
 export function Words({ text, className, delay = 0 }) {
+  let n = 0;
   return (
     <span className={className}>
       <span className="sr-only">{text}</span>
-      <span aria-hidden="true">
+      <span aria-hidden="true" style={{ perspective: 600 }}>
         {text.split(' ').map((w, i) => (
-          <span key={i} className="inline-block overflow-hidden pb-[0.12em] align-bottom">
-            <motion.span className="inline-block" initial={{ y: '110%', rotate: 6 }} animate={{ y: 0, rotate: 0 }} transition={{ duration: 0.8, delay: delay + i * 0.07, ease }}>
-              {w}&nbsp;
-            </motion.span>
+          <span key={i} className="inline-block whitespace-nowrap pb-[0.12em] align-bottom">
+            {[...w].map((ch, j) => (
+              <motion.span key={j} className="inline-block origin-bottom" initial={{ y: '60%', rotateX: -80, opacity: 0, filter: 'blur(8px)' }}
+                animate={{ y: 0, rotateX: 0, opacity: 1, filter: 'blur(0px)' }} transition={{ duration: 0.7, delay: delay + (n++) * 0.028, ease }}>
+                {ch}
+              </motion.span>
+            ))}
+            {' '}
           </span>
         ))}
       </span>

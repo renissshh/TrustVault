@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Brand } from '@/components/app/brand';
 import { ThemeToggle } from '@/components/app/account';
 import { Aurora, Words, ease } from '@/lib/fx';
+import { ParticleShield } from '@/lib/motion-kit';
 import { ErrorText, BackupCodes, OtpInput, PasswordInput, Field, CheckRow, Callout, toast, ago } from '@/components/app/kit';
 import { StepTracker, closeDoors, getKnown, setKnown, touchKnown, clearKnown, initialsOf } from '@/components/app/signin-extras';
 
@@ -21,6 +22,7 @@ export function AuthShell({ children }) {
         <Aurora />
         <div className="bg-grid pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_at_left,black,transparent_70%)]" aria-hidden="true" />
         <section className="relative hidden flex-col justify-between gap-10 p-10 lg:flex">
+          <ParticleShield className="absolute right-0 bottom-0 h-[58%]! w-[52%]! opacity-85" scale={0.85} />
           <Brand to="/welcome" />
           <div className="grid gap-8">
             <h1 className="text-6xl leading-[1.02]">
@@ -43,7 +45,7 @@ export function AuthShell({ children }) {
             <Brand to="/welcome" className="lg:hidden" />
             <ThemeToggle />
           </div>
-          <motion.div layout className="glass mx-auto w-full max-w-md rounded-3xl border border-border p-6 text-card-foreground shadow-brutal-lg sm:p-8"
+          <motion.div layout className="neon-ring glass mx-auto w-full max-w-md rounded-3xl border border-border p-6 text-card-foreground shadow-brutal-lg sm:p-8"
             initial={{ opacity: 0, y: 30, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ type: 'spring', stiffness: 220, damping: 22 }}>
             {children}
           </motion.div>

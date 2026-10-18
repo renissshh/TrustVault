@@ -8,6 +8,7 @@ import { Toaster, DialogHost } from '@/components/app/kit';
 import { GlowCursor, ClickSounds } from '@/components/app/fx-global';
 import { DoorTransition } from '@/components/app/signin-extras';
 import { PageLoader, LogoMark } from '@/components/app/brand';
+import { useMotionKit } from '@/lib/motion-kit';
 import { Button } from '@/components/ui/button';
 import './index.css';
 
@@ -44,6 +45,7 @@ function PageTitle() {
 }
 
 function Root() {
+  useMotionKit();
   return (
     <AuthProvider>
       <PageTitle />
