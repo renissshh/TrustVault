@@ -199,7 +199,15 @@ function ExportModal({ docs, onClose }) {
               <Button size="sm" variant="outline" onClick={() => copyText(result.zipPassword, 'Password copied.')}><Copy /> Copy</Button>
             </div>
           </div>
-          <p className="text-xs text-muted-foreground">The ZIP is AES-256 encrypted. Open it with 7-Zip, WinRAR, or your phone's file manager and enter this password.</p>
+          <Callout className="grid gap-1.5 text-xs">
+            <b>How to open the ZIP</b>
+            <span>It is locked with AES-256, so Windows' own "Extract All" cannot open it. Use the free <a className="font-semibold underline" href="https://www.7-zip.org/" target="_blank" rel="noreferrer">7-Zip</a> (or WinRAR, or your phone's file manager):</span>
+            <ol className="ml-4 list-decimal">
+              <li>Save the ZIP from the email.</li>
+              <li>Right-click it, choose <b>7-Zip → Extract Here</b> (on Windows 11 click <b>Show more options</b> first).</li>
+              <li>Type the password above.</li>
+            </ol>
+          </Callout>
           <Button onClick={onClose}>Done</Button>
         </div>
       ) : (

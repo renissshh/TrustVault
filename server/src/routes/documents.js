@@ -165,8 +165,9 @@ r.post('/export', async (req, res) => {
   const password = zipPassword();
   const archive = await zip(entries, password);
   const summary = `${docs.length} file(s): ${kb(before)} KB reduced to ${kb(archive.length)} KB (${quality} quality)`;
-  const howToOpen = `<p>The ZIP is <b>password-protected (AES-256)</b>. The password was shown on screen when you requested it - it is not in this email.
-    Open the ZIP with 7-Zip, WinRAR, or your phone's file manager.</p>`;
+  const howToOpen = `<p>The ZIP is <b>password-protected (AES-256)</b>. The password was shown on screen when you requested it - it is not in this email.</p>
+    <p><b>Windows' own "Extract All" cannot open it.</b> Use the free <a href="https://www.7-zip.org/">7-Zip</a>, WinRAR, or your phone's file manager:</p>
+    <ol><li>Save the ZIP.</li><li>Right-click it and choose <b>7-Zip &rarr; Extract Here</b> (on Windows 11, click <b>Show more options</b> first).</li><li>Type the password.</li></ol>`;
 
   if (archive.length <= MAX_ATTACHMENT) {
     await sendMail({
