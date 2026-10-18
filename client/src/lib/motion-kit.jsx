@@ -31,7 +31,7 @@ export function useMotionKit() {
         el.style.transform = `perspective(1000px) rotateX(${(-ny * max).toFixed(2)}deg) rotateY(${(nx * max).toFixed(2)}deg) ${el.dataset.tilt}`;
       }
       // magnetic buttons: pulled toward the pointer when it is close
-      for (const m of document.querySelectorAll('[data-magnetic], .lp-btn')) {
+      for (const m of document.querySelectorAll('[data-magnetic], main .lp-btn')) {
         const r = m.getBoundingClientRect();
         if (!r.width) continue;
         const dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);

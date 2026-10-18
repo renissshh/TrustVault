@@ -86,6 +86,13 @@ function useLandingMotion(root) {
       if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
     }), { threshold: 0.12 });
     el.querySelectorAll('.rv').forEach((n) => io.observe(n));
+    // content that renders later (live numbers, lazy sections) gets the same reveal
+    const mo = new MutationObserver((list) => list.forEach((m) => m.addedNodes.forEach((n) => {
+      if (n.nodeType !== 1) return;
+      if (n.matches('.rv:not(.in)')) io.observe(n);
+      n.querySelectorAll?.('.rv:not(.in)').forEach((c) => io.observe(c));
+    })));
+    mo.observe(el, { childList: true, subtree: true });
     // safety net: never leave content hidden
     const safety = setTimeout(() => el.querySelectorAll('.rv:not(.in)').forEach((n) => { if (n.getBoundingClientRect().top < innerHeight) n.classList.add('in'); }), 1500);
 
@@ -120,7 +127,7 @@ function useLandingMotion(root) {
     };
     if (!reduce && !matchMedia('(pointer: coarse)').matches) addEventListener('pointermove', onMove, { passive: true });
 
-    return () => { io.disconnect(); clearTimeout(safety); removeEventListener('scroll', onScroll); removeEventListener('pointermove', onMove); el.classList.remove('js'); };
+    return () => { io.disconnect(); mo.disconnect(); clearTimeout(safety); removeEventListener('scroll', onScroll); removeEventListener('pointermove', onMove); el.classList.remove('js'); };
   }, [root]);
 }
 
@@ -238,7 +245,7 @@ export default function Landing() {
                 <div className="flex items-end gap-5">
                   <span className="lp-photo"><User className="size-1/2 text-black/70" /></span>
                   <div>
-                    <div className="font-mono text-[clamp(20px,3.6vw,38px)] leading-none font-semibold tracking-wider">ABCPX1234F</div>
+                    <div className="font-mono text-[clamp(20px,3.6vw,38px)] leading-none font-semibold tracking-wider">ABCPS1234F</div>
                     <div className="mt-2 text-[clamp(11px,1.4vw,15px)] opacity-80">Permanent Account Number · Rahul Sharma</div>
                   </div>
                 </div>
@@ -357,7 +364,7 @@ export default function Landing() {
           <span className="lp-eyebrow rv">By the numbers</span>
           <div className="lp-nums w-full">
             {numbers.map(([n, unit, label], i) => (
-              <div key={label} className="lp-num rv zoom" style={{ '--d': i * 110 }}>
+              <div key={i} className="lp-num rv zoom" style={{ '--d': i * 110 }}>
                 <b><CountUp value={n} duration={1600} />{unit && <span className="text-[0.4em] tracking-normal">{unit}</span>}</b>
                 <span>{label}</span>
               </div>

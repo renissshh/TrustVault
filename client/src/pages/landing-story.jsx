@@ -44,14 +44,18 @@ export function StoryScroll() {
   // the stamp lands once per pass: burst + sound
   const landed = k(2) > 0.25;
   const prev = useRef(false);
+  const heard = useRef(false);
   useEffect(() => {
-    if (landed && !prev.current) { burst(stamp.current, { size: 1.5 }); sfx('success'); }
+    if (landed && !prev.current) {
+      burst(stamp.current, { size: 1.5 });
+      if (!heard.current) { sfx('success'); heard.current = true; }
+    }
     prev.current = landed;
   }, [landed]);
 
   const k0 = k(0), k1 = k(1), k2 = k(2), k3 = k(3);
   const encrypted = k0 > 0.62;
-  const cardY = (1 - easeOut(k0 * 1.6)) * -70; // falls in from above
+  const cardY = (1 - easeOut(k0 * 1.6)) * -34; // drops into place from just above
   const cardRot = (1 - easeOut(k0 * 1.6)) * -12;
   const toQr = easeOut(k3 * 1.4); // the card shrinks into the corner while the QR builds
   const aside = easeOut(k1 * 3); // during the checks the card slides left, out of the list's way
@@ -86,7 +90,7 @@ export function StoryScroll() {
           {/* the card */}
           <div className="st-card" style={{
             transform: `translate(-50%, -50%) translate(${cardX}%, ${cardY - toQr * 48}%) rotate(${cardRot}deg) scale(${cardS})`,
-            opacity: clamp(k0 * 4),
+            opacity: 1,
           }}>
             <div className="face" style={{ opacity: encrypted && k1 === 0 && k2 === 0 ? 0.08 : 1 }}>
               <div className="top"><span>Income Tax Department</span><ShieldCheck className="size-5" /></div>

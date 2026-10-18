@@ -68,7 +68,8 @@
 .lp-btn svg { transition: transform 0.3s var(--ease-spring); }
 .lp-btn:hover svg { transform: translateX(6px); }
 .lp-btn.ghost {
-  color: var(--foreground); background: color-mix(in srgb, var(--foreground) 7%, transparent); animation: none;
+  color: var(--foreground); animation: none;
+  background: linear-gradient(color-mix(in srgb, var(--foreground) 7%, transparent), color-mix(in srgb, var(--foreground) 7%, transparent)), color-mix(in srgb, var(--background) 82%, transparent);
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--foreground) 22%, transparent) inset; backdrop-filter: blur(10px);
 }
 .lp-btn.ghost:hover { box-shadow: 0 0 0 1px var(--cyan) inset, 0 0 40px -6px var(--cyan); }
@@ -92,7 +93,7 @@
   animation: lp-line 1.1s var(--ease-out-expo) both, shimmer 5s linear infinite;
 }
 .lp-sub { max-width: 620px; font-size: clamp(1.05rem, 1.6vw, 1.35rem); line-height: 1.5; color: var(--muted-foreground); animation: lp-up 1s var(--ease-out-expo) 0.35s both; }
-.lp-cta { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; animation: lp-up 1s var(--ease-out-expo) 0.5s both; }
+.lp-cta { position: relative; z-index: 3; display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; animation: lp-up 1s var(--ease-out-expo) 0.5s both; }
 .lp-in { animation: lp-up 1s var(--ease-out-expo) both; }
 
 /* ---------- hero visual: glass ID card on a neon grid floor ---------- */
