@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Brand } from '@/components/app/brand';
 import { ThemeToggle } from '@/components/app/account';
 import { Aurora, Words, ease } from '@/lib/fx';
-import { ParticleShield } from '@/lib/motion-kit';
+import { AsciiScan } from '@/lib/ascii-scan';
 import { ErrorText, BackupCodes, OtpInput, PasswordInput, Field, CheckRow, Callout, Segmented, toast, ago } from '@/components/app/kit';
 import { StepTracker, closeDoors, getKnown, setKnown, touchKnown, clearKnown, initialsOf } from '@/components/app/signin-extras';
 
@@ -21,15 +21,14 @@ export function AuthShell({ children }) {
       <div className="relative grid min-h-dvh overflow-hidden lg:grid-cols-2">
         <Aurora />
         <div className="bg-grid pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_at_left,black,transparent_70%)]" aria-hidden="true" />
-        <section className="relative hidden flex-col justify-between gap-10 p-10 lg:flex">
-          <ParticleShield className="absolute right-0 bottom-0 h-[58%]! w-[52%]! opacity-85" scale={0.85} />
+        <section className="relative hidden h-dvh flex-col gap-8 p-10 lg:flex">
           <Brand to="/welcome" />
           <div className="grid gap-8">
             <h1 className="text-6xl leading-[1.02]">
               <Words text="Your identity." /><br />
               <Words text="Verified. Vaulted." className="text-gradient" delay={0.25} />
             </h1>
-            <ul className="grid gap-3">
+            <ul className="flex max-w-2xl flex-wrap gap-3">
               {PROOF.map(([Icon, text], i) => (
                 <motion.li key={text} className="glass flex w-fit items-center gap-3 rounded-full border border-border px-4 py-2 text-sm font-semibold shadow-brutal"
                   initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.6 + i * 0.12, type: 'spring', stiffness: 260, damping: 20 }} whileHover={{ x: 8 }}>
@@ -38,6 +37,8 @@ export function AuthShell({ children }) {
               ))}
             </ul>
           </div>
+          {/* a SPECIMEN PAN card being read by the automatic checks; it takes whatever height is left */}
+          <AsciiScan className="-mx-10 min-h-0 w-auto! flex-1" />
           <p className="font-mono text-xs tracking-widest text-muted-foreground uppercase">Sessions end after 60 minutes · every view is logged</p>
         </section>
         <section className="relative grid content-start gap-8 p-4 sm:p-10 lg:content-center">
