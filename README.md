@@ -9,12 +9,12 @@ Store identity documents in an encrypted vault, have them verified, and let anyo
 **[Live demo: trustvault-5lgg.onrender.com](https://trustvault-5lgg.onrender.com)** · **[Android app (APK)](https://github.com/SriNithish-JK/TrustVault/releases/latest/download/TrustVault.apk)** (free hosting: the first visit can take a minute to wake up; use sample documents only)
 
 [![CI](https://github.com/SriNithish-JK/TrustVault/actions/workflows/ci.yml/badge.svg)](https://github.com/SriNithish-JK/TrustVault/actions/workflows/ci.yml)
-![End-to-end checks](https://img.shields.io/badge/end--to--end_checks-105-19e6ff)
-![License](https://img.shields.io/badge/license-MIT-b56bff)
-![React](https://img.shields.io/badge/React-19-61dafb?logo=react&logoColor=white)
-![Node.js](https://img.shields.io/badge/Node.js-Express-5fa04e?logo=nodedotjs&logoColor=white)
-![MongoDB](https://img.shields.io/badge/MongoDB-database-47a248?logo=mongodb&logoColor=white)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-38bdf8?logo=tailwindcss&logoColor=white)
+![End-to-end checks](https://img.shields.io/badge/end--to--end_checks-105-f5c518?style=for-the-badge&labelColor=0d0d0d)
+![License](https://img.shields.io/badge/license-MIT-f5c518?style=for-the-badge&labelColor=0d0d0d)
+![React](https://img.shields.io/badge/React-19-f5c518?style=for-the-badge&logo=react&logoColor=f5c518&labelColor=0d0d0d)
+![Node.js](https://img.shields.io/badge/Node.js-Express-f5c518?style=for-the-badge&logo=nodedotjs&logoColor=f5c518&labelColor=0d0d0d)
+![MongoDB](https://img.shields.io/badge/MongoDB-database-f5c518?style=for-the-badge&logo=mongodb&logoColor=f5c518&labelColor=0d0d0d)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-f5c518?style=for-the-badge&logo=tailwindcss&logoColor=f5c518&labelColor=0d0d0d)
 
 <img src="docs/screenshots/landing-1-hero.jpg" alt="TrustVault landing page: Your documents. Verified once." width="100%">
 
