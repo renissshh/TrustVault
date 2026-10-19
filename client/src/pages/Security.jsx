@@ -129,7 +129,7 @@ function ForgetDevices({ expire, close }) {
   );
 }
 
-const LOST = ['Every document in your vault is destroyed', 'Verification QR codes stop working', 'Shared links and faculty access end'];
+const LOST = ['Every document in your vault is destroyed', 'Shared links and faculty access end'];
 
 function DeleteAccount({ expire }) {
   const { logout } = useAuth();

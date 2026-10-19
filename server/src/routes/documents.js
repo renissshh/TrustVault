@@ -1,7 +1,6 @@
 import crypto from 'node:crypto';
 import { Router } from 'express';
 import multer from 'multer';
-import QRCode from 'qrcode';
 import config from '../config.js';
 import { Document, Export, Share } from '../models.js';
 import { sha256, storeFile, removeFile, openDocument, encryptText, decryptText, randomToken } from '../lib/crypto.js';
@@ -30,11 +29,20 @@ function readNumber(type, raw) {
 const initialStatus = (type) => (type === 'other' || UNCHECKED.includes(type) ? 'stored' : 'pending');
 
 // OCR can take a few seconds, so it runs after we've replied. The page polls for the result.
+// There is no human verifier: a checked document is VERIFIED only when every automatic check passes, otherwise it is
+// NOT VERIFIED with the failed checks listed, so the student can upload a better copy.
 function checkInBackground(doc, sources, number, duplicate) {
   if (UNCHECKED.includes(doc.type)) return doc.updateOne({ autoCheck: { state: 'skipped', checks: [] } }).catch(() => {});
   otherWords(doc)
     .then((others) => runChecks({ type: doc.type, number, sources, duplicate, others }))
-    .then(({ words, ...autoCheck }) => doc.updateOne({ autoCheck, wordsEnc: encryptText(JSON.stringify(words)) }))
+    .then(async ({ words, ...autoCheck }) => {
+      const failed = autoCheck.checks.filter((c) => !c.ok).map((c) => c.name);
+      const decided = doc.type === 'other' ? {} : failed.length
+        ? { status: 'rejected', reviewNote: `Not verified: ${failed.join('; ')}.`, reviewedAt: new Date() }
+        : { status: 'verified', reviewNote: '', reviewedAt: new Date() };
+      await doc.updateOne({ autoCheck, wordsEnc: encryptText(JSON.stringify(words)), ...decided });
+      if (decided.status) await addBlock(decided.status, doc._id, doc.sha256);
+    })
     .catch((e) => {
       console.error('Auto-check failed:', e);
       return doc.updateOne({ autoCheck: { state: 'failed', score: 0, checks: [] } });
@@ -54,7 +62,7 @@ const zipPassword = () => Array.from({ length: 3 }, () =>
 export const docView = (d) => ({
   id: d.id, type: d.type, title: d.title, numberMasked: d.numberMasked, originalName: d.originalName, mime: d.mime, sides: d.sides,
   size: d.size, sha256: d.sha256, status: d.status, autoCheck: d.autoCheck, reviewNote: d.reviewNote, reviewedAt: d.reviewedAt,
-  verifyCode: d.status === 'verified' ? d.verifyCode : undefined, expiryDate: d.expiryDate, tampered: d.tampered, createdAt: d.createdAt,
+  expiryDate: d.expiryDate, tampered: d.tampered, createdAt: d.createdAt,
 });
 
 const r = Router();
@@ -135,13 +143,6 @@ r.post('/:id/view', async (req, res) => {
     }).catch((e) => console.error(e.message));
   }
   res.set({ 'Content-Type': doc.mime, 'Cache-Control': 'no-store', 'Content-Disposition': 'inline' }).send(out);
-});
-
-r.get('/:id/qr', async (req, res) => {
-  const doc = await Document.findOne({ _id: req.params.id, owner: req.user._id, status: 'verified' });
-  if (!doc) throw httpError(404, 'Only verified documents have a QR code.');
-  const url = `${config.appUrl}/verify/${doc.verifyCode}`;
-  res.json({ url, qr: await QRCode.toDataURL(url, { width: 320, margin: 1 }) });
 });
 
 r.delete('/:id', async (req, res) => {

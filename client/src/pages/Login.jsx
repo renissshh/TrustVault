@@ -13,7 +13,7 @@ import { ParticleShield } from '@/lib/motion-kit';
 import { ErrorText, BackupCodes, OtpInput, PasswordInput, Field, CheckRow, Callout, Segmented, toast, ago } from '@/components/app/kit';
 import { StepTracker, closeDoors, getKnown, setKnown, touchKnown, clearKnown, initialsOf } from '@/components/app/signin-extras';
 
-const PROOF = [[Lock, 'AES-256 encrypted vault'], [Smartphone, 'Google Authenticator 2FA'], [Link2, 'Tamper-evident hash ledger'], [ScanLine, 'QR verification for anyone']];
+const PROOF = [[Lock, 'AES-256 encrypted vault'], [Smartphone, 'Google Authenticator 2FA'], [Link2, 'Tamper-evident hash ledger'], [ScanLine, 'Verified automatically by checks']];
 
 export function AuthShell({ children }) {
   return (
@@ -175,9 +175,11 @@ export default function Login({ mode = 'login' }) {
       <form onSubmit={submit}>
         <StepTracker steps={steps} at={at} />
         <motion.div key={step} className="mt-6 grid gap-4" initial={{ opacity: 0, x: 28, filter: 'blur(6px)' }} animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }} transition={{ duration: 0.45, ease }}>
-        {step === 'login' && <Segmented label="Sign in as" value={as} onChange={(v) => { setAs(v); setError(''); }}
+        {(step === 'login' || (step === 'register' && !invite)) && <Segmented label={step === 'login' ? 'Sign in as' : 'Sign up as'} value={as} onChange={(v) => { setAs(v); setError(''); }}
           options={[['student', 'Student'], ['faculty', 'Faculty'], ['admin', 'Administrator']]} />}
-        <h2 className="text-3xl leading-none">{welcome ? 'Welcome back' : step === 'login' ? { student: 'Student sign-in', faculty: 'Faculty sign-in', admin: 'Administrator sign-in' }[as] : TITLES[step]}</h2>
+        <h2 className="text-3xl leading-none">{welcome ? 'Welcome back' : step === 'login' ? { student: 'Student sign-in', faculty: 'Faculty sign-in', admin: 'Administrator sign-in' }[as]
+          : step === 'register' && !invite ? { student: 'Create a student account', faculty: 'Create a faculty account', admin: 'Create an administrator account' }[as] : TITLES[step]}</h2>
+        {step === 'register' && !invite && <input type="hidden" name="role" value={as} />}
         {step === 'login' && <input type="hidden" name="as" value={as} />}
 
         {step === 'login' && (welcome ? <>
@@ -208,9 +210,14 @@ export default function Login({ mode = 'login' }) {
           {invite
             ? <Field key="invited" label="Email" hint="The invitation works only for this address."><Input name="email" type="email" required readOnly value={invite.email} className="opacity-80" /></Field>
             : <Field key="open" label="Email"><Input name="email" type="email" required autoComplete="email" /></Field>}
-          {!invite && (
-            <Field label="MCA roll number" hint="MCA students only: the 2-digit year you joined, MX, then your 3-digit number.">
+          {!invite && as === 'student' && (
+            <Field key="roll" label="MCA roll number" hint="MCA students only: the 2-digit year you joined, MX, then your 3-digit number.">
               <Input name="studentId" required placeholder="e.g. 23MX347" pattern="\s*\d{2}\s*-?\s*[Mm][Xx]\s*-?\s*\d{3}\s*" title="Like 23MX347" autoComplete="off" className="font-mono uppercase placeholder:normal-case" maxLength={12} />
+            </Field>
+          )}
+          {!invite && as !== 'student' && (
+            <Field key={as} label={as === 'admin' ? 'Administrator code' : 'Faculty code'} hint={as === 'admin' ? 'Only the person who set up TrustVault has this code.' : 'Ask the administrator for the faculty code.'}>
+              <Input name="code" required autoComplete="off" spellCheck={false} placeholder={as === 'admin' ? 'ADM-XXXX-XXXX-XXXX' : 'FAC-XXXX-XXXX'} className="font-mono uppercase placeholder:normal-case" />
             </Field>
           )}
           <Field label="Password" hint="8+ characters with letters and numbers. Passwords found in data breaches are blocked.">
@@ -276,10 +283,9 @@ export default function Login({ mode = 'login' }) {
           {mailbox && <p><a href="/mailbox" target="_blank" rel="noreferrer" className="font-semibold text-primary underline underline-offset-4">Open the demo mailbox</a> to read sign-in codes.</p>}
           {step === 'login' && (as === 'student'
             ? <p>New here? <Link to="/register" className="font-semibold underline underline-offset-4">Create an account</Link></p>
-            : <p className="text-muted-foreground">{as === 'faculty' ? 'Faculty' : 'Administrators'} join through an invitation from the administrator.</p>)}
+            : <p>New {as === 'faculty' ? 'faculty member' : 'administrator'}? <Link to={`/register?as=${as}`} className="font-semibold underline underline-offset-4">Create {as === 'faculty' ? 'a faculty' : 'an administrator'} account</Link> with your code.</p>)}
           {step === 'register' && <p>Have an account? <Link to="/login" className="font-semibold underline underline-offset-4">Sign in</Link></p>}
           {(step === 'forgot' || step === 'reset') && <Button type="button" variant="link" onClick={() => go('login')}>← Back to sign in</Button>}
-          <Link to="/verify" className="text-xs text-muted-foreground underline underline-offset-4 transition-colors hover:text-primary">Verify a document without signing in →</Link>
         </div>
         </motion.div>
       </form>

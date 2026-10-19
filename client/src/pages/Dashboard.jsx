@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { KeyRound, Upload, FolderLock, Monitor, ChevronRight, FileLock2, Check, ArrowRight } from 'lucide-react';
-import { api, fmtDate, actionLabel, cleanDetail } from '@/lib/api';
+import { KeyRound, Upload, FolderLock, Monitor, ChevronRight, FileLock2, Check, ArrowRight, Users, GraduationCap, ShieldCheck, History } from 'lucide-react';
+import { api, fmtDate, actionLabel, cleanDetail, firstName } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,7 @@ import { useVerifiedCelebration } from '@/lib/confetti';
 import { Wallet } from '@/components/app/wallet';
 import { StatusDonut, ActivityLine, IdentityRing } from '@/components/app/charts';
 import { AwayCard, NextStep } from '@/components/app/insights';
-import { useAsync, StatusBadge, friendlyIp, Stat, Callout, EmptyState, ago, toast } from '@/components/app/kit';
+import { useAsync, StatusBadge, DocStatus, friendlyIp, Stat, Callout, EmptyState, ago, toast } from '@/components/app/kit';
 
 const greeting = () => {
   const h = new Date().getHours();
@@ -108,11 +108,11 @@ export default function Dashboard() {
   ]));
   const [docs = [], sessions = [], activity = [], stats] = data ?? [];
   const count = (s) => docs.filter((d) => d.status === s).length;
-  const firstName = user.name.split(' ')[0];
+  const first = firstName(user.name);
   const minutesLeft = Math.max(0, Math.round((new Date(expiresAt) - Date.now()) / 60e3));
   const today = new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
   useEffect(() => { window.addEventListener('tv-live', reload); return () => window.removeEventListener('tv-live', reload); }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  useVerifiedCelebration(data?.[0], user.id, (fresh) => toast(`${fresh[0].title} was verified. Its QR code is ready.`));
+  useVerifiedCelebration(data?.[0], user.id, (fresh) => toast(`${fresh[0].title} was verified.`));
 
   return (
     <div className="grid gap-6">
@@ -120,16 +120,26 @@ export default function Dashboard() {
         <Aurora />
         <div className="relative grid gap-5">
         <span className="font-mono text-xs font-semibold tracking-widest text-primary uppercase">{today}</span>
-        <h1 className="text-5xl leading-[0.98] font-extrabold sm:text-7xl"><Words text={`${greeting()},`} /><br /><Words text={`${firstName}.`} className="text-gradient" delay={0.2} /></h1>
+        <h1 className="text-5xl leading-[0.98] font-extrabold sm:text-7xl"><Words text={`${greeting()},`} /><br /><Words text={`${first}.`} className="text-gradient" delay={0.2} /></h1>
         <p className="max-w-2xl font-medium text-muted-foreground [&_b]:text-foreground">
-          {loading ? 'Opening your vault…' : <>
+          {loading ? 'Opening your vault…' : staff && stats ? <>
+            <b>{stats.users.student ?? 0}</b> students · <b>{stats.documents.verified ?? 0}</b> documents verified across the college · secure session {minutesLeft} min left
+          </> : <>
             <b>{docs.length}</b> document{docs.length === 1 ? '' : 's'} in your vault · <b>{count('verified')}</b> verified
-            {count('pending') > 0 && <> · <b>{count('pending')}</b> waiting for review</>} · secure session {minutesLeft} min left
+            {count('pending') > 0 && <> · <b>{count('pending')}</b> being checked</>} · secure session {minutesLeft} min left
           </>}
         </p>
         <div className="flex flex-wrap gap-3">
-          <Button asChild size="lg" data-tour="upload"><Link to="/documents?upload=pan"><Upload /> Upload document</Link></Button>
-          <Button asChild size="lg" variant="outline"><Link to="/documents"><FolderLock /> Open vault</Link></Button>
+          {user.role === 'verifier' ? <>
+            <Button asChild size="lg"><Link to="/records"><Users /> Ask a batch</Link></Button>
+            <Button asChild size="lg" variant="outline"><Link to="/records"><GraduationCap /> Student records</Link></Button>
+          </> : user.role === 'admin' ? <>
+            <Button asChild size="lg"><Link to="/admin"><ShieldCheck /> Admin console</Link></Button>
+            <Button asChild size="lg" variant="outline"><Link to="/activity"><History /> Activity log</Link></Button>
+          </> : <>
+            <Button asChild size="lg" data-tour="upload"><Link to="/documents?upload=pan"><Upload /> Upload document</Link></Button>
+            <Button asChild size="lg" variant="outline"><Link to="/documents"><FolderLock /> Open vault</Link></Button>
+          </>}
         </div>
         </div>
         <div className="relative" data-tilt="">{!loading && <Wallet docs={docs} holder={user.name.toUpperCase()} />}</div>
@@ -147,10 +157,10 @@ export default function Dashboard() {
 
       <div className="stagger grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Stat label="Verified documents" value={count('verified')} tone="green" />
-        <Stat label="Pending verification" value={count('pending')} tone="amber" style={{ '--i': 1 }} />
-        <Stat label="Rejected" value={count('rejected')} tone={count('rejected') ? 'red' : 'card'} style={{ '--i': 2 }} />
+        <Stat label="Being checked" value={count('pending')} tone="amber" style={{ '--i': 1 }} />
+        <Stat label="Not verified" value={count('rejected')} tone={count('rejected') ? 'red' : 'card'} style={{ '--i': 2 }} />
         <Stat label="In your vault" value={docs.length} tone="violet" style={{ '--i': 3 }} />
-        {staff && stats && <Stat label="In verification queue" value={stats.documents.pending ?? 0} tone="sky" style={{ '--i': 4 }} />}
+        {staff && stats && <Stat label="Verified across the college" value={stats.documents.verified ?? 0} tone="sky" style={{ '--i': 4 }} />}
         {staff && stats && <Stat label="Students registered" value={stats.users.student ?? 0} tone="ink" style={{ '--i': 5 }} />}
       </div>
 
@@ -179,7 +189,7 @@ export default function Dashboard() {
               {docs.slice(0, 5).map((d) => (
                 <li key={d.id} className="-mx-2 flex flex-wrap items-center justify-between gap-2 rounded-lg border-t border-border px-2 py-3 transition-colors duration-200 first:border-t-0 hover:bg-accent/40">
                   <span className="grid"><b>{d.title}</b><small className="text-muted-foreground">{fmtDate(d.createdAt)}{d.numberMasked && <> · <span className="font-mono">{d.numberMasked}</span></>}</small></span>
-                  <StatusBadge status={d.status} />
+                  <DocStatus status={d.status} />
                 </li>
               ))}
             </ul>

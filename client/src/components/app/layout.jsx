@@ -90,16 +90,15 @@ const SECTIONS = [
     { to: '/activity', label: 'Activity Log', icon: History, desc: 'Every sign-in, view and change' },
     { to: '/security', label: 'Security', icon: ShieldCheck, desc: 'PIN, password, devices, score' },
   ], feature: { to: '/security', icon: ShieldCheck, title: 'Check your security score', text: 'See which protections are on. Aim for 100.' } },
-  { label: 'Verify', roles: ['verifier', 'admin'], blurb: 'Review documents with student consent.', items: [
-    { to: '/review', label: 'Verification Queue', icon: ClipboardCheck, desc: 'Approve or reject uploads' },
-    { to: '/records', label: 'Student Records', icon: GraduationCap, desc: 'Request access to a record' },
-  ], feature: { to: '/verify', icon: ScanSearch, title: 'Public verifier', text: 'Check any TrustVault document by code or file.' } },
+  { label: 'Students', roles: ['verifier'], blurb: 'Ask students for documents. They decide what to share.', items: [
+    { to: '/records', label: 'Student Records', icon: GraduationCap, desc: 'Ask one student or a whole batch' },
+  ] },
   { label: 'Admin', to: '/admin', roles: ['admin'], items: [] },
 ];
 const DOCK = [
   { to: '/', short: 'Home', icon: LayoutDashboard }, { to: '/documents', short: 'Docs', icon: FolderLock },
-  { to: '/review', short: 'Queue', icon: ClipboardCheck, roles: ['verifier', 'admin'] }, { to: '/access', short: 'Access', icon: KeyRound, roles: ['student'] },
-  { to: '/shares', short: 'Shares', icon: Link2 }, { to: '/records', short: 'Records', icon: GraduationCap, roles: ['verifier', 'admin'] },
+  { to: '/access', short: 'Access', icon: KeyRound, roles: ['student'] },
+  { to: '/shares', short: 'Shares', icon: Link2 }, { to: '/records', short: 'Students', icon: GraduationCap, roles: ['verifier'] },
   { to: '/activity', short: 'Activity', icon: History }, { to: '/security', short: 'Security', icon: ShieldCheck }, { to: '/admin', short: 'Admin', icon: Settings, roles: ['admin'] },
 ];
 const allowed = (user) => (x) => !x.roles || x.roles.includes(user.role);
@@ -245,7 +244,6 @@ export function Layout() {
               {rest.map(({ to, short, icon: Icon }) => (
                 <NavLink key={to} to={to} className={({ isActive }) => cn('flex items-center gap-3 rounded-full px-4 py-2.5 text-sm font-semibold', isActive ? 'neon-fill' : 'text-muted-foreground hover:bg-accent hover:text-foreground')}><Icon className="size-4.5" />{short}</NavLink>
               ))}
-              <NavLink to="/verify" className="flex items-center gap-3 rounded-full px-4 py-2.5 text-sm font-semibold text-muted-foreground hover:bg-accent hover:text-foreground"><ScanSearch className="size-4.5" />Public Verifier</NavLink>
               <button type="button" className="flex items-center gap-3 rounded-full px-4 py-2.5 text-left text-sm font-semibold text-muted-foreground hover:bg-accent hover:text-foreground" onClick={signOut}><LogOut className="size-4.5" />Log out</button>
             </PopoverContent>
           </Popover>

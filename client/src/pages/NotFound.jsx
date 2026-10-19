@@ -17,7 +17,7 @@ export default function NotFound() {
         <p className="lp-sub">This vault door leads nowhere. <code className="font-mono text-foreground">{pathname}</code> does not exist, or it was moved.</p>
         <div className="lp-cta">
           <Link to="/" className="lp-btn">Take me home <ArrowRight className="size-5" /></Link>
-          <Link to="/verify" className="lp-btn ghost">Verify a document</Link>
+          <Link to="/tutorial" className="lp-btn ghost">Read the tutorial</Link>
         </div>
       </main>
     </div>

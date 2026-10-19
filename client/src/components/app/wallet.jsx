@@ -1,29 +1,25 @@
 // 3D document wallet: every document is a glowing card. Click a card behind to bring it forward,
-// click the front card to flip it - verified cards show their QR code on the back.
-import { useEffect, useRef, useState } from 'react';
+// click the front card to flip it to see its status.
+import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Clock, FolderLock, Plus, RotateCw, ShieldCheck, XCircle } from 'lucide-react';
-import { api, fmtDay, TYPE_LABELS } from '@/lib/api';
+import { fmtDay, TYPE_LABELS } from '@/lib/api';
 import { sfx } from '@/lib/sound';
 import { cn } from '@/lib/utils';
 
 const ISSUER = { pan: 'Income Tax Department', aadhaar: 'Aadhaar · UIDAI', license: 'Driving Licence', class10: 'School Board · 10th', class12: 'School Board · 12th', marksheet: 'Academic Record', certificate: 'Certificate', other: 'Personal Document' };
-const STATUS = { verified: [ShieldCheck, 'Verified'], pending: [Clock, 'Pending'], rejected: [XCircle, 'Rejected'], stored: [FolderLock, 'Stored'] };
+const STATUS = { verified: [ShieldCheck, 'Verified'], pending: [Clock, 'Checking'], rejected: [XCircle, 'Not verified'], stored: [FolderLock, 'Stored'] };
 
-function Back({ doc, show }) {
-  const [qr, setQr] = useState(null);
-  useEffect(() => {
-    if (show && doc.status === 'verified' && !qr) api(`/documents/${doc.id}/qr`).then((r) => setQr(r.qr)).catch(() => {});
-  }, [show, doc, qr]);
+function Back({ doc }) {
   return (
     <div className="wl-face wl-back">
       {doc.status === 'verified' ? <>
-        {qr ? <img src={qr} alt={`Verification QR for ${doc.title}`} className="wl-qr" /> : <span className="wl-qr animate-pulse" />}
-        <div className="grid gap-1"><b>Scan to verify</b><small>No login needed. Anyone can confirm this document is genuine.</small></div>
+        <span className="grid size-20 shrink-0 place-items-center rounded-2xl bg-success/15 text-success"><ShieldCheck className="size-10" /></span>
+        <div className="grid gap-1"><b>Verified automatically</b><small>Every check passed. The decision is sealed in the tamper-evident ledger.</small></div>
       </> : (
         <div className="grid gap-2">
           <b className="text-lg">{STATUS[doc.status][1]}</b>
-          <small>{doc.status === 'pending' ? 'An authorized verifier will review it soon.' : doc.status === 'rejected' ? (doc.reviewNote || 'Upload a clearer copy.') : 'Kept safely - not sent for official verification.'}</small>
+          <small>{doc.status === 'pending' ? 'Being checked now. Verified automatically if every check passes.' : doc.status === 'rejected' ? (doc.reviewNote || 'Upload a clearer copy.') : 'Kept safely - not sent for official verification.'}</small>
           {doc.autoCheck?.score != null && <span className="font-mono text-xs">Automatic checks {doc.autoCheck.score}% passed</span>}
         </div>
       )}
@@ -85,7 +81,7 @@ export function Wallet({ docs, holder }) {
                     <span className="text-right"><small className="block opacity-70">{d.title}</small>{fmtDay(d.createdAt)}</span>
                   </span>
                 </span>
-                <Back doc={d} show={front && flipped} />
+                <Back doc={d} />
               </span>
             </button>
           );

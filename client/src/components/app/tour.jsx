@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 const STEPS = [
   { sel: '[data-tour="hero"]', title: 'Welcome to your vault', text: 'This is your home. Your documents, progress and recent activity all live here.' },
   { sel: '[data-tour="upload"]', title: 'Upload in one click', text: 'Add a PAN, Aadhaar, licence, marksheet or any file. It is encrypted before it is saved.' },
-  { sel: '[data-tour="wallet"]', title: 'Your document wallet', text: 'Click the front card to flip it. Verified cards show a QR code anyone can scan.' },
+  { sel: '[data-tour="wallet"]', title: 'Your document wallet', text: 'Click the front card to flip it. Its back shows the status and checks can scan.' },
   { sel: '[data-tour="charts"]', title: 'See your progress', text: 'How many documents are verified, and what happened in your account lately.' },
   { sel: '[data-tour="search"]', title: 'Jump anywhere', text: 'Press Ctrl+K to search pages, actions and documents.' },
   { sel: '[data-tour="timer"]', title: '60-minute secure session', text: 'After an hour you only need your Authenticator code to continue.' },

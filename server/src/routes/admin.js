@@ -12,37 +12,6 @@ const r = Router();
 const staff = requireRole('verifier', 'admin');
 const admin = requireRole('admin');
 
-r.get('/queue', staff, async (req, res) => {
-  const docs = await Document.find({ status: 'pending' }).sort({ createdAt: 1 }).populate('owner', 'name email studentId');
-  res.json(docs.map((d) => ({ ...docView(d), owner: { name: d.owner?.name, email: d.owner?.email, studentId: d.owner?.studentId } })));
-});
-
-r.post('/documents/:id/review', staff, async (req, res) => {
-  const { decision, note = '' } = req.body ?? {};
-  if (!['verified', 'rejected'].includes(decision)) throw httpError(400, 'Decision must be verified or rejected.');
-  if (decision === 'rejected' && !note.trim()) throw httpError(400, 'Give a reason when rejecting.');
-  const doc = await Document.findById(req.params.id).populate('owner', 'name email');
-  if (!doc) throw httpError(404, 'Document not found.');
-  if (doc.owner._id.equals(req.user._id)) throw httpError(403, 'You cannot verify your own document.');
-  if (doc.type === 'other') throw httpError(400, '"Other" documents are stored only and are not officially verified.');
-  if (doc.tampered) throw httpError(409, 'This file failed its integrity check and cannot be verified.');
-
-  Object.assign(doc, { status: decision, reviewNote: note.trim(), reviewedBy: req.user._id, reviewedAt: new Date() });
-  if (decision === 'verified') doc.verifyCode = randomToken(8);
-  await doc.save();
-  await addBlock(decision, doc._id, doc.sha256);
-  await audit(req, `document.${decision}`, `${doc.title}${note ? ` - ${note}` : ''}`, doc.owner._id);
-  sendMail({
-    to: doc.owner.email,
-    subject: `Your document was ${decision}`,
-    title: decision === 'verified' ? 'Document verified' : 'Document rejected',
-    body: decision === 'verified'
-      ? `<p><b>${esc(doc.title)}</b> is now verified. Anyone can confirm it at:</p><p><a href="${config.appUrl}/verify/${doc.verifyCode}">${config.appUrl}/verify/${doc.verifyCode}</a></p>`
-      : `<p><b>${esc(doc.title)}</b> was rejected.</p><p>Reason: ${esc(note)}</p><p>Please upload a clearer or correct copy.</p>`,
-  }).catch((e) => console.error(e.message));
-  res.json(docView(doc));
-});
-
 r.get('/stats', staff, async (req, res) => {
   const [users, docs, logins, blocks] = await Promise.all([
     User.aggregate([{ $group: { _id: '$role', n: { $sum: 1 } } }]),

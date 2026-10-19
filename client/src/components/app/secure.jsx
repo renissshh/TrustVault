@@ -7,7 +7,7 @@ import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { KeyRound, Mail, Smartphone, Check, Lock, Unlock, ShieldCheck, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { api } from '@/lib/api';
+import { api, firstName } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 import { Aurora, ease } from '@/lib/fx';
@@ -46,7 +46,7 @@ export function VaultLock() {
   const [opening, setOpening] = useState(false);
   const [resetting, setResetting] = useState(false);
   const navigate = useNavigate();
-  const first = user.name.split(' ')[0];
+  const first = firstName(user.name);
 
   const padlock = useRef(null);
   const unlock = run(async ({ pin }) => {

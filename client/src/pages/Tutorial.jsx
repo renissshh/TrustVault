@@ -25,14 +25,14 @@ const STEPS = [
     'Type the document number and add the file. Aadhaar and licences take a front and a back.',
     'The file is encrypted with AES-256 before it is stored, and the number is shown masked.',
   ], 20.5],
-  [BadgeCheck, 'Get it checked and verified', [
-    'Automatic checks run in seconds: number format, checksum, the text on the card, your name, and signs of editing. You get a score out of 100.',
-    'A verifier then approves or rejects it. A verified document gets its own QR code.',
+  [BadgeCheck, 'Get it verified automatically', [
+    'Automatic checks run in seconds: number format, checksum, the text on the card, signs of editing, and whether it matches your other documents.',
+    'If every check passes it is verified straight away. If one fails you see which one, so you can upload a clearer copy.',
   ], 31.5],
-  [ScanLine, 'Share proof', [
-    'Show the QR code, or send a link that expires.',
-    <>Anyone can scan it or open the <Link className="font-semibold text-primary underline" to="/verify">public verifier</Link> to confirm it is genuine. They do not need an account, and they never see the file itself.</>,
-  ], 42.5],
+  [ScanLine, 'Share with faculty', [
+    'Faculty ask for the documents they need - sometimes for your whole batch at once.',
+    'On Privacy → Access Requests, untick anything you do not want to share and press Share. Each shared file opens one time.',
+  ], null],
   [FolderArchive, 'Take a copy with you', [
     'On Documents choose Email me a ZIP. It is locked with AES-256 and the password is shown only on screen.',
     <>Windows' own Extract All cannot open it: use the free <a className="font-semibold text-primary underline" href="https://www.7-zip.org/" target="_blank" rel="noreferrer">7-Zip</a>, right-click the ZIP, choose 7-Zip → Extract Here, and type the password.</>,

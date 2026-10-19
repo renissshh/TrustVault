@@ -257,7 +257,6 @@ export function AccountMenu() {
             <MenuItem icon={Lock} label="Lock vault now" hint="Your PIN will be asked again" onClick={async () => { setOpen(false); await api('/auth/vault/lock', { method: 'POST' }); setVault(false); }} />
           )}
           <MenuItem icon={ArrowRight} label="Take the tour" hint="A 1-minute walkthrough" onClick={() => { setOpen(false); navigate('/'); setTimeout(startTour, 600); }} />
-          <MenuItem icon={ScanSearch} label="Public verifier" hint="Check any TrustVault document" to="/verify" />
           <MenuItem icon={FileText} label="Privacy policy" hint="How your data is protected" to="/privacy" />
         </nav>
 
@@ -277,10 +276,10 @@ export function AccountMenu() {
 const NOTES = {
   'document.verified': [BadgeCheck, 'bg-success', (a) => `${a.detail.split(' - ')[0]} was verified`],
   'document.rejected': [XCircle, 'bg-destructive', (a) => `${a.detail.split(' - ')[0]} was rejected`],
-  'record.view': [Eye, 'bg-primary', (a) => `${a.user?.name ?? 'A verifier'} viewed ${a.detail}`],
-  'record.open': [Eye, 'bg-primary', (a) => `${a.user?.name ?? 'A verifier'} opened your record`],
-  'access.request': [KeyRound, 'bg-primary', (a) => `${a.user?.name ?? 'A verifier'} asked to see your records`],
-  'access.approved': [KeyRound, 'bg-success', () => 'You approved a verifier for 24 hours'],
+  'record.view': [Eye, 'bg-primary', (a) => `${a.user?.name ?? 'A faculty member'} viewed ${a.detail}`],
+  'record.open': [Eye, 'bg-primary', (a) => `${a.user?.name ?? 'A faculty member'} opened your documents`],
+  'access.request': [KeyRound, 'bg-primary', (a) => `${a.user?.name ?? 'A faculty member'} asked for your documents`],
+  'access.approved': [KeyRound, 'bg-success', () => 'You shared documents with faculty'],
   'share.view': [Link2, 'bg-info', (a) => a.detail],
   'document.upload': [UploadCloud, 'bg-info', (a) => `Uploaded ${cleanDetail(a.detail)}`],
   login: [LogIn, 'bg-info', (a) => `Signed in · ${a.detail.replace(' | ', ' · ')}`],

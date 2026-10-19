@@ -4,12 +4,12 @@
 
 **Smart digital identity and document verification portal**
 
-Store identity documents in an encrypted vault, have them verified, and let anyone confirm they are genuine by scanning a QR code.
+MCA students keep their ID and academic documents in an encrypted vault. Documents are checked and verified automatically, and faculty can open only what a student chooses to share, one time.
 
 **[Live demo: trustvault-5lgg.onrender.com](https://trustvault-5lgg.onrender.com)** · **[Android app (APK)](https://github.com/SriNithish-JK/TrustVault/releases/latest/download/TrustVault.apk)** (free hosting: the first visit can take a minute to wake up; use sample documents only)
 
 [![CI](https://github.com/SriNithish-JK/TrustVault/actions/workflows/ci.yml/badge.svg)](https://github.com/SriNithish-JK/TrustVault/actions/workflows/ci.yml)
-![End-to-end checks](https://img.shields.io/badge/end--to--end_checks-105-19e6ff)
+![End-to-end checks](https://img.shields.io/badge/end--to--end_checks-131-19e6ff)
 ![License](https://img.shields.io/badge/license-MIT-b56bff)
 ![React](https://img.shields.io/badge/React-19-61dafb?logo=react&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-Express-5fa04e?logo=nodedotjs&logoColor=white)
@@ -24,25 +24,24 @@ Store identity documents in an encrypted vault, have them verified, and let anyo
 
 [![Watch the TrustVault tour](client/public/media/trustvault-tour.jpg)](client/public/media/trustvault-tour.mp4)
 
-Sign in with three locks, upload and encrypt, automatic checks, and QR proof anyone can check. Made from code with the [motion-graphics](https://github.com/Barty-Bart/motion-graphics) explainer skill ([how](docs/video/README.md)). New here? Follow the [step-by-step tutorial](https://trustvault-5lgg.onrender.com/tutorial), which includes demo documents to try.
+Sign in with three locks, upload and encrypt, automatic checks, and sharing with faculty once. Made from code with the [motion-graphics](https://github.com/Barty-Bart/motion-graphics) explainer skill ([how](docs/video/README.md)). New here? Follow the [step-by-step tutorial](https://trustvault-5lgg.onrender.com/tutorial), which includes demo documents to try.
 
 ## What it does
 
 - **Encrypted vault.** Every file is locked with AES-256-GCM before it touches the disk. Document numbers are shown masked.
 - **Three-step sign-in, separate for each role.** Student, Faculty and Administrator tabs; each account can only use its own. Password, an email code, then Google Authenticator. A separate 6-digit PIN protects the vault.
-- **Automatic checks.** PAN format, Aadhaar checksum, OCR of the document text and signs of editing, scored out of 100. Each document is also compared with the student's **other** documents (shared name and details), never with the account name. 10th and 12th marksheets are stored as they are, without checks.
-- **Faculty requests with consent.** Faculty tick the documents they need (10th, 12th, PAN, Aadhaar, licence, college certificate...) and send a request. The student shares all or only some, and each shared document opens **one time**. The administrator sees every request and answer.
+- **Automatic checks, no human approval.** PAN format, Aadhaar checksum, OCR of the document text and signs of editing, scored out of 100. A document is **verified automatically when every check passes**; otherwise it is *not verified* and the student sees why. Each document is also compared with the student's **other** documents (shared name and details), never with the account name. 10th and 12th marksheets are stored as they are, without checks.
+- **Faculty requests with consent.** Faculty tick the documents they need (10th, 12th, PAN, Aadhaar, licence, college certificate...) and ask one student or a **whole batch** (type `26MX` and every student whose roll number starts with it is asked). The student shares all or only some, and each shared document opens **one time**. Only that faculty member can open them; the administrator sees every request and answer but cannot open students' files.
 - **Shrink and email.** Students email themselves an encrypted ZIP and can set a size limit per file (e.g. max 200 KB for an application form).
-- **Proof anyone can check.** A verified document gets a QR code. Scanning it shows the result without an account.
 - **Tamper-evident history.** Uploads and decisions are chained by SHA-256; changing one record breaks the chain.
 
 **Stack:** React (Vite) · Tailwind CSS · shadcn/ui · Motion · Node.js + Express · MongoDB · AES-256-GCM · TOTP · Tesseract OCR
 
-**Who can sign up:** MCA students only. The roll number must look like `23MX347`: the 2-digit year the student joined, `MX`, then a 3-digit number. Other formats, future years and a second account for the same roll number are refused. Verifiers and admins join through an invitation and need no roll number.
+**Who can sign up:** MCA students only. The roll number must look like `23MX347`: the 2-digit year the student joined, `MX`, then a 3-digit number. Other formats, future years and a second account for the same roll number are refused. **Faculty** sign up with the faculty code and **administrators** with the administrator code (`FACULTY_CODE` / `ADMIN_CODE` in `server/.env`, made by `npm run setup`), or join through an invitation. They need no roll number.
 
 ## Demo on a laptop
 
-`npm run demo` creates 10 students, 2 faculty and 1 administrator with SPECIMEN documents in the local database; [DEMO-GUIDE.md](DEMO-GUIDE.md) has the step-by-step demo. Without an email service, emails appear on the built-in demo mailbox page.
+`npm run demo` creates 10 students, 2 faculty and 1 administrator with SPECIMEN documents in the local database; [DEMO-GUIDE.md](DEMO-GUIDE.md) has the step-by-step demo. Mail to the demo addresses (`@trustvault.demo`) stays on the laptop; `npm run demo:codes` shows each account's email and Authenticator codes.
 
 ## Screens
 
@@ -123,9 +122,8 @@ The app is a small shell in [`mobile/`](mobile) that opens the live site full sc
 | Originality check (every file) | Looks inside the file for traces of editing tools (Photoshop, Canva, GIMP, iLovePDF…), detects PDFs modified after creation, recognises digitally signed PDFs (e-PAN, e-Aadhaar, DigiLocker), checks resolution |
 | "Other" documents | Stored safely and checked for originality only – **not** sent for official verification (status *Stored*) |
 | Type detection | OCR recognises what a document really is. If a PAN is uploaded as "Other", the app says *"This looks like a PAN Card"* and lets the user change the type in one click |
-| Human verification | Verifier/admin reviews the auto-check report and approves or rejects (with a reason emailed to the student) |
-| QR verification | Every verified document gets a QR code. Scanning it opens a public page showing **Verified ✓** without logging in |
-| Verify by file | Anyone can drop a file on the public verifier page; its SHA-256 fingerprint is compared with the vault |
+| Automatic decision | No human verifier: **verified** when every check passes, otherwise **not verified** with the failed checks listed. The decision is sealed in the ledger |
+| Batch requests | Faculty type a batch (e.g. `26MX`), tick documents and send one request to every student in it; students with a waiting request are not asked twice |
 | Compressed export by email | Choose Original / Medium / **Small KB**. Files are compressed into an **AES-256 password-protected ZIP** and **emailed** – never downloaded in the browser. The password is shown on screen only, never in the email. ZIPs over 18 MB are sent as a one-time 15-minute link |
 | Front + back upload | Aadhaar and Driving Licence take both sides; they are merged into one file and both sides are checked |
 | Camera & guidance | *Take photo* button on phones, preview before upload, and plain-language tips when a score is low ("retake in good light", "name must match") |
@@ -136,11 +134,11 @@ The app is a small shell in [`mobile/`](mobile) that opens the live site full sc
 ### Roles
 | Role | Can do |
 |---|---|
-| **Student** | Upload, view, share, export own documents; **approve / deny / revoke** verifier access; edit profile; delete account |
-| **Verifier** | Verification queue + **student records** – opening a record needs the student's approval (24 h) |
-| **Admin** | Everything above + user roles, **invite verifiers and admins by email**, unlock accounts, **reset lost 2FA**, ledger integrity check, full audit log (filter, search, CSV export) |
+| **Student** | Upload, view, share, export own documents; **share all or some / deny / revoke** faculty requests; edit profile; delete account |
+| **Faculty** | **Student records**: ask one student or a whole batch for documents; open each shared document **once** (24 h). Sign-up needs the faculty code |
+| **Administrator** | User roles, **invite faculty and admins by email**, unlock accounts, **reset lost 2FA**, every request and answer, ledger integrity check, full audit log (filter, search, CSV export). Cannot open students' files. Sign-up needs the administrator code |
 
-**Consent first:** verifiers can open *pending* documents to verify them, but a student's full record is visible only after the student approves a request (with a reason), for 24 hours. Every view is **audit-logged** and the student is **emailed**.
+**Consent first:** faculty see only the documents a student chose to share, each one time, within 24 hours. Every view is **audit-logged** and the student is **emailed**.
 
 ### Privacy & UX
 - **Sign-in:** step tracker, Caps Lock warning, paste-code button, a welcome-back card on devices you chose to trust, and vault doors that open onto the dashboard.
@@ -192,7 +190,7 @@ After registering in the website:
 npm run make-admin -- your-email@gmail.com
 ```
 
-Sign out and sign in again. You can now promote other users to *verifier* from **Admin Console → Users**.
+Sign out and sign in again. You can now promote other users to *faculty* from **Admin Console → Users**. Or sign up directly on the **Administrator** tab with `ADMIN_CODE` from `server/.env`.
 
 ---
 
@@ -264,7 +262,7 @@ content games/
  Upload:    file ──► detect real type ──► SHA-256 ──► AES-256-GCM encrypt ──► storage/*.enc
                                               │
                                               └──► ledger block (hash of previous block)
-            OCR + PAN/Aadhaar checks ──► score ──► verifier approves ──► QR code
+            OCR + PAN/Aadhaar checks ──► score ──► all pass? verified : not verified
 
  View:      vault PIN ──► decrypt ──► re-hash (tamper check) ──► watermark ──► browser (no download)
  Export:    vault PIN ──► decrypt ──► compress ──► ZIP ──► email
@@ -278,21 +276,19 @@ content games/
 4. **Upload a PAN** card image → watch the auto-check score appear (OCR, format, number match).
 5. Try an invalid PAN like `ABCXE1234F` → rejected. Try a renamed `.exe` → rejected.
 6. **View** the document → it opens straight away (vault already unlocked) → point out the watermark with your email and time.
-7. Log in as **admin** in another browser → Verification Queue → approve.
-8. Back as student → **QR** button → scan it with a phone → public "Verified ✓" page.
-9. On the public verifier, drop the original file (valid) and an edited copy (not valid).
-10. **Email me a ZIP** → Small KB → show the KB reduction in the email.
-11. Admin → **Student Records** → open the student → *Request access* → student approves on **Access Requests** → admin sees the record → student's Activity Log shows every view → student revokes.
+7. The PAN turns **verified** by itself once every check passes. Upload one with a wrong number → **not verified**, with the reason.
+8. **Email me a ZIP** → Size limit 150 KB → show the KB reduction in the email.
+9. Sign up a **faculty** account with the faculty code → **Student Records** → *Ask a whole batch* `23MX` → the student shares some documents on **Access Requests** → faculty open each one **once** → student's Activity Log shows every view → student revokes.
 12. Admin → **Ledger → Run integrity check** ✓. Then edit a file in `server/storage` → run again → **tampered** detected.
 13. Set `SESSION_MINUTES=3` in `.env` → the *Stay signed in?* warning appears → let it expire → only the Authenticator code is asked.
 13. Sign out → **Forgot password?** → email code + Authenticator → new password.
 14. Open the site on a phone (bottom navigation, *Take photo*, front + back Aadhaar).
-15. Run `npm run test:e2e` live – 105 checks pass in about a minute.
+15. Run `npm run test:e2e` live – 131 checks pass in about a minute.
 
 ## Limitations (be honest in the report)
 
-- PAN/Aadhaar are checked by **format, checksum and OCR**; real government lookups (NSDL / UIDAI) need licensed paid APIs, so a human verifier makes the final decision.
-- OCR works on clear photos/scans; text-based PDFs are read directly, scanned PDFs are left for manual review.
+- PAN/Aadhaar are checked by **format, checksum and OCR**; real government lookups (NSDL / UIDAI) need licensed paid APIs, so "verified" means every automatic check passed, not that the government confirmed it.
+- OCR works on clear photos/scans; text-based PDFs are read directly, scanned PDFs that cannot be read are marked not verified, and the student is asked for a clearer copy.
 - Download protection (watermark, no right-click) deters leaks but cannot stop someone photographing their screen – the watermark identifies who leaked it.
 - PDF compression only repacks the file; image compression gives the big KB savings.
 - The encrypted ZIP uses AES-256, which Windows Explorer cannot open – use 7-Zip, WinRAR or a phone file manager.

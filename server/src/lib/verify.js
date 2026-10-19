@@ -102,6 +102,22 @@ const COMMON = new Set(`GOVERNMENT INDIA INCOME TAX DEPARTMENT PERMANENT ACCOUNT
 // Distinctive words (names, places) read from a document.
 // Same word, allowing one misread letter in longer words (OCR often reads I as L, O as 0...).
 const near = (a, b) => a === b || (a.length >= 4 && a.length === b.length && [...a].filter((c, i) => c !== b[i]).length === 1);
+// The entered number is somewhere in the OCR text, allowing one misread, extra or missing character
+// (OCR reads the space in "KL07 2021…" as O, or 0 as O). Format and checksum are still checked exactly.
+function textHasNumber(flat, number) {
+  if (flat.includes(number)) return true;
+  if (number.length < 10) return false;
+  const within1 = (a, b) => {
+    if (Math.abs(a.length - b.length) > 1) return false;
+    let i = 0;
+    while (i < a.length && a[i] === b[i]) i++;
+    return a.slice(i + 1) === b.slice(i + 1) || a.slice(i) === b.slice(i + 1) || a.slice(i + 1) === b.slice(i);
+  };
+  for (let start = 0; start + number.length - 1 <= flat.length; start++) {
+    for (const len of [number.length - 1, number.length, number.length + 1]) if (within1(flat.slice(start, start + len), number)) return true;
+  }
+  return false;
+}
 const wordsOf = (text) => [...new Set((text.match(/[A-Z]{3,}/g) ?? []).filter((w) => !COMMON.has(w)))].slice(0, 400);
 
 // Checks look only at documents. The TrustVault account name is never compared: people may sign up under any
@@ -137,7 +153,7 @@ export async function runChecks({ type, number, sources, duplicate, others = [] 
 
   // "Other" documents only get originality checks - nothing official to match against.
   if (type !== 'other') {
-    if (number) add('Entered number appears in the document', flat.includes(number));
+    if (number) add('Entered number appears in the document', textHasNumber(flat, number));
     if (KEYWORDS[type]) add('Official keywords present', KEYWORDS[type].some((k) => text.includes(k)));
   }
 

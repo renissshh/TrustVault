@@ -282,6 +282,9 @@ const STATUS = {
   tampered: 'destructive', revoked: 'ink', expired: 'outline', stored: 'info', used: 'outline',
 };
 export const StatusBadge = ({ status, children }) => <Badge variant={STATUS[status] ?? 'outline'}>{children ?? status}</Badge>;
+// A document's status in plain words: pending means the automatic checks are still running.
+const DOC_STATUS = { pending: 'checking', rejected: 'not verified' };
+export const DocStatus = ({ status }) => <StatusBadge status={status}>{DOC_STATUS[status] ?? status}</StatusBadge>;
 
 // Form for actions that need the vault. The PIN is asked only while the vault is locked; the first
 // correct PIN unlocks it for the rest of the session. `children` are the caller's own fields.

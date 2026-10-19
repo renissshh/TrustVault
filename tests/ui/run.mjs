@@ -19,7 +19,7 @@ const API = `http://localhost:${API_PORT}/api`; const SITE = `http://localhost:$
 const MONGO = process.env.UI_MONGO_URI || 'mongodb://127.0.0.1:27017/trustvault_uitest';
 const DATA = fs.mkdtempSync(path.join(os.tmpdir(), 'trustvault-ui-')); const MAIL = path.join(DATA, 'dev-mail');
 const PASSWORD = `Ui-${crypto.randomBytes(9).toString('base64url')}-7x`; const PIN = '482915';
-const STUDENT = 'rahul@demo.test'; const ADMIN = 'admin@demo.test';
+const STUDENT = 'rahul@demo.test'; const ADMIN = 'admin@demo.test'; const FACULTY = 'faculty@demo.test';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const children = [];
 let pass = 0; let fail = 0;
@@ -36,7 +36,8 @@ function findChrome() {
 // ---------- 1. isolated API + site ----------
 async function startServers() {
   const env = { ...process.env, PORT: String(API_PORT), MONGO_URI: MONGO, DATA_DIR: DATA, APP_URL: SITE,
-    JWT_SECRET: crypto.randomBytes(32).toString('hex'), VAULT_KEY: crypto.randomBytes(32).toString('hex'), AUTH_RATE_LIMIT: '100000', API_RATE_LIMIT: '1000000' };
+    JWT_SECRET: crypto.randomBytes(32).toString('hex'), VAULT_KEY: crypto.randomBytes(32).toString('hex'), AUTH_RATE_LIMIT: '100000', API_RATE_LIMIT: '1000000',
+    FACULTY_CODE: 'FAC-TEST-CODE', ADMIN_CODE: 'ADM-TEST-CODE-XYZ' };
   delete env.SMTP_USER; delete env.BREVO_API_KEY; delete env.FILE_STORE; // never send real email from tests; files on disk
   const api = spawn(process.execPath, ['src/index.js'], { cwd: path.join(ROOT, 'server'), env });
   children.push(api);
@@ -74,10 +75,10 @@ async function seed() {
     await c.call('/auth/login/totp', { method: 'POST', body: { ticket: r.data.ticket, code: await totp(r.data.secret) } });
   };
   const upload = (c, fields, buf, name) => { const form = new FormData(); for (const [k, v] of Object.entries(fields)) form.set(k, v); form.set('file', new Blob([buf]), name); return c.call('/documents', { method: 'POST', form }); };
-  const student = client(); const first = client();
+  const student = client(); const admin = client(); const faculty = client();
   await signUp(student, 'Rahul Sharma', STUDENT, { studentId: '23MX101' });
-  await signUp(first, 'Priya Verifier', ADMIN, { studentId: '23MX900' });
-  await mongoose.connection.db.collection('users').updateOne({ email: ADMIN }, { $set: { role: 'admin' } });
+  await signUp(admin, 'Asha Admin', ADMIN, { role: 'admin', code: 'ADM-TEST-CODE-XYZ' });
+  await signUp(faculty, 'Priya Raman', FACULTY, { role: 'faculty', code: 'FAC-TEST-CODE' });
   // vault PIN needs the security check: password -> email code -> Authenticator
   let r = await student.call('/auth/step-up/password', { method: 'POST', body: { password: PASSWORD } });
   r = await student.call('/auth/step-up/otp', { method: 'POST', body: { ticket: r.data.ticket, code: lastCode(STUDENT) } });
@@ -88,16 +89,12 @@ async function seed() {
   await upload(student, { type: 'other', title: 'Hostel receipt' }, await card([['HOSTEL FEE RECEIPT', 48, 110], ['RAHUL SHARMA', 44, 300]]), 'receipt.png');
   for (let i = 0; i < 60; i++) { const d = (await student.call('/documents')).data; if (d.every((x) => x.autoCheck.state !== 'running')) break; await sleep(2000); }
   const docs = (await student.call('/documents')).data;
-  const admin = client(); // sign in again so the session carries the admin role
-  r = await admin.call('/auth/login', { method: 'POST', body: { email: ADMIN, password: PASSWORD } });
-  if (r.data.next === 'otp') r = await admin.call('/auth/login/otp', { method: 'POST', body: { ticket: r.data.ticket, code: lastCode(ADMIN) } });
-  await admin.call('/auth/login/totp', { method: 'POST', body: { ticket: r.data.ticket, code: await totp(secrets[ADMIN]) } });
-  await admin.call(`/admin/documents/${docs.find((d) => d.type === 'pan').id}/review`, { method: 'POST', body: { decision: 'verified', note: '' } });
-  const people = (await admin.call('/records/students?q=')).data;
-  await admin.call(`/records/students/${people[0].id}/request`, { method: 'POST', body: { types: ['pan', 'class10', 'class12'], reason: 'Placement document check for campus drive' } });
+  r = await faculty.call('/records/batch-request', { method: 'POST', body: { group: '23MX', types: ['pan', 'class10', 'class12'], reason: 'Placement document check for campus drive' } });
   await student.call('/auth/vault/unlock', { method: 'POST', body: { pin: PIN } });
-  ok(docs.length === 3 && (await admin.call('/auth/me')).data.user?.role === 'admin', 'demo data seeded (student with 3 documents, admin)');
-  return { secrets, studentCookies: student.jar, adminCookies: admin.jar };
+  const roles = [(await admin.call('/auth/me')).data.user?.role, (await faculty.call('/auth/me')).data.user?.role];
+  ok(docs.length === 3 && r.data.sent === 1 && roles.join() === 'admin,verifier', 'demo data seeded (student with 3 documents, faculty batch request, admin)', JSON.stringify({ roles, r: r.data }));
+  ok(docs.find((d) => d.type === 'pan')?.status === 'verified', 'PAN verified automatically (every check passed)', docs.find((d) => d.type === 'pan')?.status);
+  return { secrets, studentCookies: student.jar, adminCookies: admin.jar, facultyCookies: faculty.jar };
 }
 
 // ---------- 3. a small Chrome DevTools client ----------
@@ -129,9 +126,10 @@ async function browser() {
 }
 
 // ---------- 4. every page, every role, both themes, three sizes ----------
-const PUBLIC = ['/welcome', '/login', '/login?as=faculty', '/login?as=admin', '/register', '/verify', '/privacy', '/tutorial', '/no-such-page'];
+const PUBLIC = ['/welcome', '/login', '/login?as=faculty', '/login?as=admin', '/register', '/register?as=faculty', '/register?as=admin', '/privacy', '/tutorial', '/no-such-page'];
 const STUDENT_PAGES = ['/', '/documents', '/documents?upload=aadhaar', '/documents?upload=class10', '/access', '/shares', '/activity', '/security'];
-const ADMIN_PAGES = ['/', '/documents', '/review', '/records', '/shares', '/activity', '/security', '/admin'];
+const ADMIN_PAGES = ['/', '/activity', '/security', '/admin'];
+const FACULTY_PAGES = ['/', '/records', '/activity', '/security'];
 const SIZES = [[1900, 940], [1366, 700], [390, 844]];
 const wait = (ms) => `await new Promise((r) => setTimeout(r, ${ms}));`;
 const CLICKS = {
@@ -144,7 +142,11 @@ const CLICKS = {
 const ADMIN_CLICKS = {
   'admin tabs all show content': ['/admin', `(async () => { for (const t of ['Users', 'Requests', 'Invitations', 'Ledger', 'Audit log']) { [...document.querySelectorAll('button')].find((x) => x.textContent.trim() === t)?.click(); ${wait(700)} if (!document.querySelector('table, form')) return false; } return true; })()`],
 };
+const FACULTY_CLICKS = {
+  'batch request counts the students in 23MX': ['/records', `(async () => { const i = document.querySelector('input[aria-label="Batch code"]'); const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set; set.call(i, '23MX'); i.dispatchEvent(new Event('input', { bubbles: true })); ${wait(1200)} return document.body.innerText.includes('1 student in 23MX'); })()`],
+};
 const GUEST_CLICKS = {
+  'sign-up asks for the faculty code': ['/register?as=faculty', `(async () => { ${wait(300)} return !!document.querySelector('input[name=code]') && !document.querySelector('input[name=studentId]'); })()`],
   'landing demo runs to VERIFIED': ['/welcome', `(async () => { [...document.querySelectorAll('button')].find((x) => x.textContent.includes('Scan the sample'))?.click(); ${wait(5600)} return !!document.querySelector('.demo[data-state=done] .demo-stamp'); })()`],
 };
 
@@ -204,12 +206,13 @@ try {
   await mongoose.connect(MONGO);
   await mongoose.connection.db.dropDatabase();
   await startServers();
-  const { secrets, studentCookies, adminCookies } = await seed();
+  const { secrets, studentCookies, adminCookies, facultyCookies } = await seed();
   b = await browser();
   for (const theme of ['dark', 'light']) {
     await crawl(b, 'guest', null, theme, PUBLIC, GUEST_CLICKS);
     await crawl(b, 'student', studentCookies, theme, STUDENT_PAGES, CLICKS);
     await crawl(b, 'admin', adminCookies, theme, ADMIN_PAGES, ADMIN_CLICKS);
+    await crawl(b, 'faculty', facultyCookies, theme, FACULTY_PAGES, FACULTY_CLICKS);
   }
   await signIn(b, secrets[STUDENT], 1);
   await signIn(b, secrets[STUDENT], 2);

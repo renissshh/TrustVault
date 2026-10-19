@@ -29,7 +29,7 @@ export function PublicShell({ children, brandTo = '/welcome', nav, className }) 
         <footer className="relative border-t border-border bg-card/60 backdrop-blur-xl">
           <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-6 text-sm">
             <span className="font-mono text-xs text-muted-foreground uppercase">TrustVault · AES-256 · SHA-256 ledger · TOTP 2FA</span>
-            <span className="flex flex-wrap gap-5 font-semibold"><Link to="/tutorial" className="transition-colors hover:text-primary">Tutorial</Link><Link to="/privacy" className="transition-colors hover:text-primary">Privacy policy</Link><Link to="/verify" className="transition-colors hover:text-primary">Public verifier</Link></span>
+            <span className="flex flex-wrap gap-5 font-semibold"><Link to="/tutorial" className="transition-colors hover:text-primary">Tutorial</Link><Link to="/privacy" className="transition-colors hover:text-primary">Privacy policy</Link></span>
           </div>
         </footer>
       </div>

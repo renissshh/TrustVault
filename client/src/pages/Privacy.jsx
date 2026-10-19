@@ -7,14 +7,14 @@ const SECTIONS = [
     'Sign-in records: time, device type, IP address and approximate city - to protect your account.',
   ]],
   ['Why we collect it', [
-    'To store your documents safely and let authorized verifiers confirm they are genuine.',
+    'To store your documents safely, check that they are genuine, and share them with faculty when you choose to.',
     'To detect suspicious sign-ins and keep a tamper-evident record of who accessed what.',
     'We do not sell or share your data, and we do not use it for advertising.',
   ]],
   ['How it is protected', [
     'Files are encrypted with AES-256-GCM before being saved. Sign-in needs your password and Google Authenticator.',
     'Opening, sharing or exporting a document needs your separate 6-digit vault PIN.',
-    'Verifiers can only see your records after you approve their request, for 24 hours. You get an email every time a document is viewed.',
+    'Faculty can only see the documents you choose to share with them, and each shared document opens one time. You get an email every time one is viewed.',
   ]],
   ['About Aadhaar', [
     'Under the Aadhaar Act, organisations should avoid storing full Aadhaar copies. We recommend uploading a Masked Aadhaar (only the last 4 digits visible), which you can download from myaadhaar.uidai.gov.in.',
@@ -23,7 +23,7 @@ const SECTIONS = [
     'See your data: everything you uploaded and every access is on your Documents and Activity pages.',
     'Correct your data: edit your name and roll number on the Security page.',
     'Withdraw consent and erase your data: use "Delete my account" on the Security page. Your files are permanently removed; an anonymous audit entry is kept for security.',
-    'Revoke a verifier\'s access at any time on the Access Requests page.',
+    'Withdraw a faculty member\'s access at any time on the Access Requests page.',
   ]],
   ['How long we keep it', [
     'Documents stay until you delete them or your account. Emailed export ZIPs and one-time links expire after 15 minutes on our side.',

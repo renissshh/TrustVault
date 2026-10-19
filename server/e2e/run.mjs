@@ -35,6 +35,7 @@ const reachable = (url) => fetch(url, { signal: AbortSignal.timeout(2500) }).the
 const env = {
   ...process.env, PORT: String(PORT), MONGO_URI: MONGO, DATA_DIR: DATA, APP_URL: `http://localhost:${PORT}`,
   JWT_SECRET: crypto.randomBytes(32).toString('hex'), VAULT_KEY: crypto.randomBytes(32).toString('hex'), AUTH_RATE_LIMIT: '1000',
+  FACULTY_CODE: 'FAC-TEST-CODE', ADMIN_CODE: 'ADM-TEST-CODE-XYZ',
 };
 delete env.SMTP_USER; delete env.BREVO_API_KEY; delete env.FILE_STORE; // never send real email from tests; files on disk
 const server = spawn(process.execPath, ['src/index.js'], { cwd: path.join(import.meta.dirname, '..'), env });
@@ -131,6 +132,7 @@ const PAN = await card([['INCOME TAX DEPARTMENT', 48, 110], ['GOVT. OF INDIA', 4
 try {
   const student = client();
   const admin = client();
+  const faculty = client();
 
   // ===== Sign-up =====
   let r = await student.call('/auth/register', { method: 'POST', body: { name: 'Rahul Sharma', email: 'rahul@demo.test', password: PASSWORD } });
@@ -245,6 +247,14 @@ try {
   ok(pan.autoCheck.score >= 80, `PAN auto-check ${pan.autoCheck.score}%`, pan.autoCheck.checks.filter((c) => !c.ok).map((c) => c.name).join('; '));
   ok(aadhaar.autoCheck.checks.some((c) => c.name.startsWith('Front:')) && aadhaar.autoCheck.checks.some((c) => c.name.startsWith('Back:')), 'both Aadhaar sides checked for originality');
   ok(otherDoc.autoCheck.detectedType === 'license', '"Other" upload recognised as a Driving Licence');
+  ok(pan.status === 'verified', 'PAN verified automatically because every check passed', pan.status);
+  ok(otherDoc.status === 'stored', '"Other" stays stored (never verified)');
+  r = await upload(student, { type: 'pan', number: 'ABDPS9876K' }, { file: [await card([['INCOME TAX DEPARTMENT', 48, 110], ['ABCPS1234F', 64, 300], ['RAHUL SHARMA', 44, 420]]), 'other-pan.png'] });
+  const wrongPan = r.data.id;
+  docs = await waitChecks(student);
+  const wrong = docs.find((d) => d.id === wrongPan);
+  ok(wrong.status === 'rejected' && /Entered number appears in the document/.test(wrong.reviewNote), 'a failed check means NOT verified, with the reason', wrong.reviewNote);
+  await student.call(`/documents/${wrongPan}`, { method: 'DELETE' });
 
   // ===== Viewing =====
   await student.call('/auth/vault/lock', { method: 'POST' });
@@ -259,34 +269,36 @@ try {
   r = await phone.call(`/documents/${panId}/view`, { method: 'POST', body: {} });
   ok(r.status === 403 && r.data.code === 'VAULT_LOCKED', 'the unlock does not carry over to another device');
   r = await student.call('/admin/queue');
-  ok(r.status === 403, 'student blocked from the verification queue');
+  ok(r.status === 404, 'there is no human verification queue any more');
   r = await student.call('/records/students');
   ok(r.status === 403, 'student blocked from student records');
 
-  // ===== Admin + verification =====
-  await signUp(admin, 'Priya Admin', 'admin@demo.test', { studentId: '23MX900' });
-  await db.collection('users').updateOne({ email: 'admin@demo.test' }, { $set: { role: 'admin' } });
+  // ===== Faculty and administrator sign-up with secret codes =====
+  r = await client().call('/auth/register', { method: 'POST', body: { name: 'Fake Teacher', email: 'fake@demo.test', password: PASSWORD, consent: true, role: 'faculty', code: 'WRONG' } });
+  ok(r.status === 403 && /faculty code/.test(r.data.error), 'faculty sign-up refused with a wrong faculty code');
+  r = await client().call('/auth/register', { method: 'POST', body: { name: 'Fake Admin', email: 'fake@demo.test', password: PASSWORD, consent: true, role: 'admin', code: 'FAC-TEST-CODE' } });
+  ok(r.status === 403 && /administrator code/.test(r.data.error), 'the faculty code does not create an administrator');
+  await signUp(faculty, 'Priya Raman', 'faculty@demo.test', { role: 'faculty', code: 'fac-test-code' });
+  ok((await db.collection('users').findOne({ email: 'faculty@demo.test' }))?.role === 'verifier', 'faculty account created with the faculty code (any letter case)');
+  await signUp(admin, 'Priya Admin', 'admin@demo.test', { role: 'admin', code: 'ADM-TEST-CODE-XYZ' });
+  ok((await db.collection('users').findOne({ email: 'admin@demo.test' }))?.role === 'admin', 'administrator account created with the admin code');
   r = await admin.call('/auth/vault-pin', { method: 'POST', body: { pin: '135790' } });
   ok(r.data.user?.hasVaultPin, 'a full sign-in (password + email + Authenticator) counts as the security check');
-
+  r = await faculty.call('/auth/vault-pin', { method: 'POST', body: { pin: '135790' } });
+  r = await admin.call('/records/students');
+  ok(r.status === 403, 'administrators cannot open student records (only faculty can)');
   r = await admin.call(`/documents/${panId}/view`, { method: 'POST', body: { pin: '135790' } });
-  ok(r.status === 200, 'verifier can open a PENDING document (verification duty)');
-  r = await admin.call(`/admin/documents/${otherId}/review`, { method: 'POST', body: { decision: 'verified' } });
-  ok(r.status === 400, 'admin cannot verify an "Other" document');
-  r = await admin.call(`/admin/documents/${panId}/review`, { method: 'POST', body: { decision: 'verified' } });
-  ok(r.data.status === 'verified' && r.data.verifyCode, 'admin approved the PAN');
-  r = await admin.call(`/admin/documents/${aadhaar.id}/review`, { method: 'POST', body: { decision: 'rejected' } });
-  ok(r.status === 400, 'rejecting without a reason is refused');
+  ok(r.status === 403, 'administrators cannot open students\' files');
 
   // ===== Consent before record access =====
-  r = await admin.call(`/documents/${panId}/view`, { method: 'POST', body: { pin: '135790' } });
+  r = await faculty.call(`/documents/${panId}/view`, { method: 'POST', body: { pin: '135790' } });
   ok(r.status === 403, 'verified record is closed without the student\'s consent');
-  const sid = (await admin.call('/records/students?q=23MX1')).data[0]?.id;
-  r = await admin.call(`/records/students/${sid}`);
+  const sid = (await faculty.call('/records/students?q=23MX1')).data[0]?.id;
+  r = await faculty.call(`/records/students/${sid}`);
   ok(r.data.documents.length === 0 && !r.data.access, 'record detail hidden before consent');
-  r = await admin.call(`/records/students/${sid}/request`, { method: 'POST', body: { reason: 'Placement document check' } });
+  r = await faculty.call(`/records/students/${sid}/request`, { method: 'POST', body: { reason: 'Placement document check' } });
   ok(r.status === 400, 'a request must tick at least one document type');
-  r = await admin.call(`/records/students/${sid}/request`, { method: 'POST', body: { types: ['pan', 'aadhaar', 'nonsense'], reason: 'Placement document check' } });
+  r = await faculty.call(`/records/students/${sid}/request`, { method: 'POST', body: { types: ['pan', 'aadhaar', 'nonsense'], reason: 'Placement document check' } });
   ok(r.status === 201, 'faculty asked for PAN + Aadhaar');
   ok(await mailArrives('rahul@demo.test', /asking for your documents/), 'student emailed about the request');
   r = await student.call('/auth/me');
@@ -296,26 +308,33 @@ try {
   const reqId = mine.id;
   r = await student.call(`/access/${reqId}`, { method: 'POST', body: { decision: 'approve', types: ['pan'] } });
   ok(r.status === 200, 'student approved only the PAN');
-  r = await admin.call(`/records/students/${sid}`);
+  r = await faculty.call(`/records/students/${sid}`);
   ok(r.data.documents.length === 1 && r.data.documents[0].type === 'pan' && r.data.documents[0].canOpen, 'faculty sees only the approved PAN, ready to open once');
-  r = await admin.call(`/documents/${otherId}/view`, { method: 'POST', body: { pin: '135790' } });
+  r = await faculty.call(`/documents/${otherId}/view`, { method: 'POST', body: { pin: '135790' } });
   ok(r.status === 403, 'a document type the student did not approve stays closed');
-  r = await admin.call(`/documents/${panId}/view`, { method: 'POST', body: { pin: '135790' } });
+  r = await faculty.call(`/documents/${panId}/view`, { method: 'POST', body: { pin: '135790' } });
   ok(r.status === 200, 'faculty views the verified PAN with consent');
-  r = await admin.call(`/documents/${panId}/view`, { method: 'POST', body: { pin: '135790' } });
+  r = await faculty.call(`/documents/${panId}/view`, { method: 'POST', body: { pin: '135790' } });
   ok(r.status === 403 && /one time|once/i.test(r.data.error), 'second view of the same document refused (one-time access)');
   mine = (await student.call('/access')).data.find((a) => a.id === reqId);
   ok(mine.status === 'used' && mine.opened === 1, 'request closes once every approved document was opened');
   r = await student.call('/auth/activity');
-  ok(r.data.some((a) => a.action === 'record.view' && a.user?.name === 'Priya Admin'), 'student sees the access in the activity log');
-  r = await admin.call(`/records/students/${sid}/request`, { method: 'POST', body: { types: ['pan'] } });
+  ok(r.data.some((a) => a.action === 'record.view' && a.user?.name === 'Priya Raman'), 'student sees the access in the activity log');
+  r = await faculty.call(`/records/students/${sid}/request`, { method: 'POST', body: { types: ['pan'] } });
   const again = (await student.call('/access')).data.find((a) => a.status === 'pending').id;
   r = await student.call(`/access/${again}`, { method: 'POST', body: { decision: 'approve' } });
   r = await student.call(`/access/${again}`, { method: 'POST', body: { decision: 'revoke' } });
-  r = await admin.call(`/documents/${panId}/view`, { method: 'POST', body: { pin: '135790' } });
+  r = await faculty.call(`/documents/${panId}/view`, { method: 'POST', body: { pin: '135790' } });
   ok(r.status === 403, 'access revoked by the student');
   r = await admin.call('/admin/requests');
   ok(r.data.length >= 2 && r.data.some((a) => a.status === 'used' && a.granted.join() === 'pan'), 'administrator sees every request and answer');
+  r = await faculty.call('/records/batch-request', { method: 'POST', body: { group: '23mx', types: ['class10', 'class12'] } });
+  ok(r.status === 201 && r.data.sent === 1, 'batch request sent to every student of batch 23MX', JSON.stringify(r.data));
+  r = await faculty.call('/records/batch-request', { method: 'POST', body: { group: '23MX', types: ['class10'] } });
+  ok(r.status === 201 && r.data.sent === 0 && r.data.skipped === 1, 'a student who already has a waiting request is not asked twice');
+  r = await faculty.call('/records/batch-request', { method: 'POST', body: { group: '2023', types: ['pan'] } });
+  ok(r.status === 400, 'a batch must look like 26MX');
+  ok((await faculty.call('/records/batch/23MX')).data.students === 1, 'faculty can see how many students are in a batch');
   r = await client().call('/auth/login', { method: 'POST', body: { email: 'rahul@demo.test', password: PASSWORD, as: 'faculty' } });
   ok(r.status === 403 && /student account/.test(r.data.error), 'a student cannot use the faculty sign-in');
   r = await client().call('/auth/login', { method: 'POST', body: { email: 'admin@demo.test', password: PASSWORD, as: 'student' } });
@@ -327,20 +346,13 @@ try {
   r = await student.call(`/documents/${otherId}/type`, { method: 'PATCH', body: { type: 'license', number: 'MH12 20110012345' } });
   ok(r.data.type === 'license' && r.data.status === 'pending', '"Other" re-filed as Driving Licence, now pending');
 
-  // ===== Public verification =====
+  // ===== No public QR check any more =====
   r = await student.call(`/documents/${panId}/qr`);
-  const code = r.data.url?.split('/').pop();
-  ok(r.data.qr?.startsWith('data:image/png'), 'QR code generated');
-  r = await client().call(`/public/verify/${code}`);
-  ok(r.data.valid && r.data.holder === 'Rahul Sharma', 'public QR check: VALID');
-  let form = new FormData(); form.set('file', new Blob([PAN]), 'x.png');
-  r = await client().call('/public/verify-file', { method: 'POST', form });
-  ok(r.data.valid, 'public file check: original is VALID');
-  form = new FormData(); form.set('file', new Blob([await sharp(PAN).modulate({ brightness: 1.01 }).png().toBuffer()]), 'x.png');
-  r = await client().call('/public/verify-file', { method: 'POST', form });
-  ok(!r.data.valid, 'public file check: edited copy is NOT valid');
+  ok(r.status === 404, 'there are no QR codes any more');
+  r = await client().call('/public/verify/anything');
+  ok(r.status === 404, 'the public QR check is gone');
   r = await client().call('/public/stats');
-  ok(r.data.verified === 1 && r.data.documents === 3, 'public stats', JSON.stringify(r.data));
+  ok(r.data.documents === 3 && r.data.verified >= 1, 'public stats', JSON.stringify(r.data));
 
   // ===== Export: compressed + AES-encrypted ZIP by email =====
   r = await student.call('/documents/export', { method: 'POST', body: { quality: 'small', pin: '482915' } });

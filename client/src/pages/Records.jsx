@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Lock, Search, GraduationCap, ArrowLeft, Hourglass, Mail, ShieldCheck, Eye, Check } from 'lucide-react';
+import { Lock, Search, GraduationCap, ArrowLeft, Hourglass, Mail, ShieldCheck, Eye, Check, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { api, fmtDate, fmtDay, TYPE_LABELS } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useAsync, ErrorText, StatusBadge, DocViewer, ScoreBar, SkeletonRows, toast, PageHeader, Field, EmptyState, Initials } from '@/components/app/kit';
+import { useAsync, ErrorText, StatusBadge, DocStatus, DocViewer, ScoreBar, SkeletonRows, toast, PageHeader, Field, EmptyState, Initials } from '@/components/app/kit';
 
 const accessLabel = (a) => {
   if (!a) return <span className="text-muted-foreground">No access</span>;
@@ -26,6 +26,7 @@ export function StudentList() {
         stats={[['students', data?.length ?? 0], ['you can open now', data?.filter((s) => s.access?.status === 'approved').length ?? 0, 'ok'], ['requests pending', data?.filter((s) => s.access?.status === 'pending').length ?? 0, 'warn']]}>
         Tick the documents you need and ask the student. They approve all or some, and each approved document opens one time.
       </PageHeader>
+      <BatchRequest />
       <label className="relative max-w-md">
         <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input type="search" className="pl-9" placeholder="Search by name, email or roll number…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search students" />
@@ -131,7 +132,7 @@ export function StudentRecord() {
                 <TableRow key={d.id}>
                   <TableCell className="font-semibold">{d.title} {d.tampered && <Badge variant="destructive">Tampered</Badge>}</TableCell><TableCell>{TYPE_LABELS[d.type]}</TableCell>
                   <TableCell className="font-mono">{d.numberMasked || '-'}</TableCell><TableCell><ScoreBar check={d.autoCheck} /></TableCell>
-                  <TableCell><StatusBadge status={d.status} /></TableCell><TableCell className="whitespace-nowrap">{fmtDate(d.createdAt)}</TableCell>
+                  <TableCell><DocStatus status={d.status} /></TableCell><TableCell className="whitespace-nowrap">{fmtDate(d.createdAt)}</TableCell>
                   <TableCell>{d.canOpen ? <Button size="sm" onClick={() => setViewing(d)}><Eye /> Open once</Button> : <Badge variant="outline">Already opened</Badge>}</TableCell>
                 </TableRow>
               ))}
@@ -142,5 +143,62 @@ export function StudentRecord() {
       <RequestAccess student={student} access={access} onSent={reload} />
       {viewing && <DocViewer doc={viewing} onClose={() => { setViewing(null); reload(); }} />}
     </div>
+  );
+}
+
+// Ask a whole batch (every roll number starting with e.g. 26MX) for the same documents.
+function BatchRequest() {
+  const [group, setGroup] = useState('');
+  const [count, setCount] = useState(null);
+  const [picked, setPicked] = useState([]);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const code = group.toUpperCase().replace(/\s/g, '');
+  const valid = /^\d{2}MX$/.test(code);
+  useEffect(() => {
+    setCount(null);
+    if (!valid) return undefined;
+    const t = setTimeout(() => api(`/records/batch/${code}`).then((r) => setCount(r.students), () => setCount(0)), 250);
+    return () => clearTimeout(t);
+  }, [code, valid]);
+  const toggle = (t) => setPicked((p) => (p.includes(t) ? p.filter((x) => x !== t) : [...p, t]));
+  const send = async (e) => {
+    e.preventDefault();
+    setError(''); setBusy(true);
+    try {
+      const r = await api('/records/batch-request', { method: 'POST', body: { group: code, types: picked, reason: new FormData(e.currentTarget).get('reason') } });
+      toast(`Request sent to ${r.sent} student${r.sent === 1 ? '' : 's'} in ${r.group}${r.skipped ? ` (${r.skipped} already had a request waiting)` : ''}.`);
+      setPicked([]);
+    } catch (err) { setError(err.message); }
+    setBusy(false);
+  };
+  return (
+    <Card>
+      <form className="grid gap-4" onSubmit={send}>
+        <h2 className="flex items-center gap-2 text-xl"><Users className="size-5" /> Ask a whole batch</h2>
+        <p className="text-sm text-muted-foreground">Type a batch, tick the documents, and every student in it gets the request. Each student decides for themselves.</p>
+        <div className="flex flex-wrap items-end gap-3">
+          <Field label="Batch" className="w-40"><Input value={group} onChange={(e) => setGroup(e.target.value)} placeholder="e.g. 26MX" maxLength={6} className="font-mono uppercase placeholder:normal-case" aria-label="Batch code" /></Field>
+          <span className="pb-2 text-sm text-muted-foreground">{!code ? 'The 2-digit joining year, then MX' : !valid ? 'Like 26MX' : count == null ? 'Counting…' : <><b className="text-foreground">{count}</b> student{count === 1 ? '' : 's'} in {code}</>}</span>
+        </div>
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Documents to ask for">
+          {REQUESTABLE.map((t) => {
+            const on = picked.includes(t);
+            return (
+              <button key={t} type="button" aria-pressed={on} onClick={() => toggle(t)}
+                className={cn('flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-colors', on ? 'border-primary bg-primary/15 text-foreground shadow-glow' : 'border-border bg-card text-muted-foreground hover:border-primary/50')}>
+                <span className={cn('grid size-4 place-items-center rounded border', on ? 'border-primary bg-primary text-ink' : 'border-muted-foreground/50')}>{on && <Check className="size-3" />}</span>
+                {TYPE_LABELS[t]}
+              </button>
+            );
+          })}
+        </div>
+        <Field label="Reason (optional)"><Input name="reason" maxLength={300} placeholder="e.g. Documents for the TCS placement drive" /></Field>
+        <ErrorText>{error}</ErrorText>
+        <Button className="justify-self-start" disabled={busy || !valid || !count || !picked.length}>
+          Send to {valid && count ? `all ${count} students in ${code}` : 'the batch'}
+        </Button>
+      </form>
+    </Card>
   );
 }

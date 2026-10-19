@@ -23,11 +23,9 @@ const Access = lazy(() => import('./pages/Access'));
 const Shares = lazy(() => import('./pages/Shares'));
 const Activity = lazy(() => import('./pages/Activity'));
 const Security = lazy(() => import('./pages/Security'));
-const Review = lazy(() => import('./pages/Review'));
 const StudentList = lazy(() => import('./pages/Records').then((m) => ({ default: m.StudentList })));
 const StudentRecord = lazy(() => import('./pages/Records').then((m) => ({ default: m.StudentRecord })));
 const Admin = lazy(() => import('./pages/Admin'));
-const PublicVerify = lazy(() => import('./pages/PublicVerify'));
 const SharedView = lazy(() => import('./pages/SharedView'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const Tutorial = lazy(() => import('./pages/Tutorial'));
@@ -35,7 +33,7 @@ const Mailbox = lazy(() => import('./pages/Mailbox'));
 
 applyTheme(initialTheme()); // before first paint: no flash of the wrong theme
 
-const staff = ['verifier', 'admin'];
+const staff = ['verifier'];
 const only = (roles, page) => <RequireAuth roles={roles}>{page}</RequireAuth>;
 
 // Every route names itself in `handle.title`; the browser tab shows "Page · TrustVault".
@@ -90,8 +88,6 @@ const router = createBrowserRouter([{
     { path: '/login', element: <Login mode="login" />, handle: { title: 'Sign in' } },
     { path: '/register', element: <Login mode="register" />, handle: { title: 'Create account' } },
     { path: '/reauth', element: <Reauth />, handle: { title: 'Confirm it is you' } },
-    { path: '/verify', element: <PublicVerify />, handle: { title: 'Verify a document' } },
-    { path: '/verify/:code', element: <PublicVerify />, handle: { title: 'Verify a document' } },
     { path: '/share/:token', element: <SharedView />, handle: { title: 'Shared document' } },
     {
       element: <RequireAuth><Layout /></RequireAuth>,
@@ -102,7 +98,6 @@ const router = createBrowserRouter([{
         { path: 'shares', element: <Shares />, handle: { title: 'Shared links' } },
         { path: 'activity', element: <Activity />, handle: { title: 'Activity log' } },
         { path: 'security', element: <Security />, handle: { title: 'Security' } },
-        { path: 'review', element: only(staff, <Review />), handle: { title: 'Review queue' } },
         { path: 'records', element: only(staff, <StudentList />), handle: { title: 'Student records' } },
         { path: 'records/:id', element: only(staff, <StudentRecord />), handle: { title: 'Student record' } },
         { path: 'admin', element: only(['admin'], <Admin />), handle: { title: 'Admin' } },

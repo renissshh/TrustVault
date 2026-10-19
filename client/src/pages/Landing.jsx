@@ -3,7 +3,7 @@
 // cursor light, card tilt, the sentence that lights up as you scroll).
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, BadgeCheck, Check, Fingerprint, Lock, QrCode, ScanLine, ShieldCheck, UploadCloud, User } from 'lucide-react';
+import { ArrowRight, BadgeCheck, Check, Fingerprint, Lock, ScanLine, ShieldCheck, UploadCloud, User } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Brand } from '@/components/app/brand';
 import { ThemeToggle } from '@/components/app/account';
@@ -23,8 +23,8 @@ const CHECKS = ['PAN format and checksum', 'Number matches the card', 'Text read
 const BLOCKS = [['#41', 'a3f7…9c'], ['#42', '0b9e…41'], ['#43', '44d2…e7'], ['#44', 'c6a1…0f']];
 const STEPS = [
   [UploadCloud, 'Upload', 'Add your PAN, Aadhaar, licence, marksheets or any document - photo or PDF. It is encrypted before it touches the disk.', 'c-cyan'],
-  [BadgeCheck, 'Get verified', 'Format, checksum, OCR and originality checks run in seconds, then an authorized verifier approves it.', 'c-purple'],
-  [ScanLine, 'Share proof', 'Show a QR code or send a time-limited link instead of handing over photocopies.', 'c-hot'],
+  [BadgeCheck, 'Get verified', 'Format, checksum, the text on the card, signs of editing and your other documents are checked in seconds. Pass them all and it is verified.', 'c-purple'],
+  [ScanLine, 'Share with faculty', 'Faculty ask for what they need. You tick what to share, and each file opens one time.', 'c-hot'],
 ];
 const HEX = '0123456789abcdef';
 const scramble = (n) => Array.from({ length: n }, (_, i) => (i % 5 === 4 ? ' ' : HEX[(Math.random() * 16) | 0])).join('');
@@ -32,7 +32,7 @@ const scramble = (n) => Array.from({ length: n }, (_, i) => (i % 5 === 4 ? ' ' :
 // Side chips that fill the wide-screen margins beside the headline.
 const SIDES = [
   [BadgeCheck, 'PAN Card', 'verified · 96%', 'c-green'], [Lock, 'Aadhaar', 'masked · encrypted', 'c-cyan'], [ScanLine, 'Marksheet', 'OCR passed', 'c-purple'],
-  [QrCode, 'QR scanned', 'by an employer', 'c-hot'], [ShieldCheck, 'Access approved', 'for 24 hours', 'c-green'], [Fingerprint, '2FA code', 'accepted', 'c-cyan'],
+  [ScanLine, 'Checks passed', 'verified automatically', 'c-hot'], [ShieldCheck, 'Access approved', 'for 24 hours', 'c-green'], [Fingerprint, '2FA code', 'accepted', 'c-cyan'],
 ];
 
 // Headline: the first line rolls in letter by letter; the second line keeps changing, each letter
@@ -165,24 +165,6 @@ function CodeViz() {
   );
 }
 
-// A QR-looking pattern (decorative, not a real code): fixed so it never changes between renders.
-function QrArt() {
-  const cells = useMemo(() => {
-    const out = [];
-    let seed = 7;
-    const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
-    const finder = (x, y) => (x < 7 && y < 7) || (x > 13 && y < 7) || (x < 7 && y > 13);
-    for (let y = 0; y < 21; y++) for (let x = 0; x < 21; x++) if (!finder(x, y) && rnd() > 0.52) out.push([x, y]);
-    return out;
-  }, []);
-  const eye = (x, y) => <g key={`${x}${y}`}><rect x={x} y={y} width="7" height="7" rx="1.6" /><rect x={x + 1} y={y + 1} width="5" height="5" rx="1" fill="#fff" /><rect x={x + 2} y={y + 2} width="3" height="3" rx="0.6" /></g>;
-  return (
-    <svg viewBox="0 0 21 21" fill="#05050a" shapeRendering="crispEdges">
-      {eye(0, 0)}{eye(14, 0)}{eye(0, 14)}
-      {cells.map(([x, y]) => <rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" />)}
-    </svg>
-  );
-}
 
 export default function Landing() {
   const root = useRef(null);
@@ -193,7 +175,7 @@ export default function Landing() {
     [256, '-bit', 'AES encryption on every file'],
     [3, '', 'factors to sign in'],
     live ? [stats.data.documents, '', 'documents protected'] : [60, 'min', 'sessions, then locked'],
-    live ? [stats.data.verified, '', 'verified with a QR'] : [0, '', 'files stored unencrypted'],
+    live ? [stats.data.verified, '', 'verified automatically'] : [0, '', 'files stored unencrypted'],
   ];
 
   return (
@@ -206,7 +188,7 @@ export default function Landing() {
       <header className="lp-nav">
         <Brand to="/welcome" />
         <nav className="flex items-center gap-2" aria-label="Site">
-          <Link to="/verify" className="lp-btn ghost sm lp-wide">Verify a document</Link>
+          <Link to="/tutorial" className="lp-btn ghost sm lp-wide">How it works</Link>
           <SoundToggle />
           <ThemeToggle />
           <Link to="/login" className="lp-btn sm">Sign in</Link>
@@ -217,7 +199,7 @@ export default function Landing() {
         <section className="lp-hero">
           <span className="lp-chip lp-in"><i />Digital identity, verified</span>
           <HeroTitle />
-          <p className="lp-sub">TrustVault keeps your identity and academic documents in an encrypted vault, checks them in seconds, and lets anyone confirm they are genuine with a QR code.</p>
+          <p className="lp-sub">TrustVault keeps your identity and academic documents in an encrypted vault, checks them in seconds, and shares them with faculty only when you say so.</p>
           <div className="lp-cta">
             <Link to="/register" className="lp-btn">Create free account <ArrowRight className="size-5" /></Link>
             <Link to="/login" className="lp-btn ghost">I already have an account</Link>
@@ -256,7 +238,7 @@ export default function Landing() {
               </div>
             </div>
             <div className="lp-sat s1"><b><Lock className="size-5" /></b><span>AES-256 encrypted</span></div>
-            <div className="lp-sat s2"><b><QrCode className="size-5" /></b><span>QR proof for anyone</span></div>
+            <div className="lp-sat s2"><b><ShieldCheck className="size-5" /></b><span>Faculty see it once</span></div>
             <div className="lp-sat s3"><b><Check className="size-5" /></b><span>Checked in seconds</span></div>
             <div className="lp-sat s4"><b><Fingerprint className="size-5" /></b><span>Authenticator 2FA</span></div>
           </div>
@@ -309,28 +291,29 @@ export default function Landing() {
               <div><h3>Real checks</h3><p>Numbers, OCR text and file originality are checked the moment you upload.</p></div>
             </article>
             <article data-tilt="translateY(-10px) scale(1.012)" className="lp-panel w3 c-purple rv right" style={{ '--d': 120 }}>
-              <span className="tag">No login needed</span>
+              <span className="tag">Whole batch at once</span>
               <div className="viz">
                 <div className="viz-phone">
                   <div className="screen">
                     <span className="notch" />
-                    <div className="viz-qr"><QrArt /></div>
-                    <span className="viz-ok"><Check className="size-4" /> VERIFIED</span>
-                    <span className="text-xs opacity-70">PAN Card · Rahul Sharma</span>
+                    <span className="viz-batch">26MX</span>
+                    <span className="text-xs opacity-80">PAN · 10th · 12th</span>
+                    <span className="viz-ok"><Check className="size-4" /> Sent to the batch</span>
+                    <span className="text-xs opacity-70">Each student decides</span>
                   </div>
                 </div>
               </div>
-              <div><h3>QR verification</h3><p>Employers scan the QR to confirm a document is genuine. No calls, no photocopies.</p></div>
+              <div><h3>Batch requests</h3><p>Faculty type a batch like 26MX, tick the documents, and every student in it gets the request.</p></div>
             </article>
             <article data-tilt="translateY(-10px) scale(1.012)" className="lp-panel w2 c-cyan rv left">
               <span className="tag">Consent first</span>
               <div className="viz">
                 <div className="viz-consent">
-                  <div className="req"><b>PV</b><span><b className="block text-sm">Priya (verifier)</b><span className="text-xs opacity-70">asks to see your records</span></span></div>
-                  <div className="acts"><span className="yes">Approve 24 h</span><span className="no">Deny</span></div>
+                  <div className="req"><b>PV</b><span><b className="block text-sm">Priya (faculty)</b><span className="text-xs opacity-70">asks for your PAN and 10th</span></span></div>
+                  <div className="acts"><span className="yes">Share once</span><span className="no">Deny</span></div>
                 </div>
               </div>
-              <div><h3>You decide</h3><p>Verifiers must ask first. Every view is watermarked and logged.</p></div>
+              <div><h3>You decide</h3><p>Faculty must ask first. You choose the files, each opens once, watermarked and logged.</p></div>
             </article>
             <article data-tilt="translateY(-10px) scale(1.012)" className="lp-panel w4 c-purple rv right" style={{ '--d': 120 }}>
               <span className="tag">SHA-256 hash chain</span>
@@ -393,7 +376,7 @@ export default function Landing() {
           <div className="rv lp-center">
             <span className="lp-eyebrow">60-second tour</span>
             <h2 className="lp-h2" style={{ maxWidth: '16ch' }}>Watch it <span className="lp-neon" style={{ animation: 'shimmer 5s linear infinite' }}>work.</span></h2>
-            <p className="lp-lead">Sign in, upload, automatic checks and QR proof, start to finish.</p>
+            <p className="lp-lead">Sign in, upload, automatic checks and sharing with faculty, start to finish.</p>
           </div>
           <div className="rv zoom mt-10 w-full max-w-5xl"><TourVideo /></div>
           <div className="lp-cta rv mt-8"><Link to="/tutorial" className="lp-btn ghost">Step-by-step tutorial <ArrowRight className="size-5" /></Link></div>
@@ -412,7 +395,7 @@ export default function Landing() {
         <span className="font-mono text-xs uppercase">TrustVault · AES-256 · SHA-256 ledger · TOTP 2FA</span>
         <span className="flex flex-wrap gap-6 font-semibold">
           {!navigator.userAgent.includes('TrustVaultApp') && <a href="https://github.com/SriNithish-JK/TrustVault/releases/latest/download/TrustVault.apk">Android app</a>}
-          <Link to="/tutorial">Tutorial</Link><Link to="/privacy">Privacy policy</Link><Link to="/verify">Public verifier</Link>
+          <Link to="/tutorial">Tutorial</Link><Link to="/privacy">Privacy policy</Link>
         </span>
       </footer>
     </div>

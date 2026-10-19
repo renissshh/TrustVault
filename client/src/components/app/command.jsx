@@ -15,9 +15,9 @@ import { startTour } from './tour';
 import { toast } from './kit';
 
 const PAGES = [
-  ['/', 'Dashboard', LayoutDashboard], ['/documents', 'My Documents', FolderLock], ['/review', 'Verification Queue', ClipboardCheck, ['verifier', 'admin']],
-  ['/records', 'Student Records', GraduationCap, ['verifier', 'admin']], ['/access', 'Access Requests', KeyRound, ['student']], ['/shares', 'Shared Links', Link2],
-  ['/activity', 'Activity Log', History], ['/security', 'Security & profile', ShieldCheck], ['/admin', 'Admin Console', Settings, ['admin']], ['/verify', 'Public Verifier', ScanSearch],
+  ['/', 'Dashboard', LayoutDashboard], ['/documents', 'My Documents', FolderLock],
+  ['/records', 'Student Records', GraduationCap, ['verifier']], ['/access', 'Access Requests', KeyRound, ['student']], ['/shares', 'Shared Links', Link2],
+  ['/activity', 'Activity Log', History], ['/security', 'Security & profile', ShieldCheck], ['/admin', 'Admin Console', Settings, ['admin']],
 ];
 
 export const openCommand = () => window.dispatchEvent(new Event('tv-command'));

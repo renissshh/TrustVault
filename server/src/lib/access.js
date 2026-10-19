@@ -1,11 +1,10 @@
-// Consent rules for staff looking at a student's documents:
-//  - pending documents: faculty (verifiers) may open them to do the verification the student asked for;
-//  - everything else: only through an approved access request that covers the document's type. Each approved
-//    document opens ONE time per request (within 24 hours); then the faculty member asks again.
+// Consent rules: only faculty (role "verifier") can open a student's documents, and only through an approved request
+// that covers the document's type. Each shared document opens ONE time per request (within 24 hours); then the
+// faculty member asks again. Administrators manage accounts but never open students' files.
 import { AccessRequest, Document } from '../models.js';
 import { httpError } from './util.js';
 
-export const STAFF = ['verifier', 'admin'];
+export const STAFF = ['verifier'];
 export const GRANT_HOURS = 24;
 
 // Approved, unexpired requests from this faculty member to this student.
@@ -18,7 +17,6 @@ export const grantFor = (grants, doc) => grants.find((g) => g.granted.includes(d
 // Returns the grant to mark as used once the document has been shown (null for verification duty).
 export async function assertDocAccess(viewer, doc) {
   if (!STAFF.includes(viewer.role)) throw httpError(403, 'You cannot open this document.');
-  if (doc.status === 'pending') return null;
   const grants = await activeGrants(viewer, doc.owner._id);
   const grant = grantFor(grants, doc);
   if (grant) return grant;

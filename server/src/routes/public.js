@@ -1,4 +1,4 @@
-// No login needed: QR verification, file-hash verification, share links, export download links.
+// No login needed: site stats, invitations, share links, export download links.
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { Document, Share, Export, Block, Invite } from '../models.js';
@@ -12,17 +12,6 @@ import { upload, TYPE_LABELS } from './documents.js';
 const r = Router();
 r.use(rateLimit({ windowMs: 15 * 60e3, limit: 100, message: { error: 'Too many requests. Wait a few minutes.' } }));
 
-async function verificationResult(doc) {
-  if (!doc) return { valid: false, message: 'No document with this code or file exists in TrustVault.' };
-  await doc.populate([{ path: 'owner', select: 'name studentId' }, { path: 'reviewedBy', select: 'name' }]);
-  return {
-    valid: doc.status === 'verified' && !doc.tampered,
-    status: doc.tampered ? 'tampered' : doc.status,
-    title: doc.title, type: TYPE_LABELS[doc.type], holder: doc.owner?.name, studentId: doc.owner?.studentId,
-    number: doc.numberMasked, verifiedBy: doc.reviewedBy?.name, verifiedAt: doc.reviewedAt, sha256: doc.sha256, uploadedAt: doc.createdAt,
-  };
-}
-
 r.get('/stats', async (req, res) => {
   const [verified, documents, blocks] = await Promise.all([
     Document.countDocuments({ status: 'verified' }), Document.countDocuments(), Block.countDocuments(),
@@ -35,17 +24,6 @@ r.get('/invite/:token', async (req, res) => {
   const invite = await Invite.findOne({ tokenHash: sha256(req.params.token), usedAt: null, revoked: false, expiresAt: { $gt: new Date() } }).populate('invitedBy', 'name');
   if (!invite) throw httpError(404, 'This invitation is not valid any more. Ask the admin to send a new one.');
   res.json({ email: invite.email, role: invite.role, invitedBy: invite.invitedBy?.name, expiresAt: invite.expiresAt });
-});
-
-r.get('/verify/:code', async (req, res) => {
-  res.json(await verificationResult(await Document.findOne({ verifyCode: req.params.code, status: 'verified' })));
-});
-
-// "Is this exact file genuine?" - compares the SHA-256 fingerprint with the vault.
-r.post('/verify-file', upload.single('file'), async (req, res) => {
-  if (!req.file) throw httpError(400, 'Choose a file to check.');
-  const doc = await Document.findOne({ sha256: sha256(req.file.buffer) }).sort({ status: -1 }); // prefer a verified copy
-  res.json({ ...(await verificationResult(doc)), fileHash: sha256(req.file.buffer) });
 });
 
 async function findShare(token) {

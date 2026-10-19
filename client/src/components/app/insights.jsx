@@ -1,7 +1,7 @@
 // After sign-in: "while you were away" (what changed since the last visit) and the one next best step.
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, BadgeCheck, Eye, KeyRound, LifeBuoy, Link2, PartyPopper, QrCode, ShieldAlert, Sparkles, Upload, X, XCircle } from 'lucide-react';
+import { ArrowRight, BadgeCheck, Eye, KeyRound, LifeBuoy, Link2, PartyPopper, ShieldAlert, ShieldCheck, Sparkles, Upload, Users, X, XCircle } from 'lucide-react';
 import { fmtDate } from '@/lib/api';
 import { store } from '@/lib/theme';
 import { Button } from '@/components/ui/button';
@@ -60,16 +60,18 @@ export function nextStep({ user, docs, pendingAccess }) {
   const rejected = docs.find((d) => d.status === 'rejected');
   const verified = docs.find((d) => d.status === 'verified');
   if (!user.hasVaultPin) return [KeyRound, 'Set your vault PIN', 'It protects every view, share and export. It takes one minute.', '/security', 'Set it up'];
-  if (pendingAccess > 0) return [KeyRound, `Answer ${pendingAccess} access request${pendingAccess > 1 ? 's' : ''}`, 'A verifier is waiting for your permission to see your records.', '/access', 'Review'];
-  if (rejected) return [XCircle, `Replace "${rejected.title}"`, rejected.reviewNote ? `It was rejected: ${rejected.reviewNote}` : 'It was rejected. Upload a clearer copy.', `/documents?upload=${rejected.type}`, 'Upload again'];
+  if (user.role === 'verifier') return [Users, 'Ask a batch for documents', 'Type a batch like 26MX, tick the documents, and every student in it is asked. Each student decides.', '/records', 'Student records'];
+  if (user.role === 'admin') return [ShieldCheck, 'Check the college at a glance', 'Every faculty request and answer, user roles, the ledger and the audit log.', '/admin', 'Admin console'];
+  if (pendingAccess > 0) return [KeyRound, `Answer ${pendingAccess} access request${pendingAccess > 1 ? 's' : ''}`, 'A faculty member is waiting for your permission to see your records.', '/access', 'Review'];
+  if (rejected) return [XCircle, `Replace "${rejected.title}"`, `${rejected.reviewNote || 'It did not pass the automatic checks.'} Upload a clearer copy.`, `/documents?upload=${rejected.type}`, 'Upload again'];
   if (!docs.length) return [Upload, 'Upload your first document', 'Start with your PAN or Aadhaar. It is encrypted and checked in seconds.', '/documents?upload=pan', 'Upload'];
   if (!has('pan')) return [Upload, 'Add your PAN card', 'It is one of the four documents on your checklist.', '/documents?upload=pan', 'Upload'];
   if (!has('aadhaar')) return [Upload, 'Add your Aadhaar card', 'Use a masked Aadhaar with only the last 4 digits showing.', '/documents?upload=aadhaar', 'Upload'];
   if (!has('class10')) return [Upload, 'Add your 10th marksheet', 'Faculty often ask for it. It is stored as it is.', '/documents?upload=class10', 'Upload'];
   if (!has('class12')) return [Upload, 'Add your 12th marksheet', 'Faculty often ask for it. It is stored as it is.', '/documents?upload=class12', 'Upload'];
   if (user.backupCodesLeft < 4) return [LifeBuoy, 'Get new backup codes', `Only ${user.backupCodesLeft} left. They sign you in if you lose your phone.`, '/security', 'Open security'];
-  if (verified) return [QrCode, `Share "${verified.title}"`, 'It is verified. Show its QR code or send a time-limited link.', '/documents', 'Open vault'];
-  return [PartyPopper, 'You are all set', 'Everything is uploaded and protected. Your documents are waiting for review.', '/documents', 'Open vault'];
+  if (verified) return [Link2, `Share "${verified.title}"`, 'It is verified. Send a time-limited link instead of a photocopy.', '/documents', 'Open vault'];
+  return [PartyPopper, 'You are all set', 'Everything is uploaded and protected. Faculty can ask you for documents when they need them.', '/documents', 'Open vault'];
 }
 
 export function NextStep(props) {

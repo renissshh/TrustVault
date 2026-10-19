@@ -1,6 +1,6 @@
 import { useDeferredValue, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Award, Hourglass, School, BookOpen, Car, CreditCard, FileText, Fingerprint, GraduationCap, Upload, Camera, Mail, Eye, QrCode, Share2, Trash2, Repeat, Lightbulb, Copy, FolderLock, Search, ChevronDown, Check, Plus, CheckCircle2 } from 'lucide-react';
+import { Award, Hourglass, School, BookOpen, Car, CreditCard, FileText, Fingerprint, GraduationCap, Upload, Camera, Mail, Eye, Share2, Trash2, Repeat, Lightbulb, Copy, FolderLock, Search, ChevronDown, Check, Plus, CheckCircle2 } from 'lucide-react';
 import { api, fmtDate, fmtDay, fmtSize, TYPE_LABELS, SECTIONS, NUMBER_FIELD } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth';
@@ -14,7 +14,7 @@ import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   useAsync, Modal, StatusBadge, ErrorText, PinForm, DocViewer, ScoreBar, CheckList, SkeletonRows, ask, toast, PageHeader, Segmented,
-  Field, CheckRow, Callout, EmptyState, copyText,
+  Field, CheckRow, Callout, EmptyState, copyText, DocStatus,
 } from '@/components/app/kit';
 
 // What a student is expected to keep here. 10th and 12th marksheets are stored, not verified, so storing them counts.
@@ -272,32 +272,15 @@ function ShareModal({ doc, onClose }) {
   );
 }
 
-function QrModal({ doc, onClose }) {
-  const { data, error } = useAsync(() => api(`/documents/${doc.id}/qr`));
-  return (
-    <Modal title="Verification QR code" onClose={onClose}>
-      <ErrorText>{error}</ErrorText>
-      {!data && !error && <SkeletonRows rows={2} />}
-      {data && (
-        <div className="grid justify-items-center gap-3 text-center">
-          <img className="size-52 border border-border bg-white p-2 rounded-xl shadow-brutal" src={data.qr} alt="Verification QR" />
-          <p className="text-sm text-muted-foreground">Anyone can scan this to confirm "{doc.title}" is verified - no login needed.</p>
-          <code className="bg-muted px-2 py-1 font-mono text-xs break-all">{data.url}</code>
-          <Button variant="outline" onClick={() => copyText(data.url, 'Link copied.')}><Copy /> Copy link</Button>
-        </div>
-      )}
-    </Modal>
-  );
-}
 
 function DocCard({ d, open, onToggle, onAction }) {
   const suggested = d.autoCheck?.detectedType;
-  const tips = d.autoCheck?.state === 'done' && d.autoCheck.score < 80 && d.status !== 'verified' ? tipsFor(d.autoCheck.checks) : [];
+  const tips = d.autoCheck?.state === 'done' && d.status === 'rejected' ? tipsFor(d.autoCheck.checks) : [];
   return (
     <article data-spot className={cn('grid gap-3 overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-brutal transition-[transform,border-color,box-shadow] duration-300 ease-[var(--ease-out-expo)] hover:-translate-y-1 hover:border-primary/40 hover:shadow-brutal-lg', d.tampered && 'border-destructive')}>
       <div className={cn('flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-2 text-ink', TYPE_TONE[d.type], d.type === 'other' && 'text-foreground')}>
         <span className="font-mono text-[11px] font-semibold tracking-widest uppercase">{TYPE_LABELS[d.type]}{d.sides > 1 && ' · front + back'}</span>
-        <span className="flex gap-1.5">{d.tampered && <Badge variant="destructive">Tampered</Badge>}<StatusBadge status={d.status} /></span>
+        <span className="flex gap-1.5">{d.tampered && <Badge variant="destructive">Tampered</Badge>}<DocStatus status={d.status} /></span>
       </div>
       <div className="grid gap-3 px-4 pb-4">
         <div>
@@ -320,18 +303,17 @@ function DocCard({ d, open, onToggle, onAction }) {
           {d.type === 'other' ? 'Originality check' : 'Automatic checks'} <ScoreBar check={d.autoCheck} /> <ChevronDown className={cn('size-4 transition-transform', open && 'rotate-180')} />
         </button>
         {open && <>
-          {d.autoCheck?.state === 'done' && <p className="text-xs text-muted-foreground">TrustVault read this file and compared it with the official format of a {TYPE_LABELS[d.type]} and with your other documents. The score is the share of checks passed. A faculty member still makes the final decision.</p>}
+          {d.autoCheck?.state === 'done' && <p className="text-xs text-muted-foreground">TrustVault read this file and compared it with the official format of a {TYPE_LABELS[d.type]} and with your other documents. The score is the share of checks passed. It is verified only if every check passes.</p>}
           <CheckList checks={d.autoCheck?.checks} />
           <p className="font-mono text-[11px] break-all text-muted-foreground">Digital fingerprint (SHA-256): {d.sha256}</p>
         </>}
-        {d.status === 'pending' && d.autoCheck?.state === 'done' && (
+        {d.status === 'pending' && (
           <p className="flex items-start gap-2 text-xs text-muted-foreground"><Hourglass className="mt-px size-3.5 shrink-0 text-warning" />
-            Automatic checks finished. A verifier (a person) now approves or rejects it, so this step is not instant. You get a notification when it is decided.</p>
+            Checking now. It is verified automatically if every check passes - usually within a minute.</p>
         )}
-        {d.status === 'rejected' && d.reviewNote && <ErrorText>Reason: {d.reviewNote}</ErrorText>}
+        {d.status === 'rejected' && d.reviewNote && <ErrorText>{d.reviewNote} Upload a clearer copy to try again.</ErrorText>}
         <div className="flex flex-wrap gap-2">
           <Button size="sm" onClick={() => onAction('view', d)}><Eye /> View</Button>
-          {d.status === 'verified' && <Button size="sm" variant="accent" onClick={() => onAction('qr', d)}><QrCode /> QR code</Button>}
           <Button size="sm" variant="outline" onClick={() => onAction('share', d)}><Share2 /> Share</Button>
           {d.status !== 'verified' && !suggested && <Button size="sm" variant="outline" onClick={() => onAction('retype', d)}><Repeat /> Change type</Button>}
           <Button size="sm" variant="ghost" className="ml-auto" onClick={() => onAction('delete', d)} aria-label={`Delete ${d.title}`}><Trash2 /> Delete</Button>
@@ -353,7 +335,7 @@ export default function Documents() {
   const search = useDeferredValue(query.trim()); // typing stays instant; the list catches up
   const list = data ?? [];
   const { user } = useAuth();
-  useVerifiedCelebration(data, user.id, (fresh) => toast(`${fresh[0].title} was verified. Its QR code is ready.`));
+  useVerifiedCelebration(data, user.id, (fresh) => toast(`${fresh[0].title} was verified.`));
 
   useEffect(() => { window.addEventListener('tv-live', reload); return () => window.removeEventListener('tv-live', reload); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   // While OCR checks are running, refresh every 3 seconds.
@@ -454,7 +436,6 @@ export default function Documents() {
       {modal?.kind === 'export' && <ExportModal docs={list} onClose={close} />}
       {modal?.kind === 'view' && <DocViewer doc={modal.doc} onClose={close} />}
       {modal?.kind === 'share' && <ShareModal doc={modal.doc} onClose={close} />}
-      {modal?.kind === 'qr' && <QrModal doc={modal.doc} onClose={close} />}
     </div>
   );
 }

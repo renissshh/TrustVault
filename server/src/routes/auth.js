@@ -80,7 +80,7 @@ function isTrustedDevice(req, user) {
 const newBackupCodes = () => Array.from({ length: 8 }, () => crypto.randomBytes(4).toString('hex').toUpperCase().replace(/(.{4})/, '$1-'));
 
 r.post('/register', async (req, res) => {
-  const { name, email, password, studentId, consent, invite: inviteToken } = req.body ?? {};
+  const { name, email, password, studentId, consent, invite: inviteToken, role: wanted = 'student', code } = req.body ?? {};
   if (!name?.trim() || !EMAIL.test(email ?? '')) throw httpError(400, 'Enter your name and a valid email.');
   // An invitation link gives the new account its role. It must be unused, unexpired and sent to this exact email.
   const invite = inviteToken && await Invite.findOne({ tokenHash: sha256(String(inviteToken)), usedAt: null, revoked: false, expiresAt: { $gt: new Date() } });
@@ -91,14 +91,23 @@ r.post('/register', async (req, res) => {
   if (await isPwned(password)) throw httpError(400, 'This password appeared in a known data breach. Please choose a different one.');
   if (await isDisposableEmail(email)) throw httpError(400, 'Temporary / disposable email addresses are not allowed. Use your real email.');
   if (await User.exists({ email: email.toLowerCase() })) throw httpError(409, 'An account with this email already exists.');
-  // Students must give a valid MCA roll number, one account per number. Invited staff (verifiers, admins) don't need one.
-  const roll = invite ? undefined : rollNumber(studentId);
+  // Sign up as a student (MCA roll number), faculty (faculty code) or administrator (admin code). An invitation sets the role.
+  const role = invite ? invite.role : { student: 'student', faculty: 'verifier', admin: 'admin' }[wanted];
+  if (!role) throw httpError(400, 'Choose Student, Faculty or Administrator.');
+  if (!invite && role !== 'student') {
+    const secret = role === 'admin' ? config.adminCode : config.facultyCode;
+    const given = String(code ?? '').trim().toUpperCase();
+    const ok = secret && given.length === secret.length && crypto.timingSafeEqual(Buffer.from(given), Buffer.from(secret));
+    if (!ok) throw httpError(403, `Wrong ${role === 'admin' ? 'administrator' : 'faculty'} code. Ask the administrator for it.`);
+  }
+  // Students must give a valid MCA roll number, one account per number.
+  const roll = role === 'student' ? rollNumber(studentId) : undefined;
   if (roll && await User.exists({ studentId: roll })) throw httpError(409, `Roll number ${roll} already has an account. Contact your administrator if that is not you.`);
   // claim the invitation first (atomically), so one link can never create two accounts
   if (invite && !(await Invite.findOneAndUpdate({ _id: invite._id, usedAt: null, revoked: false }, { usedAt: new Date() }))) {
     throw httpError(400, 'This invitation was already used.');
   }
-  const user = await User.create({ name, email, studentId: roll, passwordHash: await bcrypt.hash(password, 12), consentAt: new Date(), ...(invite && { role: invite.role }) })
+  const user = await User.create({ name, email, studentId: roll, passwordHash: await bcrypt.hash(password, 12), consentAt: new Date(), role })
     .catch(async (err) => { // the account was not created: hand the invitation back so the link still works
       if (invite) await Invite.updateOne({ _id: invite._id }, { usedAt: null });
       throw err;

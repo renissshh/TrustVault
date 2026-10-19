@@ -27,7 +27,6 @@
 .wl-card.front .wl-face { box-shadow: 0 0 0 1px rgb(255 255 255 / 0.1) inset, 0 30px 70px -24px #000, 0 0 70px -10px var(--a, #19e6ff); }
 .wl-back { transform: rotateY(180deg); flex-direction: row; align-items: center; justify-content: flex-start; gap: 16px; background: linear-gradient(135deg, #12121e, #05050a); }
 .wl-back small { opacity: 0.75; font-size: 12px; line-height: 1.35; }
-.wl-qr { display: block; width: 44%; aspect-ratio: 1; flex: none; border-radius: 12px; background: #fff; padding: 6px; box-shadow: 0 0 40px -8px var(--a, #19e6ff); }
 .wl-sheen { position: absolute; inset: -40%; background: linear-gradient(115deg, transparent 42%, rgb(255 255 255 / 0.3) 50%, transparent 58%); transform: translateX(-60%); pointer-events: none; }
 .wl-card.front .wl-sheen { animation: wl-sheen 5s ease-in-out infinite; }
 .wl-chip { width: 44px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, #fde68a, #f59e0b); box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.25), inset 0 -8px 12px -8px rgb(0 0 0 / 0.5); }

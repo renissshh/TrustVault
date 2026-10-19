@@ -31,7 +31,7 @@ app.use('/api', rateLimit({ windowMs: 15 * 60e3, limit: Number(process.env.API_R
 app.use('/api/auth', authRoutes);
 app.use('/api/documents', requireAuth, documentRoutes);
 app.use('/api/shares', requireAuth, shareRoutes);
-app.use('/api/records', requireAuth, requireRole('verifier', 'admin'), recordRoutes);
+app.use('/api/records', requireAuth, requireRole('verifier'), recordRoutes);
 app.use('/api/admin', requireAuth, adminRoutes);
 app.use('/api/access', requireAuth, accessRoutes);
 app.use('/api/public', publicRoutes);

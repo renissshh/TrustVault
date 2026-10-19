@@ -1,34 +1,22 @@
 // Scroll-driven story: one card goes from upload to proof while the visitor scrolls (the section is pinned).
-// 0-25% upload + encrypt, 25-50% automatic checks, 50-75% verified + sealed, 75-100% QR proof on a phone.
+// 0-25% upload + encrypt, 25-50% automatic checks, 50-75% verified + sealed, 75-100% shared once with faculty.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMotionValueEvent, useScroll } from 'motion/react';
-import { BadgeCheck, Check, Lock, QrCode, ScanLine, ShieldCheck, UploadCloud, User } from 'lucide-react';
+import { BadgeCheck, Check, Eye, KeyRound, Lock, ScanLine, ShieldCheck, UploadCloud, User } from 'lucide-react';
 import { burst } from '@/lib/burst';
 import { sfx } from '@/lib/sound';
 
 const STORY = [
   [UploadCloud, 'Upload', 'Drop a photo or PDF. It is locked with AES-256 before it ever touches the disk.'],
   [ScanLine, 'Checked', 'Number format, checksum, the text on the card, official keywords and signs of editing, in seconds.'],
-  [BadgeCheck, 'Verified', 'A verifier approves it and the decision is sealed in the tamper-evident ledger.'],
-  [QrCode, 'Proven', 'Anyone scans the QR code and sees it is genuine. No account, no phone calls.'],
+  [BadgeCheck, 'Verified', 'Every check passes, so it is verified automatically and sealed in the tamper-evident ledger.'],
+  [KeyRound, 'Shared', 'A faculty member asks. You tick what to share, and they can open it one time.'],
 ];
 const CHECKS = ['Text read (OCR)', 'PAN format valid', 'Number on card', 'No editing traces', 'Sealed in ledger'];
 const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
 const easeOut = (x) => 1 - (1 - clamp(x)) ** 3;
 const HEX = '0123456789abcdef';
 
-function useQrCells() {
-  return useMemo(() => {
-    const out = []; let seed = 11;
-    const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
-    const finder = (x, y) => (x < 7 && y < 7) || (x > 13 && y < 7) || (x < 7 && y > 13);
-    for (let y = 0; y < 21; y++) for (let x = 0; x < 21; x++) {
-      if (finder(x, y)) { const fx = x > 13 ? x - 14 : x, fy = y > 13 ? y - 14 : y; if (fx === 0 || fy === 0 || fx === 6 || fy === 6 || (fx > 1 && fx < 5 && fy > 1 && fy < 5)) out.push([x, y]); }
-      else if (rnd() > 0.5) out.push([x, y]);
-    }
-    return out;
-  }, []);
-}
 
 export function StoryScroll() {
   const ref = useRef(null);
@@ -38,7 +26,6 @@ export function StoryScroll() {
   useMotionValueEvent(scrollYProgress, 'change', (v) => setP(Math.round(v * 500) / 500));
   const k = (i) => clamp(p * 4 - i); // progress inside chapter i
   const step = Math.min(3, Math.floor(p * 4));
-  const cells = useQrCells();
   const cipher = useMemo(() => Array.from({ length: 220 }, (_, i) => HEX[(i * 7 + (i >> 3) * 5) % 16]).join(''), []);
 
   // the stamp lands once per pass: burst + sound
@@ -112,20 +99,19 @@ export function StoryScroll() {
           {/* score */}
           <div className="st-score" style={{ opacity: clamp(k2 * 5) * (1 - toQr) }}><b>{score}</b><span>/ 100 · sealed in block #45</span></div>
 
-          {/* QR + phone */}
-          <div className="st-qr" style={{ opacity: clamp(k3 * 6) }}>
-            <svg viewBox="0 0 21 21" shapeRendering="crispEdges">
-              {cells.map(([x, y], i) => {
-                const s = clamp(k3 * 2.2 - ((x + y) / 40));
-                return <rect key={i} x={x + (1 - s) * 0.5} y={y + (1 - s) * 0.5} width={s} height={s} />;
-              })}
-            </svg>
+          {/* a faculty request: the student ticks what to share, then faculty open it once */}
+          <div className="st-req" style={{ opacity: clamp(k3 * 6), transform: `translate(-50%, -50%) translateY(${(1 - easeOut(k3 * 3)) * 30}px)` }}>
+            <span className="st-req-head"><b>PR</b><span><b>Dr. Priya Raman</b><small>asks for your documents</small></span></span>
+            {[['PAN Card', 0.25], ['10th Marksheet', 0.38], ['12th Marksheet', 0.51]].map(([t, at]) => (
+              <span key={t} className={k3 > at ? 'st-req-row on' : 'st-req-row'}><i>{k3 > at && <Check className="size-3" />}</i>{t}</span>
+            ))}
+            <span className={k3 > 0.66 ? 'st-req-btn done' : 'st-req-btn'}>{k3 > 0.66 ? 'Shared · opens once' : 'Share 3 of 3'}</span>
           </div>
           <div className="st-phone" style={{ transform: `translate(${(1 - easeOut(k3 * 1.5 - 0.3)) * 140}%, -50%)`, opacity: clamp(k3 * 3 - 0.5) }}>
-            <div className={k3 > 0.72 ? 'scr ok' : 'scr'}>
-              {k3 > 0.72
-                ? <><BadgeCheck className="size-9" /><b>Verified document</b><small>PAN card · Rahul Sharma</small><small>Unchanged since upload</small></>
-                : <><i className="scan" /><small>Scanning…</small></>}
+            <div className={k3 > 0.8 ? 'scr ok' : 'scr'}>
+              {k3 > 0.8
+                ? <><Eye className="size-9" /><b>Opened once</b><small>PAN Card · Rahul Sharma</small><small>Watermarked · logged</small></>
+                : <><i className="scan" /><small>Waiting for the student…</small></>}
             </div>
           </div>
         </div>

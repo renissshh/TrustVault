@@ -92,7 +92,7 @@ body { font-family: 'Inter', sans-serif; color: #f2f4fa; }
   <div class="layer" id="L_t1"><div class="cam"><div class="tline" data-text="Sign in with [three locks.]"></div></div></div>
   <div class="layer" id="L_t2"><div class="cam"><div class="tline" data-text="Upload once. [Encrypted instantly.]"></div></div></div>
   <div class="layer" id="L_t3"><div class="cam"><div class="tline" data-text="Checked in [seconds.]"></div></div></div>
-  <div class="layer" id="L_t4"><div class="cam"><div class="tline" data-text="Anyone can confirm it. [No account needed.]"></div></div></div>
+  <div class="layer" id="L_t4"><div class="cam"><div class="tline" data-text="Faculty ask. [You decide.]"></div></div></div>
 
   <!-- 4. sign in -->
   <div class="layer" id="L_ui1"><div class="cam">
@@ -164,32 +164,35 @@ body { font-family: 'Inter', sans-serif; color: #f2f4fa; }
       <span class="mono" style="font-size:18px;letter-spacing:.16em;color:#39ff9c">/ 100 SCORE</span></div>
     <div class="stamp" id="stamp3" style="left:600px;top:500px">VERIFIED</div>
     <div class="abs" id="approved" style="left:600px;top:700px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;font:600 19px Inter;color:#c9cede">
-      <span style="width:30px;height:30px;border-radius:50%;background:linear-gradient(160deg,#19e6ff,#b56bff);display:grid;place-items:center;font:700 13px Inter;color:#05060a">PV</span>
-      Approved by a verifier · sealed in the ledger</div>
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#39ff9c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m9 12 2 2 4-4"/></svg>
+      Every check passed · sealed in the ledger</div>
     <svg class="burst" id="burst3" width="1920" height="1080" style="position:absolute;left:0;top:0;overflow:visible"></svg>
   </div></div>
 
-  <!-- 10. QR verify -->
+  <!-- 10. faculty request -> student shares, opens once -->
   <div class="layer" id="L_ui4"><div class="cam">
     <div class="abs" style="left:300px;top:250px;width:600px;height:600px;border-radius:26px;background:#0c0e16;border:1px solid #23273a"></div>
-    <div class="pan" id="pan4" style="left:330px;top:290px"></div>
-    <svg id="qrDoc" class="abs" style="left:700px;top:648px" width="170" height="170"></svg>
-    <div class="abs" style="left:340px;top:700px;font:600 19px Inter;color:#c9cede">Scan to verify</div>
-    <div class="abs mono" style="left:340px;top:734px;font-size:15px;color:#8a90a2">trustvault-5lgg.onrender.com/verify</div>
+    <div class="abs" style="left:340px;top:290px;font:700 26px 'Inter Tight';letter-spacing:-.02em">Ask a whole batch</div>
+    <div class="abs" style="left:340px;top:330px;font:500 17px Inter;color:#8a90a2">Faculty · Dr. Priya Raman</div>
+    <div class="abs mono" style="left:340px;top:392px;font:800 96px 'JetBrains Mono';letter-spacing:.06em;color:#19e6ff;text-shadow:0 0 30px rgba(25,230,255,.55)">23MX</div>
+    <div class="abs" style="left:340px;top:512px;font:600 20px Inter;color:#c9cede"><b style="color:#fff">58</b> students in this batch</div>
+    <div id="reqChips" class="abs" style="left:340px;top:570px;display:flex;gap:12px"></div>
+    <div id="sentPill" class="abs" style="left:340px;top:660px;padding:14px 26px;border-radius:999px;background:linear-gradient(90deg,#19e6ff,#b56bff);color:#05060a;font:800 20px Inter">Request sent to 58 students</div>
+    <div class="abs" style="left:340px;top:760px;font:500 16px Inter;color:#8a90a2">Each student decides what to share.</div>
     <div class="phone" style="left:1160px;top:100px;width:420px;height:880px">
       <div class="screen">
         <div id="finder" class="abs" style="left:0;top:0;width:388px;height:848px;background:#0a0c14">
-          <svg id="qrCam" class="abs" style="left:74px;top:294px" width="240" height="240"></svg>
-          <svg class="abs" style="left:54px;top:274px" width="280" height="280" fill="none" stroke="#19e6ff" stroke-width="5" stroke-linecap="round">
-            <path d="M4 50V4h46M230 4h46v46M276 230v46h-46M50 276H4v-46"/></svg>
-          <div id="scanLine" class="abs" style="left:64px;width:260px;height:3px;background:#19e6ff;box-shadow:0 0 18px 3px rgba(25,230,255,.7)"></div>
-          <div id="found" class="abs" style="left:194px;top:600px;transform:translateX(-50%);padding:10px 20px;border-radius:999px;background:#19e6ff;color:#05060a;font:700 18px Inter">QR code found</div>
+          <div class="abs" style="left:28px;top:90px;display:flex;align-items:center;gap:14px">
+            <span style="width:52px;height:52px;border-radius:50%;background:linear-gradient(160deg,#19e6ff,#b56bff);display:grid;place-items:center;font:800 18px Inter;color:#05060a">PR</span>
+            <span><b style="display:block;font:700 21px Inter">Dr. Priya Raman</b><small style="font:500 15px Inter;color:#8a90a2">asks for your documents</small></span></div>
+          <div id="tickRows"></div>
+          <div id="found" class="abs" style="left:194px;top:640px;transform:translateX(-50%);padding:14px 30px;border-radius:999px;background:#39ff9c;color:#05060a;font:800 19px Inter;white-space:nowrap">Share 3 of 3</div>
         </div>
         <div id="result" class="abs" style="left:0;top:0;width:388px;height:848px;background:#05060a">
           <div class="abs" style="left:0;top:0;width:388px;height:230px;background:#39ff9c"></div>
           <svg id="badge" class="abs" style="left:30px;top:90px" width="62" height="62" viewBox="0 0 24 24" fill="none" stroke="#05060a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m9 12 2 2 4-4"/></svg>
-          <div class="abs" style="left:30px;top:166px;font:800 31px 'Inter Tight';letter-spacing:-.02em;color:#05060a">Verified document</div>
+            <rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+          <div class="abs" style="left:30px;top:166px;font:800 31px 'Inter Tight';letter-spacing:-.02em;color:#05060a">Shared · opens once</div>
           <div id="vrows"></div>
         </div>
       </div>
@@ -232,10 +235,10 @@ body { font-family: 'Inter', sans-serif; color: #f2f4fa; }
   26.9  Upload & encrypt -> progress -> "Encrypted" + burst      click, rise, tick
   31.5  "Checked in [seconds.]"                                 whoosh
   34.2  five checks tick, score counts to 100                   tick per check
-  40.5  VERIFIED stamp + burst, "Approved by a verifier"        impact-pop
-  42.5  "Anyone can confirm it. [No account needed.]"          whoosh
-  45.4  phone scans QR on the printed card                      scan sweep
-  47.9  public result: Verified document + burst, details       chime, ticks
+  40.5  VERIFIED stamp + burst, "Every check passed"            impact-pop
+  42.5  "Faculty ask. [You decide.]"                           whoosh
+  45.4  faculty asks batch 23MX; student ticks 3 documents      ticks
+  47.9  "Shared · opens once" + burst, details                  chime, ticks
   53.4  closer on brand gradient: Your documents. [Encrypted./Verified./Shared safely.]   lift
   57.6  end card: logo, URL                                     chime
 */
@@ -290,20 +293,7 @@ function logo(svg) {
 document.querySelectorAll('svg.logo').forEach(logo); logo($('brandLogo')); logo($('endLogo'));
 const panHTML = `<div class="band"><b>INCOME TAX DEPARTMENT</b><span>Permanent Account Number Card</span></div><div class="ph"><i></i><em></em></div>
   <div class="nm">RAHUL SHARMA</div><div class="dob">Date of birth · 14/08/2003</div><div class="no">ABCPS1234F</div><div class="ft">DEMO SAMPLE · NOT A REAL CARD</div>`;
-['thumb', 'pan3', 'pan4'].forEach((id) => { $(id).innerHTML = panHTML; });
-// a QR-looking grid (decorative), same pattern on the paper and in the phone
-function qr(svg, size, light, dark) {
-  const n = 25, cell = size / n, r = rng(7); let d = '';
-  const finder = (x, y) => (x < 7 && y < 7) || (x >= n - 7 && y < 7) || (x < 7 && y >= n - 7);
-  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
-    let on = r() > 0.52;
-    if (finder(x, y)) { const fx = x >= n - 7 ? x - (n - 7) : x, fy = y >= n - 7 ? y - (n - 7) : y; on = fx === 0 || fy === 0 || fx === 6 || fy === 6 || (fx >= 2 && fx <= 4 && fy >= 2 && fy <= 4); }
-    else if ((x < 8 && y < 8) || (x >= n - 8 && y < 8) || (x < 8 && y >= n - 8)) on = false;
-    if (on) d += `M${x * cell} ${y * cell}h${cell}v${cell}h-${cell}z`;
-  }
-  svg.innerHTML = `<rect width="${size}" height="${size}" rx="${size * 0.06}" fill="${light}"/><g transform="translate(${size * 0.08} ${size * 0.08}) scale(0.84)"><path d="${d}" fill="${dark}"/></g>`;
-}
-qr($('qrDoc'), 170, '#f2f4fa', '#05060a'); qr($('qrCam'), 240, '#f2f4fa', '#05060a');
+['thumb', 'pan3'].forEach((id) => { $(id).innerHTML = panHTML; });
 // burst: ring + 12 spark lines + 8 dots, drawn for progress p (0..1)
 function makeBurst(svg) {
   let h = '<circle class="ring" fill="none"/>';
@@ -383,7 +373,10 @@ for (let i = 0; i < 6; i++) dh += `<div class="digit" style="left:${700 + i * 89
 $('digits').innerHTML = dh;
 const ROWS = [['Reading the text (OCR)', '142 chars'], ['PAN format', 'valid'], ['Official keywords', 'found'], ['Editing traces', 'none found'], ['Sealed in the ledger', 'block #45']];
 $('rows').innerHTML = ROWS.map(([a, b], i) => `<div class="row" style="left:990px;top:${300 + i * 84}px"><span class="ic"></span><span>${a}</span><span class="dt">${b}</span></div>`).join('');
-const VROWS = [['Document', 'PAN card'], ['Holder', 'Rahul Sharma'], ['Number', 'AB******4F'], ['Verified by', 'Priya Verifier'], ['Integrity', 'Unchanged since upload']];
+const VROWS = [['Shared with', 'Dr. Priya Raman'], ['Documents', 'PAN · 10th · 12th'], ['Access', 'One time each'], ['Expires', 'In 24 hours'], ['Every view', 'Logged and emailed']];
+const TICKS = ['PAN Card', '10th Marksheet', '12th Marksheet'];
+$('tickRows').innerHTML = TICKS.map((t, i) => `<div class="tick abs" style="left:28px;top:${210 + i * 112}px;width:332px;height:88px;border-radius:18px;border:1px solid #2c3352;display:flex;align-items:center;gap:16px;padding:0 20px;font:700 21px Inter"><i style="width:30px;height:30px;border-radius:8px;border:2px solid #8a90a2;display:grid;place-items:center"></i>${t}</div>`).join('');
+$('reqChips').innerHTML = TICKS.map((t) => `<span style="padding:10px 18px;border-radius:999px;border:1px solid #19e6ff;background:rgba(25,230,255,.12);font:700 17px Inter">${t}</span>`).join('');
 $('vrows').innerHTML = VROWS.map(([a, b], i) => `<div class="vrow" style="top:${262 + i * 82}px"><small>${a}</small><b>${b}</b></div>`).join('');
 const CHECK = '<svg width="20" height="20" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#05060a" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
@@ -465,10 +458,18 @@ const UPDATE = {
   },
   ui4(lt) {
     const L = $('L_ui4'); camera(L, CAM4.x(lt), CAM4.y(lt), CAM4.s(lt));
-    $('scanLine').style.top = `${300 + 228 * (0.5 - 0.5 * Math.cos(Math.PI * 2 * seg(lt, 0.6, 1.95)))}px`;
-    $('scanLine').style.opacity = lt < UI4.found ? 1 : 0;
+    const sp = spring(lt - 0.15, 14, 0.8);
+    $('sentPill').style.opacity = clamp(sp); $('sentPill').style.transform = `scale(${lerp(0.85, 1, sp)})`;
+    $('tickRows').querySelectorAll('.tick').forEach((row, i) => {
+      const on = lt > 0.7 + i * 0.4, k = spring(lt - 0.7 - i * 0.4, 18, 0.6);
+      row.style.borderColor = on ? '#39ff9c' : '#2c3352'; row.style.background = on ? 'rgba(57,255,156,.1)' : 'transparent';
+      const box = row.querySelector('i');
+      box.style.background = on ? '#39ff9c' : 'transparent'; box.style.borderColor = on ? '#39ff9c' : '#8a90a2';
+      box.innerHTML = on ? CHECK : ''; box.style.transform = `scale(${on ? lerp(0.6, 1, k) : 1})`;
+    });
     const f = spring(lt - UI4.found, 16, 0.7);
-    $('found').style.opacity = clamp(f); $('found').style.transform = `translateX(-50%) scale(${lerp(0.7, 1, f)})`;
+    $('found').style.transform = `translateX(-50%) scale(${lt > UI4.found ? lerp(0.9, 1, f) : 1})`;
+    $('found').style.boxShadow = lt > UI4.found ? `0 0 ${30 * clamp(f)}px rgba(57,255,156,.7)` : 'none';
     const r = clamp(seg(lt, UI4.result, UI4.result + 0.35));
     $('result').style.opacity = r; $('result').style.transform = `translateY(${(1 - easeOut(r)) * 40}px)`;
     $('badge').style.transform = `scale(${lt > UI4.result ? spring(lt - UI4.result - 0.15, 15, 0.55) : 0})`;
@@ -597,7 +598,7 @@ window.buildAudio = async function (ctx) {
   tick(S.ui2[0] + UI2.done); tone(1760, S.ui2[0] + UI2.done + 0.06, 0.25, 'sine', 0.04);
   UI3.rows.forEach(([, b]) => tick(S.ui3[0] + b));
   tone(90, S.ui3[0] + UI3.stamp, 0.35, 'sine', 0.3, 0.002, out, 40); noise(S.ui3[0] + UI3.stamp, 0.18, 0.08, 'lowpass', 1200);
-  noise(S.ui4[0] + 0.6, 1.35, 0.025, 'bandpass', 1500, 2, 3500);
+  [0.7, 1.1, 1.5].forEach((d) => key(S.ui4[0] + d));
   tick(S.ui4[0] + UI4.found);
   [0, 0.09].forEach((d, i) => tone([1046, 1568][i], S.ui4[0] + UI4.result + 0.2 + d, 0.7, 'sine', 0.06));
   VROWS.forEach((_, i) => key(S.ui4[0] + UI4.rows + i * 0.22));

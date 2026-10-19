@@ -125,7 +125,7 @@ function Users() {
   );
 }
 
-// ---------- Invitations: bring in a verifier or another admin by email ----------
+// ---------- Invitations: bring in a faculty member or another admin by email ----------
 function Invites() {
   const { data, error, reload } = useAsync(() => api('/admin/invites'));
   const [role, setRole] = useState('verifier');
@@ -158,7 +158,7 @@ function Invites() {
           <Field label="Role">
             <Select value={role} onValueChange={setRole}>
               <SelectTrigger className="h-10 w-full bg-card"><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value="verifier">Faculty - requests and reviews documents</SelectItem><SelectItem value="admin">Administrator - full control</SelectItem></SelectContent>
+              <SelectContent><SelectItem value="verifier">Faculty - asks students for documents</SelectItem><SelectItem value="admin">Administrator - full control</SelectItem></SelectContent>
             </Select>
           </Field>
           <ErrorText>{formError}</ErrorText>
@@ -168,7 +168,7 @@ function Invites() {
       <div className="grid gap-3">
         <ErrorText>{error}</ErrorText>
         {data && !data.length && <EmptyState icon={MailPlus} title="No invitations yet" steps={[[MailPlus, 'Enter their email and pick faculty or admin'], [Link2, 'They get a one-time link that works only for that address'], [Check, 'They set a password and Google Authenticator, then appear in Users']]}>
-          Bring in a verifier or another admin without waiting for them to register first.
+          Bring in a faculty member or another admin without them needing a sign-up code.
         </EmptyState>}
         {data?.length > 0 && (
           <Table>

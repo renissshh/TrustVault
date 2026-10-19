@@ -8,8 +8,8 @@ export const CHAPTERS = [
   [0, 'Intro'],
   [8.6, 'Sign in with three locks'],
   [20.5, 'Upload and encrypt'],
-  [31.5, 'Automatic checks and approval'],
-  [42.5, 'Verify with a QR code'],
+  [31.5, 'Automatic checks: verified when all pass'],
+  [42.5, 'Faculty ask, you decide'],
 ];
 
 export const clock = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
@@ -25,6 +25,6 @@ export const TourVideo = forwardRef(function TourVideo({ className, onEnded }, r
   return (
     <video ref={ref} className={cn('aspect-video w-full rounded-3xl border border-border bg-black shadow-glow', className)}
       src="/media/trustvault-tour.mp4" poster="/media/trustvault-tour.jpg" controls preload="none" playsInline onEnded={onEnded}
-      aria-label="TrustVault in 60 seconds: sign in, upload, automatic checks and QR verification" />
+      aria-label="TrustVault in 60 seconds: sign in, upload, automatic checks and sharing with faculty" />
   );
 });

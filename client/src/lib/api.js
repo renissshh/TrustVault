@@ -32,7 +32,7 @@ const ACTIONS = {
   'backup-codes.regenerate': 'New backup codes', 'devices.forget': 'Trusted devices forgotten', 'account.delete': 'Account deleted',
   'document.upload': 'Document uploaded', 'document.view': 'Document viewed', 'document.delete': 'Document deleted',
   'document.retype': 'Document type changed', 'document.export': 'Documents emailed', 'document.verified': 'Document verified',
-  'document.rejected': 'Document rejected', 'record.view': 'Viewed by a verifier', 'record.open': 'Record opened by a verifier',
+  'document.rejected': 'Document rejected', 'record.view': 'Viewed by faculty', 'record.open': 'Opened by faculty',
   'share.create': 'Share link sent', 'share.view': 'Shared link opened', 'share.revoke': 'Share link revoked',
   'access.request': 'Access requested', 'access.approved': 'Access approved', 'access.denied': 'Access denied', 'access.revoked': 'Access revoked',
   'user.role': 'Role changed', 'user.unlock': 'Account unlocked', 'user.reset-2fa': 'Authenticator reset', 'invite.create': 'Invitation sent', 'invite.revoke': 'Invitation cancelled', 'invite.accept': 'Invitation accepted', 'ledger.check': 'Integrity check run',
@@ -42,9 +42,9 @@ export const actionLabel = (code) => ACTIONS[code] ?? code;
 export const cleanDetail = (s = '') => s.replace(' | ', ' · ').replace(/^(.+?) \((.+)\)$/, (m, a, b) => (b.startsWith(a) ? a + b.slice(a.length) : m));
 
 export const SECTIONS = [
-  { title: 'Identity documents', types: ['pan', 'aadhaar', 'license'], note: 'Checked automatically, then verified by an authorized verifier.' },
+  { title: 'Identity documents', types: ['pan', 'aadhaar', 'license'], note: 'Checked automatically. Verified when every check passes.' },
   { title: 'School marksheets', types: ['class10', 'class12'], note: 'Stored safely as they are. Not checked or sent for verification.' },
-  { title: 'College documents', types: ['marksheet', 'certificate'], note: 'Checked automatically, then verified by an authorized verifier.' },
+  { title: 'College documents', types: ['marksheet', 'certificate'], note: 'Checked automatically. Verified when every check passes.' },
   { title: 'Other documents', types: ['other'], note: 'Stored securely and checked for originality only - not sent for official verification.' },
 ];
 
@@ -58,3 +58,6 @@ export const NUMBER_FIELD = {
   certificate: { label: 'Certificate number (optional)', placeholder: '' },
   other: { label: 'Reference number (optional)', placeholder: '' },
 };
+
+// "Dr. Priya Raman" -> "Priya": the first name without a title, for greetings.
+export const firstName = (name = '') => name.trim().replace(/^(dr|prof|mr|mrs|ms|miss)\.?\s+/i, '').split(/\s+/)[0];

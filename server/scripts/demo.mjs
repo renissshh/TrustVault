@@ -13,7 +13,7 @@ import mongoose from 'mongoose';
 import { authenticator } from 'otplib';
 import config from '../src/config.js';
 import { User, Document, AccessRequest, Audit } from '../src/models.js';
-import { sha256, storeFile, encryptText, decryptText, randomToken } from '../src/lib/crypto.js';
+import { sha256, storeFile, encryptText, decryptText } from '../src/lib/crypto.js';
 import { runChecks, maskNumber, verhoeff } from '../src/lib/verify.js';
 import { addBlock } from '../src/lib/ledger.js';
 import { TYPE_LABELS, UNCHECKED } from '../src/routes/documents.js';
@@ -119,9 +119,11 @@ for (const [i, s] of STUDENTS.entries()) students.push({ ...s, user: await makeU
 
 let n = 0;
 const docsByStudent = new Map();
-for (const s of students) {
+for (const [i, s] of students.entries()) {
   const mine = [];
-  for (const [type, number, draw] of documentsFor(s)) {
+  for (const [type, printed, draw] of documentsFor(s)) {
+    // one student mistypes their Aadhaar number, so the automatic check fails and it is not verified
+    const number = i === 7 && type === 'aadhaar' ? aadhaarNumber() : printed;
     const buf = await draw();
     const hash = sha256(buf);
     const doc = await Document.create({
@@ -136,7 +138,12 @@ for (const s of students) {
       const others = (await Document.find({ owner: s.user._id, _id: { $ne: doc._id }, wordsEnc: { $exists: true } }))
         .map((o) => ({ label: TYPE_LABELS[o.type], words: JSON.parse(decryptText(o.wordsEnc)) }));
       const { words, ...autoCheck } = await runChecks({ type, number, sources: [{ buf, mime: 'image/png' }], duplicate: false, others });
-      await doc.updateOne({ autoCheck, wordsEnc: encryptText(JSON.stringify(words)) });
+      // same rule as the server: verified only when every check passes
+      const failed = autoCheck.checks.filter((c) => !c.ok).map((c) => c.name);
+      const status = failed.length ? 'rejected' : 'verified';
+      await doc.updateOne({ autoCheck, wordsEnc: encryptText(JSON.stringify(words)), status, reviewNote: failed.length ? `Not verified: ${failed.join('; ')}.` : '', reviewedAt: new Date() });
+      await addBlock(status, doc._id, hash);
+      await Audit.create({ user: s.user._id, subject: s.user._id, action: `document.${status}`, detail: `${TYPE_LABELS[type]} - automatic checks`, ip: '127.0.0.1' });
     }
     mine.push(doc);
     process.stdout.write(`\r${++n} documents created and checked`);
@@ -144,22 +151,6 @@ for (const s of students) {
   docsByStudent.set(s.roll, mine);
 }
 console.log();
-
-// ---------- approvals by faculty ----------
-async function review(doc, by, decision, note = '') {
-  Object.assign(doc, { status: decision, reviewNote: note, reviewedBy: by._id, reviewedAt: ago(rnd(6), rnd(20)) });
-  if (decision === 'verified') doc.verifyCode = randomToken(8);
-  await doc.save();
-  await addBlock(decision, doc._id, doc.sha256);
-  await Audit.create({ user: by._id, subject: doc.owner, action: `document.${decision}`, detail: doc.title + (note ? ` - ${note}` : ''), ip: '127.0.0.1' });
-}
-for (const [i, s] of students.entries()) {
-  const docs = docsByStudent.get(s.roll);
-  const by = faculty[i % 2];
-  if (i < 7) for (const d of docs.filter((x) => ['pan', 'aadhaar'].includes(x.type))) await review(d, by, 'verified');
-  if (i < 4) for (const d of docs.filter((x) => x.type === 'certificate')) await review(d, by, 'verified');
-  if (i === 7) for (const d of docs.filter((x) => x.type === 'aadhaar')) await review(d, by, 'rejected', 'Photo is blurry - please upload a clearer scan');
-}
 
 // ---------- faculty requests in every state ----------
 const R = (code) => students.find((s) => s.roll === code);
@@ -210,8 +201,10 @@ const md = [
   '',
   `Password for every account: \`${PASSWORD}\`  ·  Vault PIN for every account: \`${PIN}\``,
   '',
-  'Sign-in needs the email code (read it on the **Demo mailbox** page: http://localhost:5173/mailbox) and an Authenticator code.',
-  'Easiest: run `npm run demo:codes` in a second terminal - it shows every account\'s current Authenticator code.',
+  `Codes for creating new staff accounts: Faculty \`${config.facultyCode || '(FACULTY_CODE not set)'}\`  ·  Administrator \`${config.adminCode || '(ADMIN_CODE not set)'}\``,
+  '',
+  'Sign-in needs an email code and an Authenticator code. Demo addresses (@trustvault.demo) cannot receive real mail,',
+  'so run `npm run demo:codes` in a second terminal - it shows every account\'s Authenticator code and its latest email code.',
   'Or add an account to the Google Authenticator app with its key below ("Enter a setup key", time based).',
   '',
   '| Sign in as | Name | Email | Roll no. | Authenticator key |',

@@ -58,25 +58,62 @@ r.get('/students/:id', async (req, res) => {
   });
 });
 
+// The document types asked for, cleaned up; at least one.
+function requestedTypes(body) {
+  const types = [...new Set([].concat(body?.types ?? []))].filter((t) => TYPE_LABELS[t]);
+  if (!types.length) throw httpError(400, 'Tick at least one document you need.');
+  return types;
+}
+// Batch codes are the first 4 characters of a roll number: joining year + MX, e.g. 26MX.
+const batchOf = (group) => {
+  const g = String(group ?? '').toUpperCase().replace(/\s/g, '');
+  if (!/^\d{2}MX$/.test(g)) throw httpError(400, 'Type a batch like 26MX: the 2-digit joining year, then MX.');
+  return g;
+};
+const inBatch = (group) => new RegExp('^' + group + '\\d{3}$'); // 26MX -> 26MX001 ... 26MX999
+const requestMail = (req, student, types, reason) => sendMail({
+  to: student.email, subject: `${req.user.name} is asking for your documents`, title: 'Document request',
+  body: `<p><b>${esc(req.user.name)}</b> (faculty) is asking to see these documents:</p>
+    <ul>${types.map((t) => `<li>${esc(TYPE_LABELS[t])}</li>`).join('')}</ul>
+    ${reason ? `<p>Reason: <i>${esc(reason)}</i></p>` : ''}
+    <p><a href="${config.appUrl}/access">Approve or deny the request</a>. You can approve only some of them.
+    Each approved document can be opened <b>one time</b> within ${GRANT_HOURS} hours. Nothing is shared unless you approve.</p>`,
+}).catch((e) => console.error(e.message));
+
+// How many students are in a batch (shown before faculty send a batch request).
+r.get('/batch/:group', async (req, res) => {
+  const group = batchOf(req.params.group);
+  res.json({ group, students: await User.countDocuments({ role: 'student', studentId: inBatch(group) }) });
+});
+
+// Ask every student of a batch (e.g. all of 26MX) for the same documents. Each student answers for themselves.
+r.post('/batch-request', async (req, res) => {
+  const group = batchOf(req.body?.group);
+  const types = requestedTypes(req.body);
+  const reason = String(req.body?.reason ?? '').trim().slice(0, 300);
+  const students = await User.find({ role: 'student', studentId: inBatch(group) });
+  if (!students.length) throw httpError(404, `No students in batch ${group} yet.`);
+  const waiting = new Set((await AccessRequest.find({ verifier: req.user._id, status: 'pending', student: { $in: students.map((s) => s._id) } })).map((a) => String(a.student)));
+  const fresh = students.filter((s) => !waiting.has(String(s._id)));
+  await AccessRequest.insertMany(fresh.map((s) => ({ verifier: req.user._id, student: s._id, reason, types })));
+  for (const s of fresh) {
+    await audit(req, 'access.request', `${req.user.name} asked batch ${group} for: ${labels(types)}${reason ? ` (${reason})` : ''}`, s._id);
+    requestMail(req, s, types, reason);
+  }
+  res.status(201).json({ group, sent: fresh.length, skipped: students.length - fresh.length });
+});
+
 r.post('/students/:id/request', async (req, res) => {
   const student = await User.findOne({ _id: req.params.id, role: 'student' });
   if (!student) throw httpError(404, 'Student not found.');
   const reason = String(req.body?.reason ?? '').trim().slice(0, 300);
-  const types = [...new Set([].concat(req.body?.types ?? []))].filter((t) => TYPE_LABELS[t]);
-  if (!types.length) throw httpError(400, 'Tick at least one document you need.');
+  const types = requestedTypes(req.body);
   if (await AccessRequest.exists({ verifier: req.user._id, student: student._id, status: 'pending' })) {
     throw httpError(409, 'You already have a pending request for this student.');
   }
   await AccessRequest.create({ verifier: req.user._id, student: student._id, reason, types });
   await audit(req, 'access.request', `${req.user.name} asked for: ${labels(types)}${reason ? ` (${reason})` : ''}`, student._id);
-  sendMail({
-    to: student.email, subject: `${req.user.name} is asking for your documents`, title: 'Document request',
-    body: `<p><b>${esc(req.user.name)}</b> (faculty) is asking to see these documents:</p>
-      <ul>${types.map((t) => `<li>${esc(TYPE_LABELS[t])}</li>`).join('')}</ul>
-      ${reason ? `<p>Reason: <i>${esc(reason)}</i></p>` : ''}
-      <p><a href="${config.appUrl}/access">Approve or deny the request</a>. You can approve only some of them.
-      Each approved document can be opened <b>one time</b> within ${GRANT_HOURS} hours. Nothing is shared unless you approve.</p>`,
-  }).catch((e) => console.error(e.message));
+  requestMail(req, student, types, reason);
   res.status(201).json({ ok: true });
 });
 

@@ -19,11 +19,9 @@ This **deletes everything in the local database** and creates the demo. It takes
 
 Double-click **Start TrustVault.bat** in `D:\TrustVault`. The site opens at http://localhost:5173.
 
-Open two more things beside it:
-- **Demo mailbox**: http://localhost:5173/mailbox. Every email lands here: sign-in codes, document requests, approvals.
-- **Authenticator codes**: in a second terminal, run `npm run demo:codes`. It shows each account's current 6-digit code, so you don't have to scan 13 accounts into your phone.
+In a second terminal, run `npm run demo:codes`. It shows, for every demo account, the current **Authenticator** code and the latest **email** code. The demo addresses (`@trustvault.demo`) cannot receive real mail, so their emails stay on the laptop and the codes appear here. Real addresses get real email through your Gmail.
 
-Every sign-in has three steps: **password → email code (from the mailbox) → Authenticator code (from `demo:codes`)**.
+Every sign-in has three steps: **password → email code → Authenticator code** (both codes from `demo:codes`).
 
 ## 3. What is already in the demo
 
@@ -40,7 +38,7 @@ Every sign-in has three steps: **password → email code (from the mailbox) → 
 | Mohammed Faiz | 24MX309 | Prof. Arun **already opened** his 10th and 12th |
 | Lakshmi Venkat | 24MX310 | Shared only the certificate with Prof. Arun (he asked for PAN too) |
 
-Every student has a PAN, Aadhaar, 10th marksheet, 12th marksheet and a college bonafide certificate; some also have a driving licence. All are fake **SPECIMEN** cards. Seven students already have their PAN and Aadhaar verified by faculty, and one Aadhaar was rejected ("photo is blurry").
+Every student has a PAN, Aadhaar, 10th marksheet, 12th marksheet and a college bonafide certificate; some also have a driving licence. All are fake **SPECIMEN** cards. There is no human verifier: a document is **verified automatically when every check passes**. Sneha Patel (24MX308) mistyped her Aadhaar number, so her Aadhaar is **not verified** and shows the reason. 10th and 12th marksheets are stored without checks.
 
 ## 4. Demo script (about 10 minutes)
 
@@ -50,33 +48,32 @@ Every student has a PAN, Aadhaar, 10th marksheet, 12th marksheet and a college b
 3. **Vault → My Documents**:
    - Point out the groups: identity documents (checked), **school marksheets** (10th/12th, stored as they are, no checks) and college documents.
    - Open **Automatic checks** on her Aadhaar: it was compared with her other documents ("shares MEERA KRISHNAN … with your PAN Card"), never with her account name.
-4. **Email me a ZIP**: choose **Size limit**, type `150` KB, send. Then open the demo mailbox to show the email with every file under 150 KB.
+4. **Email me a ZIP**: choose **Size limit**, type `150` KB, send. For a demo account the email and its ZIP land in `server\dev-mail\` (every file under 150 KB); for a real account they arrive in Gmail.
 5. **Privacy → Access Requests**: Dr. Priya asked for 5 documents. **Untick** two of them and press **Share 3 of 5**.
 
 **Part B: the faculty member (Dr. Priya Raman)**
 1. Sign out, then sign in with the **Faculty** tab. The Student tab would refuse this account.
-2. **Verify → Student Records**: all 10 students and Dr. Priya's access to each.
+2. **Students → Student Records**: all 10 students and Dr. Priya's access to each.
 3. Open **Meera Krishnan**: only the 3 documents she shared are listed. Press **Open once** on one: it opens with Dr. Priya's email watermarked across it. Close it, and it now says **Already opened**.
-4. Open **Lakshmi Venkat** (no access yet): tick **10th Marksheet** and **12th Marksheet**, add a reason, press **Send request**. The email appears in the mailbox for Lakshmi.
-5. **Verify → Verification Queue**: approve or reject a pending document (for example Vikram's college certificate).
+4. Open **Lakshmi Venkat** (no access yet): tick **10th Marksheet** and **12th Marksheet**, add a reason, press **Send request**. Lakshmi is notified.
+5. **Ask a whole batch**: type `23MX`. It counts the students in that batch. Tick **PAN Card** and **College Certificate**, press **Send to all students in 23MX**. Students who already have a waiting request from Dr. Priya are skipped. Each student then decides on their own **Access Requests** page.
 
 **Part C: the administrator (Admin Office)**
 1. Sign in with the **Administrator** tab.
 2. **Admin → Overview**: numbers and charts for the whole college.
 3. **Admin → Requests**: every request from both faculty and every student's answer (waiting, shared, opened, denied). Filter by **Waiting**, or search a roll number.
 4. **Admin → Users**: change someone's role, unlock an account. **Invitations**: invite a new faculty member by email.
-5. **Admin → Ledger / Audit log**: every upload, approval and view is recorded and chained.
+5. **Admin → Ledger / Audit log**: every upload, automatic decision and view is recorded and chained.
+6. The administrator manages people but **cannot open students' files**. Only a faculty member a student shared with can, once.
 
-**Part D: the public check (no sign-in)**
-1. As a student with a verified PAN (e.g. Rahul), open **QR code** on the PAN.
-2. Open the link in a private window: anyone can confirm the document is genuine without an account.
+**Part D: creating staff accounts (sign-up codes)**
+1. Open **Create account** and choose **Faculty** or **Administrator**. Instead of a roll number it asks for a code.
+2. The codes are in `server\.env` (`FACULTY_CODE`, `ADMIN_CODE`) and at the top of `DEMO-ACCOUNTS.md`. A wrong code is refused, and the faculty code cannot create an administrator.
+3. Students need no code, but only MCA roll numbers like `23MX347` are accepted.
 
-## 5. Real email on your laptop (optional)
+## 5. Email on your laptop
 
-The demo mailbox is for showing the app without internet email. To send **real** emails from your laptop, use your Gmail:
-1. Google Account → **Security** → turn on **2-Step Verification** → **App passwords** → create one named "TrustVault".
-2. Open `server\.env`, set `SMTP_USER=` to your Gmail address and `SMTP_PASS=` to the 16-letter app password, and delete the line `DEMO_MAILBOX=1`.
-3. Restart TrustVault. The demo accounts use made-up `@trustvault.demo` addresses, so real email only makes sense with real accounts.
+Real email goes out through your Gmail (`SMTP_USER` / `SMTP_PASS` in `server\.env`, using a Google **App password**). Mail to the made-up `@trustvault.demo` addresses is never sent; it is kept in `server\dev-mail\` and its codes show in `npm run demo:codes`.
 
 ## 6. Reset
 

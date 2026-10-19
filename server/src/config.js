@@ -27,6 +27,9 @@ export default {
   trustProxy: Number(env.TRUST_PROXY) || 'loopback',
   // Laptop demos: show the saved dev emails on a Mailbox page. Off unless asked for, and never with a real email service.
   demoMailbox: env.DEMO_MAILBOX === '1' && !env.SMTP_USER && !env.BREVO_API_KEY,
+  // Secret sign-up codes: only people who know them can create a Faculty or an Administrator account.
+  facultyCode: env.FACULTY_CODE || '',
+  adminCode: env.ADMIN_CODE || '',
   sessionMinutes: Number(env.SESSION_MINUTES || 60),
   // Where encrypted files, dev emails and the OCR cache live (tests point this at a temp folder).
   dataDir: env.DATA_DIR || path.join(import.meta.dirname, '..'),

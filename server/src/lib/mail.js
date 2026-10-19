@@ -21,8 +21,12 @@ const layout = (title, body, logo) => `
   <p style="color:#6b7280;font-size:12px;margin-top:24px">If this wasn't you, change your password and contact your administrator.</p>
 </div>`;
 
+// Demo accounts (@trustvault.demo) cannot receive real email, so their mail stays on this computer
+// (server/dev-mail/) and "npm run demo:codes" shows their sign-in codes.
+const demoAddress = (to) => /@trustvault\.demo$/i.test(to);
+
 export async function sendMail({ to, subject, title = subject, body, attachments = [] }) {
-  if (config.brevoKey) {
+  if (config.brevoKey && !demoAddress(to)) {
     const res = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST', headers: { 'api-key': config.brevoKey, 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(15000),
       body: JSON.stringify({ sender: { name: 'TrustVault', email: config.mailFrom }, to: [{ email: to }], subject, htmlContent: layout(title, body),
@@ -32,7 +36,7 @@ export async function sendMail({ to, subject, title = subject, body, attachments
     return;
   }
   const html = layout(title, body, logo);
-  if (transport) return transport.sendMail({ from: `"TrustVault" <${user}>`, to, subject, html, attachments: logo ? [...attachments, logo] : attachments });
+  if (transport && !demoAddress(to)) return transport.sendMail({ from: `"TrustVault" <${user}>`, to, subject, html, attachments: logo ? [...attachments, logo] : attachments });
 
   // Dev mode (no SMTP configured): "deliver" the email into server/dev-mail/ so the app still works.
   await fs.mkdir(devDir, { recursive: true });
