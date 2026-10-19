@@ -19,7 +19,7 @@ import '../landing.css';
 const STANDARDS = ['AES-256-GCM', 'SHA-256 ledger', 'TOTP · RFC 6238', 'Verhoeff checksum', 'Tesseract OCR', 'Have I Been Pwned', 'DPDP Act 2023', 'WCAG accessible'];
 const SAY = 'Encrypted before it is saved. Checked in seconds. Proven with one scan.'.split(' ');
 const HI = ['Encrypted', 'Checked', 'Proven'];
-const CHECKS = ['PAN format and checksum', 'Name matches the card', 'Text readable by OCR', 'No editing traces'];
+const CHECKS = ['PAN format and checksum', 'Number matches the card', 'Text readable by OCR', 'No editing traces'];
 const BLOCKS = [['#41', 'a3f7…9c'], ['#42', '0b9e…41'], ['#43', '44d2…e7'], ['#44', 'c6a1…0f']];
 const STEPS = [
   [UploadCloud, 'Upload', 'Add your PAN, Aadhaar, licence, marksheets or any document - photo or PDF. It is encrypted before it touches the disk.', 'c-cyan'],
@@ -250,7 +250,7 @@ export default function Landing() {
                   </div>
                 </div>
                 <div className="lp-mono flex items-center justify-between border-t border-white/25 pt-3 text-[clamp(9px,1.2vw,12px)]">
-                  <span>OCR · checksum · name match</span><span className="font-bold">96%</span>
+                  <span>OCR · checksum · number match</span><span className="font-bold">96%</span>
                 </div>
                 <span className="lp-stamp">VERIFIED</span>
               </div>

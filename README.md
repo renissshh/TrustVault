@@ -37,6 +37,8 @@ Sign in with three locks, upload and encrypt, automatic checks, and QR proof any
 
 **Stack:** React (Vite) · Tailwind CSS · shadcn/ui · Motion · Node.js + Express · MongoDB · AES-256-GCM · TOTP · Tesseract OCR
 
+**Who can sign up:** MCA students only. The roll number must look like `23MX347`: the 2-digit year the student joined, `MX`, then a 3-digit number. Other formats, future years and a second account for the same roll number are refused. Verifiers and admins join through an invitation and need no roll number.
+
 ## Screens
 
 | Dashboard | Top navigation |
@@ -268,7 +270,7 @@ content games/
 1. **Register** → show the email OTP → scan the QR with Google Authenticator → save backup codes.
 2. **Security page** → Vault PIN → *Set up* → walk through the steps (password → email code → Authenticator → new PIN).
 3. Sign out and back in → the **vault lock screen** asks for the PIN once.
-4. **Upload a PAN** card image → watch the auto-check score appear (OCR, format, name match).
+4. **Upload a PAN** card image → watch the auto-check score appear (OCR, format, number match).
 5. Try an invalid PAN like `ABCXE1234F` → rejected. Try a renamed `.exe` → rejected.
 6. **View** the document → it opens straight away (vault already unlocked) → point out the watermark with your email and time.
 7. Log in as **admin** in another browser → Verification Queue → approve.

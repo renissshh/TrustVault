@@ -75,8 +75,8 @@ async function seed() {
   };
   const upload = (c, fields, buf, name) => { const form = new FormData(); for (const [k, v] of Object.entries(fields)) form.set(k, v); form.set('file', new Blob([buf]), name); return c.call('/documents', { method: 'POST', form }); };
   const student = client(); const first = client();
-  await signUp(student, 'Rahul Sharma', STUDENT, { studentId: '22CS101' });
-  await signUp(first, 'Priya Verifier', ADMIN);
+  await signUp(student, 'Rahul Sharma', STUDENT, { studentId: '23MX101' });
+  await signUp(first, 'Priya Verifier', ADMIN, { studentId: '23MX900' });
   await mongoose.connection.db.collection('users').updateOne({ email: ADMIN }, { $set: { role: 'admin' } });
   // vault PIN needs the security check: password -> email code -> Authenticator
   let r = await student.call('/auth/step-up/password', { method: 'POST', body: { password: PASSWORD } });

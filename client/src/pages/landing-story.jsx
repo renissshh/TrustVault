@@ -8,11 +8,11 @@ import { sfx } from '@/lib/sound';
 
 const STORY = [
   [UploadCloud, 'Upload', 'Drop a photo or PDF. It is locked with AES-256 before it ever touches the disk.'],
-  [ScanLine, 'Checked', 'Number format, checksum, the text on the card, your name and signs of editing, in seconds.'],
+  [ScanLine, 'Checked', 'Number format, checksum, the text on the card, official keywords and signs of editing, in seconds.'],
   [BadgeCheck, 'Verified', 'A verifier approves it and the decision is sealed in the tamper-evident ledger.'],
   [QrCode, 'Proven', 'Anyone scans the QR code and sees it is genuine. No account, no phone calls.'],
 ];
-const CHECKS = ['Text read (OCR)', 'PAN format valid', 'Name matches', 'No editing traces', 'Sealed in ledger'];
+const CHECKS = ['Text read (OCR)', 'PAN format valid', 'Number on card', 'No editing traces', 'Sealed in ledger'];
 const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
 const easeOut = (x) => 1 - (1 - clamp(x)) ** 3;
 const HEX = '0123456789abcdef';

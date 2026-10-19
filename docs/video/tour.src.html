@@ -381,7 +381,7 @@ const CAM4 = { s: kf([[0, 1.35], [0.9, 1.35], [1.7, 1.3], [2.6, 1.3], [3.2, 1.7]
 let dh = '';
 for (let i = 0; i < 6; i++) dh += `<div class="digit" style="left:${700 + i * 89.6}px;top:470px"></div>`;
 $('digits').innerHTML = dh;
-const ROWS = [['Reading the text (OCR)', '142 chars'], ['PAN format', 'valid'], ['Holder name', 'matches'], ['Editing traces', 'none found'], ['Sealed in the ledger', 'block #45']];
+const ROWS = [['Reading the text (OCR)', '142 chars'], ['PAN format', 'valid'], ['Official keywords', 'found'], ['Editing traces', 'none found'], ['Sealed in the ledger', 'block #45']];
 $('rows').innerHTML = ROWS.map(([a, b], i) => `<div class="row" style="left:990px;top:${300 + i * 84}px"><span class="ic"></span><span>${a}</span><span class="dt">${b}</span></div>`).join('');
 const VROWS = [['Document', 'PAN card'], ['Holder', 'Rahul Sharma'], ['Number', 'AB******4F'], ['Verified by', 'Priya Verifier'], ['Integrity', 'Unchanged since upload']];
 $('vrows').innerHTML = VROWS.map(([a, b], i) => `<div class="vrow" style="top:${262 + i * 82}px"><small>${a}</small><b>${b}</b></div>`).join('');

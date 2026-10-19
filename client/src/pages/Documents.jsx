@@ -1,6 +1,6 @@
 import { useDeferredValue, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Award, Car, CreditCard, FileText, Fingerprint, GraduationCap, Upload, Camera, Mail, Eye, QrCode, Share2, Trash2, Repeat, Lightbulb, Copy, FolderLock, Search, ChevronDown, Check, Plus, CheckCircle2 } from 'lucide-react';
+import { Award, Hourglass, Car, CreditCard, FileText, Fingerprint, GraduationCap, Upload, Camera, Mail, Eye, QrCode, Share2, Trash2, Repeat, Lightbulb, Copy, FolderLock, Search, ChevronDown, Check, Plus, CheckCircle2 } from 'lucide-react';
 import { api, fmtDate, fmtDay, fmtSize, TYPE_LABELS, SECTIONS, NUMBER_FIELD } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth';
@@ -49,7 +49,6 @@ const TIPS = [
   ['editing software', 'Upload the original photo or PDF, not a copy edited in an app.'],
   ['modified after', 'Download a fresh copy of the PDF from the official source (e.g. DigiLocker) and upload that.'],
   ['unique', 'This exact file already exists in another account. Contact your administrator if that is a mistake.'],
-  ['5th letter', 'The 5th letter of a PAN is the first letter of the surname. Check the PAN number and your name.'],
 ];
 const tipsFor = (checks = []) => [...new Set(checks.filter((c) => !c.ok).map((c) => TIPS.find(([k]) => c.name.toLowerCase().includes(k))?.[1]).filter(Boolean))];
 
@@ -311,6 +310,10 @@ function DocCard({ d, open, onToggle, onAction }) {
           <CheckList checks={d.autoCheck?.checks} />
           <p className="font-mono text-[11px] break-all text-muted-foreground">Digital fingerprint (SHA-256): {d.sha256}</p>
         </>}
+        {d.status === 'pending' && d.autoCheck?.state === 'done' && (
+          <p className="flex items-start gap-2 text-xs text-muted-foreground"><Hourglass className="mt-px size-3.5 shrink-0 text-warning" />
+            Automatic checks finished. A verifier (a person) now approves or rejects it, so this step is not instant. You get a notification when it is decided.</p>
+        )}
         {d.status === 'rejected' && d.reviewNote && <ErrorText>Reason: {d.reviewNote}</ErrorText>}
         <div className="flex flex-wrap gap-2">
           <Button size="sm" onClick={() => onAction('view', d)}><Eye /> View</Button>

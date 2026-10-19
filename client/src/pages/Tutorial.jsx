@@ -10,7 +10,7 @@ import { burst } from '@/lib/burst';
 // [icon, title, steps, video chapter start or null]
 const STEPS = [
   [UserPlus, 'Create your account', [
-    <>Open <Link className="font-semibold text-primary underline" to="/register">Create account</Link>. Type your full name exactly as it is printed on your documents: the checks compare it.</>,
+    <>Open <Link className="font-semibold text-primary underline" to="/register">Create account</Link>. Type the name you want to be shown in TrustVault. Documents are checked on their own, not against this name.</>,
     'Enter your email and a strong password. Passwords that appear in known data leaks are refused.',
     'Type the 6-digit code we email you. If it is not in your inbox, look in Spam.',
     'Scan the QR code with Google Authenticator and type the 6-digit code it shows.',
@@ -91,7 +91,7 @@ export default function Tutorial() {
       <section className="grid gap-5">
         <div className="grid gap-2">
           <h2 className="text-3xl">Try it with demo documents</h2>
-          <p className="max-w-2xl text-muted-foreground">These cards are fake and marked SPECIMEN. Upload them with the numbers shown. They are made out to <b className="text-foreground">Rahul Sharma</b>: register with that name if you want the name check to pass.</p>
+          <p className="max-w-2xl text-muted-foreground">These cards are fake and marked SPECIMEN. Upload them with the numbers shown. Any account can use them.</p>
         </div>
         <div className="grid gap-4 md:grid-cols-3">
           {DEMO.map(([type, number, files]) => (

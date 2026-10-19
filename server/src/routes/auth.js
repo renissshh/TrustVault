@@ -14,7 +14,7 @@ import { sha256, encryptText, decryptText, removeFile } from '../lib/crypto.js';
 import { addBlock } from '../lib/ledger.js';
 import { sendMail } from '../lib/mail.js';
 import { isPwned, isDisposableEmail, sendOtp, checkOtp } from '../lib/security.js';
-import { httpError, maskEmail, publicUser, audit, esc } from '../lib/util.js';
+import { httpError, maskEmail, publicUser, audit, esc, rollNumber } from '../lib/util.js';
 import { requireAuth, startSession, requireStepUp, checkPin, STEP_UP_MINUTES, REAUTH_COOKIE } from '../middleware/auth.js';
 
 authenticator.options = { window: 1 }; // accept the previous/next 30-second code for clock drift
@@ -91,11 +91,14 @@ r.post('/register', async (req, res) => {
   if (await isPwned(password)) throw httpError(400, 'This password appeared in a known data breach. Please choose a different one.');
   if (await isDisposableEmail(email)) throw httpError(400, 'Temporary / disposable email addresses are not allowed. Use your real email.');
   if (await User.exists({ email: email.toLowerCase() })) throw httpError(409, 'An account with this email already exists.');
+  // Students must give a valid MCA roll number, one account per number. Invited staff (verifiers, admins) don't need one.
+  const roll = invite ? undefined : rollNumber(studentId);
+  if (roll && await User.exists({ studentId: roll })) throw httpError(409, `Roll number ${roll} already has an account. Contact your administrator if that is not you.`);
   // claim the invitation first (atomically), so one link can never create two accounts
   if (invite && !(await Invite.findOneAndUpdate({ _id: invite._id, usedAt: null, revoked: false }, { usedAt: new Date() }))) {
     throw httpError(400, 'This invitation was already used.');
   }
-  const user = await User.create({ name, email, studentId, passwordHash: await bcrypt.hash(password, 12), consentAt: new Date(), ...(invite && { role: invite.role }) })
+  const user = await User.create({ name, email, studentId: roll, passwordHash: await bcrypt.hash(password, 12), consentAt: new Date(), ...(invite && { role: invite.role }) })
     .catch(async (err) => { // the account was not created: hand the invitation back so the link still works
       if (invite) await Invite.updateOne({ _id: invite._id }, { usedAt: null });
       throw err;
@@ -239,7 +242,11 @@ r.patch('/profile', async (req, res) => {
   const name = String(req.body?.name ?? '').trim();
   if (name.length < 2) throw httpError(400, 'Enter your full name.');
   const before = req.user.name;
-  Object.assign(req.user, { name, studentId: String(req.body.studentId ?? '').trim() || undefined });
+  // students always keep a valid roll number; staff may leave it empty
+  const given = String(req.body.studentId ?? '').trim();
+  const roll = req.user.role === 'student' || given ? rollNumber(given) : undefined;
+  if (roll && roll !== req.user.studentId && await User.exists({ studentId: roll, _id: { $ne: req.user._id } })) throw httpError(409, `Roll number ${roll} already has an account.`);
+  Object.assign(req.user, { name, studentId: roll });
   await req.user.save();
   await audit(req, 'profile.update', before === name ? 'Roll number updated' : `Name: ${before} -> ${name}`);
   res.json({ user: publicUser(req.user) });

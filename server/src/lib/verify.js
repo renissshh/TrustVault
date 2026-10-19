@@ -92,10 +92,11 @@ async function originalityChecks(buf, mime, add) {
 }
 
 // `sources` = the original uploaded file(s): [front] or [front, back].
-export async function runChecks({ type, number, ownerName, sources, duplicate }) {
+// Checks look only at the document itself. The TrustVault account name is never compared: people may sign up
+// under any display name, so a mismatch says nothing about whether the document is genuine.
+export async function runChecks({ type, number, sources, duplicate }) {
   const checks = [];
   const add = (name, ok, detail = '') => checks.push({ name, ok, detail });
-  const nameWords = ownerName.toUpperCase().split(/\s+/).filter((w) => w.length > 1);
 
   add('File is unique (not uploaded by another account)', !duplicate);
   for (const [i, { buf, mime }] of sources.entries()) {
@@ -106,7 +107,6 @@ export async function runChecks({ type, number, ownerName, sources, duplicate })
 
   if (type === 'pan') {
     add('PAN format is valid (ABCDE1234F)', numberIsValid('pan', number));
-    add('PAN 5th letter matches holder name initial', nameWords.some((w) => w[0] === number[4]), `5th letter is "${number[4]}"`);
   }
   if (type === 'aadhaar') add('Aadhaar format + Verhoeff checksum valid', numberIsValid('aadhaar', number));
   if (type === 'license') add('Licence number valid (state code, RTO, issue year)', numberIsValid('license', number), number.slice(0, 2));
@@ -125,8 +125,6 @@ export async function runChecks({ type, number, ownerName, sources, duplicate })
   // "Other" documents only get originality checks - nothing official to match against.
   if (type !== 'other') {
     if (number) add('Entered number appears in the document', flat.includes(number));
-    const firstName = nameWords.find((w) => w.length > 2);
-    if (firstName) add('Holder name appears in the document', text.includes(firstName), `looked for "${firstName}"`);
     if (KEYWORDS[type]) add('Official keywords present', KEYWORDS[type].some((k) => text.includes(k)));
   }
 

@@ -197,11 +197,15 @@ export default function Login({ mode = 'login' }) {
         {step === 'register' && <>
           {import.meta.env.VITE_DEMO && <Callout className="text-xs"><b>Demo site.</b> Use it with sample documents only. Do not upload your real ID.</Callout>}
           {invite && <Callout tone="info" className="flex items-start gap-2"><MailCheck className="mt-0.5 size-4 shrink-0" /><span><b>{invite.invitedBy ?? 'An admin'}</b> invited you to join as {invite.role === 'admin' ? 'an' : 'a'} <b>{invite.role}</b>.</span></Callout>}
-          <Field label={invite ? 'Full name' : 'Full name (exactly as on your documents)'}><Input name="name" required autoFocus autoComplete="name" /></Field>
+          <Field label="Name"><Input name="name" required autoFocus autoComplete="name" /></Field>
           {invite
             ? <Field key="invited" label="Email" hint="The invitation works only for this address."><Input name="email" type="email" required readOnly value={invite.email} className="opacity-80" /></Field>
             : <Field key="open" label="Email"><Input name="email" type="email" required autoComplete="email" /></Field>}
-          {!invite && <Field label="Student ID / Roll number"><Input name="studentId" placeholder="e.g. 22CS101" /></Field>}
+          {!invite && (
+            <Field label="MCA roll number" hint="MCA students only: the 2-digit year you joined, MX, then your 3-digit number.">
+              <Input name="studentId" required placeholder="e.g. 23MX347" pattern="\s*\d{2}\s*-?\s*[Mm][Xx]\s*-?\s*\d{3}\s*" title="Like 23MX347" autoComplete="off" className="font-mono uppercase placeholder:normal-case" maxLength={12} />
+            </Field>
+          )}
           <Field label="Password" hint="8+ characters with letters and numbers. Passwords found in data breaches are blocked.">
             <PasswordInput required minLength={8} strength autoComplete="new-password" />
           </Field>

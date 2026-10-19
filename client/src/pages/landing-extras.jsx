@@ -41,7 +41,7 @@ export function VaultIntro() {
 const STEPS = [
   ['Reading the text (OCR)', '93 characters', null],
   ['Checking the PAN format', 'valid', 'pan'],
-  ['Matching the holder name', 'matches', 'name'],
+  ['Finding official keywords', 'found', null],
   ['Looking for editing traces', 'none found', null],
   ['Sealing it in the ledger', 'block #45', null],
 ];

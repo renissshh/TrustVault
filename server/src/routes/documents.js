@@ -27,8 +27,8 @@ function readNumber(type, raw) {
 const initialStatus = (type) => (type === 'other' ? 'stored' : 'pending');
 
 // OCR can take a few seconds, so it runs after we've replied. The page polls for the result.
-function checkInBackground(doc, sources, number, ownerName, duplicate) {
-  runChecks({ type: doc.type, number, ownerName, sources, duplicate })
+function checkInBackground(doc, sources, number, duplicate) {
+  runChecks({ type: doc.type, number, sources, duplicate })
     .then((autoCheck) => doc.updateOne({ autoCheck }))
     .catch((e) => {
       console.error('Auto-check failed:', e);
@@ -78,7 +78,7 @@ r.post('/', upload.fields([{ name: 'file', maxCount: 1 }, { name: 'back', maxCou
   await addBlock('upload', doc._id, hash);
   await audit(req, 'document.upload', `${doc.title} (${TYPE_LABELS[type]}${back ? ', front + back' : ''})`);
   res.status(201).json(docView(doc));
-  checkInBackground(doc, sources, number, req.user.name, duplicate);
+  checkInBackground(doc, sources, number, duplicate);
 });
 
 // Re-file a document under the right type (e.g. an "Other" upload that is really a PAN card).
@@ -101,7 +101,7 @@ r.patch('/:id/type', async (req, res) => {
   await audit(req, 'document.retype', `${doc.title}: ${from} -> ${TYPE_LABELS[type]}`);
   res.json(docView(doc));
   const duplicate = await Document.exists({ sha256: doc.sha256, _id: { $ne: doc._id } });
-  checkInBackground(doc, [{ buf, mime: doc.mime }], number, req.user.name, duplicate);
+  checkInBackground(doc, [{ buf, mime: doc.mime }], number, duplicate);
 });
 
 // Owner, or staff with the student's consent (logged + the student is emailed). Needs the viewer's vault unlocked.

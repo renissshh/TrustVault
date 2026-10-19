@@ -148,8 +148,15 @@ try {
     else ok(r.status === 400 && /disposable/i.test(r.data.error), 'disposable email blocked (Disify)');
   } else skip('disposable email blocked (Disify)', 'disify.com not reachable');
 
-  r = await student.call('/auth/register', { method: 'POST', body: { name: 'Rahul Sharma', email: 'rahul@demo.test', studentId: '22CS101', password: PASSWORD, consent: true } });
+  r = await client().call('/auth/register', { method: 'POST', body: { name: 'Rahul Sharma', email: 'other@demo.test', studentId: '22CS101', password: PASSWORD, consent: true } });
+  ok(r.status === 400 && /MCA roll number/.test(r.data.error), 'sign-up refused without an MCA roll number (22CS101)');
+  r = await client().call('/auth/register', { method: 'POST', body: { name: 'Rahul Sharma', email: 'other@demo.test', studentId: '99MX101', password: PASSWORD, consent: true } });
+  ok(r.status === 400 && /future/.test(r.data.error), 'sign-up refused with a roll number from a future year');
+  r = await student.call('/auth/register', { method: 'POST', body: { name: 'Rahul Sharma', email: 'rahul@demo.test', studentId: '23mx 101', password: PASSWORD, consent: true } });
   ok(r.status === 201 && r.data.next === 'verify-email', 'student registered, email code sent');
+  ok((await db.collection('users').findOne({ email: 'rahul@demo.test' }))?.studentId === '23MX101', 'roll number saved cleaned up (23MX101)');
+  const copy = await client().call('/auth/register', { method: 'POST', body: { name: 'Copy Cat', email: 'copy@demo.test', studentId: '23MX101', password: PASSWORD, consent: true } });
+  ok(copy.status === 409 && /already has an account/.test(copy.data.error), 'second account with the same roll number refused');
   r = await student.call('/auth/verify-email', { method: 'POST', body: { ticket: r.data.ticket, code: '000000' } });
   ok(r.status === 400, 'wrong email code rejected');
   r = await student.call('/auth/login/resend', { method: 'POST', body: { ticket: 'forged' } });
@@ -257,7 +264,7 @@ try {
   ok(r.status === 403, 'student blocked from student records');
 
   // ===== Admin + verification =====
-  await signUp(admin, 'Priya Admin', 'admin@demo.test');
+  await signUp(admin, 'Priya Admin', 'admin@demo.test', { studentId: '23MX900' });
   await db.collection('users').updateOne({ email: 'admin@demo.test' }, { $set: { role: 'admin' } });
   r = await admin.call('/auth/vault-pin', { method: 'POST', body: { pin: '135790' } });
   ok(r.data.user?.hasVaultPin, 'a full sign-in (password + email + Authenticator) counts as the security check');
@@ -274,7 +281,7 @@ try {
   // ===== Consent before record access =====
   r = await admin.call(`/documents/${panId}/view`, { method: 'POST', body: { pin: '135790' } });
   ok(r.status === 403, 'verified record is closed without the student\'s consent');
-  const sid = (await admin.call('/records/students?q=22CS')).data[0]?.id;
+  const sid = (await admin.call('/records/students?q=23MX1')).data[0]?.id;
   r = await admin.call(`/records/students/${sid}`);
   ok(r.data.documents.length === 0 && !r.data.access, 'record detail hidden before consent');
   r = await admin.call(`/records/students/${sid}/request`, { method: 'POST', body: { reason: 'Placement document check' } });
@@ -390,7 +397,7 @@ try {
   ok(newBackup?.length === 8, 'new Authenticator + new backup codes');
 
   // ===== Profile & delete account =====
-  r = await student.call('/auth/profile', { method: 'PATCH', body: { name: 'Rahul K Sharma', studentId: '22CS101' } });
+  r = await student.call('/auth/profile', { method: 'PATCH', body: { name: 'Rahul K Sharma', studentId: '23MX101' } });
   ok(r.data.user?.name === 'Rahul K Sharma', 'profile name updated');
   const fake = new FormData();
   fake.append('photo', new Blob(['plain text, not a picture'], { type: 'image/png' }), 'fake.png');

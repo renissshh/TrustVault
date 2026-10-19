@@ -182,7 +182,9 @@ function ProfileEdit({ onClose }) {
         <Field label="Full name" hint="Must match your documents exactly - the automatic checks compare them.">
           <Input name="name" defaultValue={user.name} required minLength={2} autoComplete="name" autoFocus />
         </Field>
-        <Field label="Student ID / Roll number"><Input name="studentId" defaultValue={user.studentId ?? ''} /></Field>
+        <Field label="MCA roll number" hint="MCA students only: the 2-digit year you joined, MX, then your 3-digit number.">
+          <Input name="studentId" defaultValue={user.studentId ?? ''} required={user.role === 'student'} placeholder="e.g. 23MX347" autoComplete="off" className="font-mono uppercase placeholder:normal-case" maxLength={12} />
+        </Field>
         <ErrorText>{error}</ErrorText>
         <Button>Save</Button>
       </form>
