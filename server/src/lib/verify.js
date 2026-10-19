@@ -92,9 +92,22 @@ async function originalityChecks(buf, mime, add) {
 }
 
 // `sources` = the original uploaded file(s): [front] or [front, back].
-// Checks look only at the document itself. The TrustVault account name is never compared: people may sign up
-// under any display name, so a mismatch says nothing about whether the document is genuine.
-export async function runChecks({ type, number, sources, duplicate }) {
+// Printed on most cards, so they say nothing about whose card it is.
+const COMMON = new Set(`GOVERNMENT INDIA INCOME TAX DEPARTMENT PERMANENT ACCOUNT NUMBER CARD NAME FATHER FATHERS MOTHER DATE BIRTH DOB
+  MALE FEMALE AADHAAR UNIQUE IDENTIFICATION AUTHORITY ENROLMENT DRIVING LICENCE LICENSE UNION TRANSPORT VALID TILL ADDRESS
+  DEMO SAMPLE SPECIMEN NOT REAL DOCUMENT CLASS VEHICLE ISSUE ISSUED HOLDER SIGNATURE GOVT THE AND FOR WITH FROM HELP
+  MOTOR GEAR LIGHT BLOOD GROUP MARKS STATEMENT ROLL CERTIFICATE UNIVERSITY BOARD SEMESTER RESULT GRADE COLLEGE
+  THIS THAT CERTIFY CERTIFIED HAS HAVE YEAR YEARS PASSED EXAMINATION REGISTER NUMBER OFFICE PIN CODE STATE CITY GENDER
+  TOTAL PROGRAMME DEPARTMENT COMPUTER APPLICATIONS`.split(/\s+/));
+// Distinctive words (names, places) read from a document.
+// Same word, allowing one misread letter in longer words (OCR often reads I as L, O as 0...).
+const near = (a, b) => a === b || (a.length >= 4 && a.length === b.length && [...a].filter((c, i) => c !== b[i]).length === 1);
+const wordsOf = (text) => [...new Set((text.match(/[A-Z]{3,}/g) ?? []).filter((w) => !COMMON.has(w)))].slice(0, 400);
+
+// Checks look only at documents. The TrustVault account name is never compared: people may sign up under any
+// display name. Instead a document is compared with the owner's OTHER documents (`others`): a PAN, an Aadhaar and a
+// licence of the same person share the holder's name.
+export async function runChecks({ type, number, sources, duplicate, others = [] }) {
   const checks = [];
   const add = (name, ok, detail = '') => checks.push({ name, ok, detail });
 
@@ -128,11 +141,20 @@ export async function runChecks({ type, number, sources, duplicate }) {
     if (KEYWORDS[type]) add('Official keywords present', KEYWORDS[type].some((k) => text.includes(k)));
   }
 
+  const words = wordsOf(text);
+  if (type !== 'other' && others.length && words.length) {
+    const mine = new Set(words);
+    const best = others.map((o) => ({ ...o, shared: o.words.filter((w) => mine.has(w) || words.some((m) => near(m, w))) })).sort((a, b) => b.shared.length - a.shared.length)[0];
+    add('Matches your other documents', best.shared.length >= 2,
+      best.shared.length ? `shares ${best.shared.slice(0, 4).join(' ')} with your ${best.label}` : 'no name or detail in common with your other documents');
+  }
+
   const detected = detectType(text);
   return {
     state: 'done',
     score: Math.round((checks.filter((c) => c.ok).length / checks.length) * 100),
     checks,
     detectedType: detected && detected !== type ? detected : undefined,
+    words,
   };
 }

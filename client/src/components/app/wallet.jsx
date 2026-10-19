@@ -7,7 +7,7 @@ import { api, fmtDay, TYPE_LABELS } from '@/lib/api';
 import { sfx } from '@/lib/sound';
 import { cn } from '@/lib/utils';
 
-const ISSUER = { pan: 'Income Tax Department', aadhaar: 'Aadhaar · UIDAI', license: 'Driving Licence', marksheet: 'Academic Record', certificate: 'Certificate', other: 'Personal Document' };
+const ISSUER = { pan: 'Income Tax Department', aadhaar: 'Aadhaar · UIDAI', license: 'Driving Licence', class10: 'School Board · 10th', class12: 'School Board · 12th', marksheet: 'Academic Record', certificate: 'Certificate', other: 'Personal Document' };
 const STATUS = { verified: [ShieldCheck, 'Verified'], pending: [Clock, 'Pending'], rejected: [XCircle, 'Rejected'], stored: [FolderLock, 'Stored'] };
 
 function Back({ doc, show }) {
@@ -24,7 +24,7 @@ function Back({ doc, show }) {
         <div className="grid gap-2">
           <b className="text-lg">{STATUS[doc.status][1]}</b>
           <small>{doc.status === 'pending' ? 'An authorized verifier will review it soon.' : doc.status === 'rejected' ? (doc.reviewNote || 'Upload a clearer copy.') : 'Kept safely - not sent for official verification.'}</small>
-          {doc.autoCheck?.score != null && <span className="font-mono text-xs">Auto-check {doc.autoCheck.score}%</span>}
+          {doc.autoCheck?.score != null && <span className="font-mono text-xs">Automatic checks {doc.autoCheck.score}% passed</span>}
         </div>
       )}
     </div>

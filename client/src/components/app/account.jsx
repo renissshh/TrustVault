@@ -6,7 +6,7 @@ import {
   Camera, Trash2, ChevronRight, ChevronDown, ShieldCheck, History, FolderLock, Share2, KeyRound, ScanSearch, FileText, LogOut,
   RotateCw, ZoomIn, BadgeCheck, Lock, Sun, Moon, Bell, XCircle, Eye, Link2, LogIn, ShieldAlert, UploadCloud, ArrowRight,
 } from 'lucide-react';
-import { api, cleanDetail } from '@/lib/api';
+import { api, cleanDetail, ROLE_LABELS } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { applyTheme, currentTheme, store } from '@/lib/theme';
 import { cn } from '@/lib/utils';
@@ -225,7 +225,7 @@ export function AccountMenu() {
           <div className="grid min-w-0 gap-1">
             <b className="flex items-center gap-1 truncate">{user.name} {verified > 0 && <BadgeCheck className="size-4 shrink-0" aria-label="Has verified documents" />}</b>
             <span className="truncate text-xs">{user.email}</span>
-            <span className="flex flex-wrap gap-1"><Badge variant="ink">{user.role}</Badge>{user.studentId && <Badge variant="outline">Roll {user.studentId}</Badge>}</span>
+            <span className="flex flex-wrap gap-1"><Badge variant="ink">{ROLE_LABELS[user.role] ?? user.role}</Badge>{user.studentId && <Badge variant="outline">Roll {user.studentId}</Badge>}</span>
           </div>
         </div>
 

@@ -7,7 +7,9 @@
     "start": "node --env-file-if-exists=.env src/index.js",
     "make-admin": "node --env-file-if-exists=.env src/make-admin.js",
     "test": "node --test",
-    "test:e2e": "node e2e/run.mjs"
+    "test:e2e": "node e2e/run.mjs",
+    "demo": "node --env-file-if-exists=.env scripts/demo.mjs",
+    "demo:codes": "node scripts/demo-codes.mjs"
   },
   "dependencies": {
     "archiver": "^7.0.1",

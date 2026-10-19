@@ -94,7 +94,7 @@ async function seed() {
   await admin.call('/auth/login/totp', { method: 'POST', body: { ticket: r.data.ticket, code: await totp(secrets[ADMIN]) } });
   await admin.call(`/admin/documents/${docs.find((d) => d.type === 'pan').id}/review`, { method: 'POST', body: { decision: 'verified', note: '' } });
   const people = (await admin.call('/records/students?q=')).data;
-  await admin.call(`/records/students/${people[0].id}/request`, { method: 'POST', body: { reason: 'Placement document check for campus drive' } });
+  await admin.call(`/records/students/${people[0].id}/request`, { method: 'POST', body: { types: ['pan', 'class10', 'class12'], reason: 'Placement document check for campus drive' } });
   await student.call('/auth/vault/unlock', { method: 'POST', body: { pin: PIN } });
   ok(docs.length === 3 && (await admin.call('/auth/me')).data.user?.role === 'admin', 'demo data seeded (student with 3 documents, admin)');
   return { secrets, studentCookies: student.jar, adminCookies: admin.jar };
@@ -129,8 +129,8 @@ async function browser() {
 }
 
 // ---------- 4. every page, every role, both themes, three sizes ----------
-const PUBLIC = ['/welcome', '/login', '/register', '/verify', '/privacy', '/tutorial', '/no-such-page'];
-const STUDENT_PAGES = ['/', '/documents', '/documents?upload=aadhaar', '/access', '/shares', '/activity', '/security'];
+const PUBLIC = ['/welcome', '/login', '/login?as=faculty', '/login?as=admin', '/register', '/verify', '/privacy', '/tutorial', '/no-such-page'];
+const STUDENT_PAGES = ['/', '/documents', '/documents?upload=aadhaar', '/documents?upload=class10', '/access', '/shares', '/activity', '/security'];
 const ADMIN_PAGES = ['/', '/documents', '/review', '/records', '/shares', '/activity', '/security', '/admin'];
 const SIZES = [[1900, 940], [1366, 700], [390, 844]];
 const wait = (ms) => `await new Promise((r) => setTimeout(r, ${ms}));`;
@@ -142,7 +142,7 @@ const CLICKS = {
   'activity filter changes': ['/activity', `(async () => { const b = [...document.querySelectorAll('[role=group] button')].find((x) => x.textContent.includes('Documents')); b?.click(); ${wait(400)} return b?.getAttribute('aria-pressed') === 'true'; })()`],
 };
 const ADMIN_CLICKS = {
-  'admin tabs all show content': ['/admin', `(async () => { for (const t of ['Users', 'Invitations', 'Ledger', 'Audit log']) { [...document.querySelectorAll('button')].find((x) => x.textContent.trim() === t)?.click(); ${wait(700)} if (!document.querySelector('table, form')) return false; } return true; })()`],
+  'admin tabs all show content': ['/admin', `(async () => { for (const t of ['Users', 'Requests', 'Invitations', 'Ledger', 'Audit log']) { [...document.querySelectorAll('button')].find((x) => x.textContent.trim() === t)?.click(); ${wait(700)} if (!document.querySelector('table, form')) return false; } return true; })()`],
 };
 const GUEST_CLICKS = {
   'landing demo runs to VERIFIED': ['/welcome', `(async () => { [...document.querySelectorAll('button')].find((x) => x.textContent.includes('Scan the sample'))?.click(); ${wait(5600)} return !!document.querySelector('.demo[data-state=done] .demo-stamp'); })()`],

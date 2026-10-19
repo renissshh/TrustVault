@@ -6,3 +6,7 @@ server/storage/
 server/dev-mail/
 server/.ocr-cache/
 *.log
+
+# laptop demo accounts (passwords and Authenticator keys)
+DEMO-ACCOUNTS.md
+demo-accounts.json

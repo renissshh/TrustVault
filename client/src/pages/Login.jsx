@@ -10,7 +10,7 @@ import { Brand } from '@/components/app/brand';
 import { ThemeToggle } from '@/components/app/account';
 import { Aurora, Words, ease } from '@/lib/fx';
 import { ParticleShield } from '@/lib/motion-kit';
-import { ErrorText, BackupCodes, OtpInput, PasswordInput, Field, CheckRow, Callout, toast, ago } from '@/components/app/kit';
+import { ErrorText, BackupCodes, OtpInput, PasswordInput, Field, CheckRow, Callout, Segmented, toast, ago } from '@/components/app/kit';
 import { StepTracker, closeDoors, getKnown, setKnown, touchKnown, clearKnown, initialsOf } from '@/components/app/signin-extras';
 
 const PROOF = [[Lock, 'AES-256 encrypted vault'], [Smartphone, 'Google Authenticator 2FA'], [Link2, 'Tamper-evident hash ledger'], [ScanLine, 'QR verification for anyone']];
@@ -81,6 +81,10 @@ export default function Login({ mode = 'login' }) {
   const [known, setKnownState] = useState(getKnown); // remembered on a trusted device
   const [invite, setInvite] = useState(null); // { token, email, role, invitedBy } from an invitation link
   const [params] = useSearchParams();
+  // Separate sign-in for each kind of account; the server refuses an account that doesn't match the tab.
+  const [mailbox, setMailbox] = useState(false);
+  useEffect(() => { api('/dev/mailbox').then((r) => setMailbox(r.enabled), () => {}); }, []);
+  const [as, setAs] = useState(['student', 'faculty', 'admin'].includes(params.get('as')) ? params.get('as') : 'student');
   const { refresh } = useAuth();
   const navigate = useNavigate();
 
@@ -171,7 +175,10 @@ export default function Login({ mode = 'login' }) {
       <form onSubmit={submit}>
         <StepTracker steps={steps} at={at} />
         <motion.div key={step} className="mt-6 grid gap-4" initial={{ opacity: 0, x: 28, filter: 'blur(6px)' }} animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }} transition={{ duration: 0.45, ease }}>
-        <h2 className="text-3xl leading-none">{welcome ? 'Welcome back' : TITLES[step]}</h2>
+        {step === 'login' && <Segmented label="Sign in as" value={as} onChange={(v) => { setAs(v); setError(''); }}
+          options={[['student', 'Student'], ['faculty', 'Faculty'], ['admin', 'Administrator']]} />}
+        <h2 className="text-3xl leading-none">{welcome ? 'Welcome back' : step === 'login' ? { student: 'Student sign-in', faculty: 'Faculty sign-in', admin: 'Administrator sign-in' }[as] : TITLES[step]}</h2>
+        {step === 'login' && <input type="hidden" name="as" value={as} />}
 
         {step === 'login' && (welcome ? <>
           <div className="wb">
@@ -266,7 +273,10 @@ export default function Login({ mode = 'login' }) {
         <Button size="lg" disabled={busy}>{busy ? 'Please wait…' : SUBMIT[step] ?? 'Verify'}</Button>
 
         <div className="grid justify-items-center gap-2 text-sm">
-          {step === 'login' && <p>New here? <Link to="/register" className="font-semibold underline underline-offset-4">Create an account</Link></p>}
+          {mailbox && <p><a href="/mailbox" target="_blank" rel="noreferrer" className="font-semibold text-primary underline underline-offset-4">Open the demo mailbox</a> to read sign-in codes.</p>}
+          {step === 'login' && (as === 'student'
+            ? <p>New here? <Link to="/register" className="font-semibold underline underline-offset-4">Create an account</Link></p>
+            : <p className="text-muted-foreground">{as === 'faculty' ? 'Faculty' : 'Administrators'} join through an invitation from the administrator.</p>)}
           {step === 'register' && <p>Have an account? <Link to="/login" className="font-semibold underline underline-offset-4">Sign in</Link></p>}
           {(step === 'forgot' || step === 'reset') && <Button type="button" variant="link" onClick={() => go('login')}>← Back to sign in</Button>}
           <Link to="/verify" className="text-xs text-muted-foreground underline underline-offset-4 transition-colors hover:text-primary">Verify a document without signing in →</Link>

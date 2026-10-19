@@ -6,7 +6,7 @@ import {
   LayoutDashboard, FolderLock, Link2, History, ShieldCheck, ClipboardCheck, GraduationCap, Settings, ScanSearch, LogOut, KeyRound, Clock, Ellipsis,
   ArrowUpRight, ChevronDown, Upload,
 } from 'lucide-react';
-import { api } from '@/lib/api';
+import { api, ROLE_LABELS } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 import { ease, spring, useSpotlight } from '@/lib/fx';
@@ -86,7 +86,7 @@ const SECTIONS = [
     { to: '/shares', label: 'Shared Links', icon: Link2, desc: 'Time-limited links you sent' },
   ], feature: { to: '/documents?upload=pan', icon: Upload, title: 'Upload a document', text: 'PAN, Aadhaar, licence, marksheet - encrypted in seconds.' } },
   { label: 'Privacy', blurb: 'You decide who sees what.', items: [
-    { to: '/access', label: 'Access Requests', icon: KeyRound, desc: 'Approve or deny verifiers', roles: ['student'] },
+    { to: '/access', label: 'Access Requests', icon: KeyRound, desc: 'Share documents with faculty', roles: ['student'] },
     { to: '/activity', label: 'Activity Log', icon: History, desc: 'Every sign-in, view and change' },
     { to: '/security', label: 'Security', icon: ShieldCheck, desc: 'PIN, password, devices, score' },
   ], feature: { to: '/security', icon: ShieldCheck, title: 'Check your security score', text: 'See which protections are on. Aim for 100.' } },
@@ -204,7 +204,7 @@ export function Layout() {
               <SoundToggle className="hidden sm:inline-flex" />
               <ThemeToggle />
               <NotificationCenter />
-              <Badge variant="violet" className="hidden h-8 px-2.5 xl:inline-flex">{user.role}</Badge>
+              <Badge variant="violet" className="hidden h-8 px-2.5 xl:inline-flex">{ROLE_LABELS[user.role] ?? user.role}</Badge>
               <AccountMenu />
             </div>
           </div>

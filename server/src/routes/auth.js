@@ -136,6 +136,13 @@ r.post('/login', async (req, res) => {
     }
     throw httpError(401, 'Wrong email or password.');
   }
+  // Separate sign-in for students, faculty and administrators: the account must match the chosen sign-in.
+  const ROLES = { student: ['student'], faculty: ['verifier'], admin: ['admin'] };
+  const as = String(req.body.as ?? '');
+  if (ROLES[as] && !ROLES[as].includes(user.role)) {
+    const kind = { student: 'student', verifier: 'faculty', admin: 'administrator' }[user.role];
+    throw httpError(403, `This is a ${kind} account. Use the ${kind[0].toUpperCase() + kind.slice(1)} sign-in tab.`);
+  }
   // A device trusted in the last 30 days skips the email code: password + Authenticator is still 2 factors.
   if (user.emailVerified && user.totpEnabled && isTrustedDevice(req, user)) return res.json({ ...(await totpStep(user)), trusted: true });
   res.json(await otpStep(user, user.emailVerified ? 'otp' : 'verify'));

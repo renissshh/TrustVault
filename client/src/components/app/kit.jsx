@@ -357,6 +357,7 @@ export const FileFrame = ({ url, pdf, title, children }) => (
 export function ScoreBar({ check }) {
   if (!check || check.state === 'running') return <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"><Loader2 className="size-3 animate-spin" /> Checking…</span>;
   if (check.state === 'failed') return <span className="text-xs text-muted-foreground">Check failed</span>;
+  if (check.state === 'skipped') return <span className="text-xs text-muted-foreground">Not checked (stored as it is)</span>;
   const tone = check.score >= 80 ? 'bg-success' : check.score >= 50 ? 'bg-amber-400' : 'bg-destructive';
   return (
     <span className="inline-flex items-center gap-2 font-mono text-xs font-semibold" title="Automatic verification score">

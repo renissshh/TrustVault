@@ -64,6 +64,30 @@ export async function compress(buf, mime, level) {
   return { buf, ext: EXT[mime] };
 }
 
+// Shrink a file to fit under `limit` bytes (e.g. a form that says "max 200 KB").
+// Photos: lower JPEG quality first, then smaller dimensions. PDFs can only be tidied, so they may stay larger
+// - the caller reports that. Returns { buf, ext, fits }.
+export async function compressTo(buf, mime, limit) {
+  if (buf.length <= limit) return { buf, ext: EXT[mime], fits: true };
+  if (mime.startsWith('image/')) {
+    const img = sharp(buf).rotate().flatten({ background: '#ffffff' });
+    const { width = 2000, height = 2000 } = await img.metadata();
+    let max = Math.min(2400, Math.max(width, height));
+    let out = buf;
+    while (max >= 320) {
+      for (const q of [82, 70, 58, 46, 36]) {
+        out = await sharp(buf).rotate().resize(max, max, { fit: 'inside', withoutEnlargement: true }).flatten({ background: '#ffffff' })
+          .jpeg({ quality: q, mozjpeg: true }).toBuffer();
+        if (out.length <= limit) return { buf: out, ext: 'jpg', fits: true };
+      }
+      max = Math.round(max * 0.75);
+    }
+    return { buf: out, ext: 'jpg', fits: false };
+  }
+  const { buf: out, ext } = await compress(buf, mime, 'small');
+  return { buf: out, ext, fits: out.length <= limit };
+}
+
 // Front + back of a card become one file: two PDFs -> one PDF, two photos -> one tall image.
 export async function mergeSides(front, frontMime, back, backMime) {
   if (frontMime === 'application/pdf' && backMime === 'application/pdf') {

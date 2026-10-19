@@ -31,6 +31,7 @@ const PublicVerify = lazy(() => import('./pages/PublicVerify'));
 const SharedView = lazy(() => import('./pages/SharedView'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const Tutorial = lazy(() => import('./pages/Tutorial'));
+const Mailbox = lazy(() => import('./pages/Mailbox'));
 
 applyTheme(initialTheme()); // before first paint: no flash of the wrong theme
 
@@ -85,6 +86,7 @@ const router = createBrowserRouter([{
     { path: '/welcome', element: <Landing /> }, // no short title: search results show the full name
     { path: '/privacy', element: <Privacy />, handle: { title: 'Privacy policy' } },
     { path: '/tutorial', element: <Tutorial />, handle: { title: 'Tutorial' } },
+    { path: '/mailbox', element: <Mailbox />, handle: { title: 'Demo mailbox' } },
     { path: '/login', element: <Login mode="login" />, handle: { title: 'Sign in' } },
     { path: '/register', element: <Login mode="register" />, handle: { title: 'Create account' } },
     { path: '/reauth', element: <Reauth />, handle: { title: 'Confirm it is you' } },

@@ -1,6 +1,6 @@
 import { useDeferredValue, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Award, Hourglass, Car, CreditCard, FileText, Fingerprint, GraduationCap, Upload, Camera, Mail, Eye, QrCode, Share2, Trash2, Repeat, Lightbulb, Copy, FolderLock, Search, ChevronDown, Check, Plus, CheckCircle2 } from 'lucide-react';
+import { Award, Hourglass, School, BookOpen, Car, CreditCard, FileText, Fingerprint, GraduationCap, Upload, Camera, Mail, Eye, QrCode, Share2, Trash2, Repeat, Lightbulb, Copy, FolderLock, Search, ChevronDown, Check, Plus, CheckCircle2 } from 'lucide-react';
 import { api, fmtDate, fmtDay, fmtSize, TYPE_LABELS, SECTIONS, NUMBER_FIELD } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth';
@@ -17,27 +17,31 @@ import {
   Field, CheckRow, Callout, EmptyState, copyText,
 } from '@/components/app/kit';
 
-const REQUIRED = ['pan', 'aadhaar', 'marksheet'];
+// What a student is expected to keep here. 10th and 12th marksheets are stored, not verified, so storing them counts.
+const REQUIRED = ['pan', 'aadhaar', 'class10', 'class12'];
+const isDone = (d) => d.status === 'verified' || (['class10', 'class12'].includes(d.type) && d.status === 'stored');
 const inSection = (n) => (d) => SECTIONS[n].types.includes(d.type);
 const FILTERS = {
   all: ['All', () => true],
   identity: ['Identity', inSection(0)],
-  academic: ['Academic', inSection(1)],
-  other: ['Other', inSection(2)],
+  academic: ['Academic', (d) => inSection(1)(d) || inSection(2)(d)],
+  other: ['Other', inSection(3)],
   verified: ['Verified', (d) => d.status === 'verified'],
   pending: ['Pending', (d) => d.status === 'pending'],
 };
 const TWO_SIDED = ['aadhaar', 'license'];
 // [icon, one-line hint, colour] for the "add this document" tiles
 const TYPE_TILE = {
-  pan: [CreditCard, 'Number and name are checked automatically', 'var(--primary)'],
+  pan: [CreditCard, 'Number and card text are checked automatically', 'var(--primary)'],
   aadhaar: [Fingerprint, 'Front and back. Use a masked copy', 'var(--violet)'],
   license: [Car, 'Front and back, with the licence number', 'var(--info)'],
-  marksheet: [GraduationCap, 'Any semester or board marksheet', 'var(--success)'],
-  certificate: [Award, 'Degrees, courses and awards', '#fbbf24'],
+  class10: [School, 'Stored as it is, no checks', '#38bdf8'],
+  class12: [BookOpen, 'Stored as it is, no checks', '#a78bfa'],
+  marksheet: [GraduationCap, 'Any semester marksheet', 'var(--success)'],
+  certificate: [Award, 'Bonafide, course and college certificates', '#fbbf24'],
   other: [FileText, 'Anything else. Stored safely, not verified', 'var(--pink)'],
 };
-const TYPE_TONE = { pan: 'bg-linear-to-r from-primary to-success', aadhaar: 'bg-linear-to-r from-violet to-info', license: 'bg-info', marksheet: 'bg-linear-to-r from-success to-primary', certificate: 'bg-success', other: 'bg-muted' };
+const TYPE_TONE = { pan: 'bg-linear-to-r from-primary to-success', aadhaar: 'bg-linear-to-r from-violet to-info', license: 'bg-info', class10: 'bg-sky-400', class12: 'bg-violet-400', marksheet: 'bg-linear-to-r from-success to-primary', certificate: 'bg-success', other: 'bg-muted' };
 
 // Plain-language advice for each failed automatic check.
 const TIPS = [
@@ -183,9 +187,11 @@ function ExportModal({ docs, onClose }) {
   const [selected, setSelected] = useState(docs.map((d) => d.id));
   const [result, setResult] = useState(null);
   const toggle = (id) => setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
-  const send = async ({ pin, quality }) => {
+  const send = async ({ pin, quality, targetKB }) => {
     if (!selected.length) throw new Error('Select at least one document.');
-    setResult(await api('/documents/export', { method: 'POST', body: { ids: selected, quality, pin } }));
+    const limit = quality === 'limit' ? Number(targetKB) : null;
+    if (quality === 'limit' && !(limit >= 20 && limit <= 10240)) throw new Error('Type a size limit between 20 and 10240 KB.');
+    setResult(await api('/documents/export', { method: 'POST', body: { ids: selected, pin, ...(limit ? { targetKB: limit } : { quality }) } }));
   };
 
   return (
@@ -194,6 +200,7 @@ function ExportModal({ docs, onClose }) {
         <div className="grid gap-4">
           <Callout tone="ok" className="flex items-center gap-2"><CheckCircle2 className="size-4" /> Sent to {result.sentTo}</Callout>
           <p className="text-sm">{result.summary}</p>
+          {result.sizes?.length > 0 && <ul className="grid gap-1 font-mono text-xs text-muted-foreground">{result.sizes.map((x) => <li key={x}>{x}</li>)}</ul>}
           <div className="grid gap-2 border border-border bg-muted p-3">
             <span className="text-sm font-semibold">ZIP password - write it down now, it is not in the email</span>
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -220,7 +227,7 @@ function ExportModal({ docs, onClose }) {
               <CheckRow key={d.id} checked={selected.includes(d.id)} onChange={() => toggle(d.id)}>{d.title} <span className="text-xs text-muted-foreground">({fmtSize(d.size)})</span></CheckRow>
             ))}
           </fieldset>
-          <fieldset className="grid gap-2 sm:grid-cols-3">
+          <fieldset className="grid gap-2 sm:grid-cols-2">
             <legend className="mb-2 text-sm font-semibold">File size</legend>
             {QUALITY.map(([value, title, hint]) => (
               <label key={value} className="grid cursor-pointer gap-0.5 rounded-lg border border-border bg-card p-3 transition-[border-color,box-shadow,background-color] duration-200 has-checked:border-primary has-checked:bg-primary/15 has-checked:shadow-glow has-focus-visible:outline-3 has-focus-visible:outline-ring">
@@ -228,6 +235,12 @@ function ExportModal({ docs, onClose }) {
                 <b className="text-sm">{title}</b><span className="text-xs opacity-80">{hint}</span>
               </label>
             ))}
+            <label className="grid cursor-pointer gap-1.5 rounded-lg border border-border bg-card p-3 transition-[border-color,box-shadow,background-color] duration-200 has-checked:border-primary has-checked:bg-primary/10 has-checked:shadow-glow">
+              <span className="flex items-center gap-2"><input type="radio" name="quality" value="limit" className="sr-only" /><b className="text-sm">Size limit</b><span className="text-xs opacity-80">each file at most</span></span>
+              <span className="flex items-center gap-2"><Input name="targetKB" type="number" inputMode="numeric" min={20} max={10240} placeholder="200" className="h-9 w-24 font-mono"
+                onFocus={(e) => { e.currentTarget.closest('label').querySelector('input[type=radio]').checked = true; }} /><span className="text-sm font-semibold">KB</span></span>
+              <span className="text-xs opacity-80">For forms that say e.g. "max 200 KB". Photos shrink to fit; PDFs only a little.</span>
+            </label>
           </fieldset>
         </PinForm>
       )}
@@ -304,9 +317,10 @@ function DocCard({ d, open, onToggle, onAction }) {
           </div>
         )}
         <button type="button" className="flex w-fit items-center gap-2 text-xs font-semibold" onClick={onToggle} aria-expanded={open}>
-          {d.type === 'other' ? 'Originality check' : 'Auto-check'} <ScoreBar check={d.autoCheck} /> <ChevronDown className={cn('size-4 transition-transform', open && 'rotate-180')} />
+          {d.type === 'other' ? 'Originality check' : 'Automatic checks'} <ScoreBar check={d.autoCheck} /> <ChevronDown className={cn('size-4 transition-transform', open && 'rotate-180')} />
         </button>
         {open && <>
+          {d.autoCheck?.state === 'done' && <p className="text-xs text-muted-foreground">TrustVault read this file and compared it with the official format of a {TYPE_LABELS[d.type]} and with your other documents. The score is the share of checks passed. A faculty member still makes the final decision.</p>}
           <CheckList checks={d.autoCheck?.checks} />
           <p className="font-mono text-[11px] break-all text-muted-foreground">Digital fingerprint (SHA-256): {d.sha256}</p>
         </>}
@@ -350,7 +364,7 @@ export default function Documents() {
     return () => clearInterval(t);
   }, [running]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const verifiedTypes = REQUIRED.filter((t) => list.some((d) => d.type === t && d.status === 'verified'));
+  const verifiedTypes = REQUIRED.filter((t) => list.some((d) => d.type === t && isDone(d)));
   const close = () => setModal(null);
   const done = () => { close(); reload(); };
   const onAction = async (kind, doc) => {
@@ -393,7 +407,7 @@ export default function Documents() {
       </div>
 
       <Card className="grid gap-3">
-        <div className="flex items-center justify-between gap-2"><b>Identity checklist</b><span className="font-mono text-xs">{verifiedTypes.length} of {REQUIRED.length} verified</span></div>
+        <div className="flex items-center justify-between gap-2"><b>Document checklist</b><span className="font-mono text-xs">{verifiedTypes.length} of {REQUIRED.length} done</span></div>
         <Progress value={(verifiedTypes.length / REQUIRED.length) * 100} aria-label="Identity checklist progress" />
         <div className="flex flex-wrap gap-2">
           {REQUIRED.map((t) => <Badge key={t} variant={verifiedTypes.includes(t) ? 'success' : 'outline'}>{verifiedTypes.includes(t) && <Check />}{TYPE_LABELS[t]}</Badge>)}

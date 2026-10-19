@@ -25,6 +25,8 @@ export default {
   filesInDb: env.FILE_STORE === 'db',
   // Number of proxies in front of the server on a hosting platform (0 = only a local one).
   trustProxy: Number(env.TRUST_PROXY) || 'loopback',
+  // Laptop demos: show the saved dev emails on a Mailbox page. Off unless asked for, and never with a real email service.
+  demoMailbox: env.DEMO_MAILBOX === '1' && !env.SMTP_USER && !env.BREVO_API_KEY,
   sessionMinutes: Number(env.SESSION_MINUTES || 60),
   // Where encrypted files, dev emails and the OCR cache live (tests point this at a temp folder).
   dataDir: env.DATA_DIR || path.join(import.meta.dirname, '..'),

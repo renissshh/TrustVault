@@ -73,8 +73,9 @@ export function ActivityLine({ activity, days = 14 }) {
   );
 }
 
-// Identity progress: PAN, Aadhaar and a marksheet are each worth 30 (15 uploaded + 15 verified); the vault PIN is the last 10.
-const REQUIRED = [['pan', 'PAN card'], ['aadhaar', 'Aadhaar card'], ['marksheet', 'Marksheet']];
+// Document progress: PAN, Aadhaar, 10th and 12th are each worth 22 (11 uploaded + 11 verified; the marksheets count fully
+// once stored, as they are not verified); the vault PIN is the last 12.
+const REQUIRED = [['pan', 'PAN card'], ['aadhaar', 'Aadhaar card'], ['class10', '10th marksheet'], ['class12', '12th marksheet']];
 const STATE = {
   verified: ['Verified', 'var(--success)', Check], pending: ['In review', '#fbbf24', Clock], rejected: ['Rejected', 'var(--destructive)', X],
   missing: ['Add it', 'var(--muted)', Plus],
@@ -83,10 +84,10 @@ export function IdentityRing({ docs, user }) {
   const id = useId().replace(/:/g, '');
   const rows = REQUIRED.map(([type, label]) => {
     const mine = docs.filter((d) => d.type === type);
-    const state = mine.some((d) => d.status === 'verified') ? 'verified' : mine.some((d) => d.status === 'pending') ? 'pending' : mine.length ? 'rejected' : 'missing';
-    return { type, label, state, points: state === 'verified' ? 30 : state === 'pending' ? 15 : 0 };
+    const state = mine.some((d) => d.status === 'verified' || d.status === 'stored') ? 'verified' : mine.some((d) => d.status === 'pending') ? 'pending' : mine.length ? 'rejected' : 'missing';
+    return { type, label, state, points: state === 'verified' ? 22 : state === 'pending' ? 11 : 0 };
   });
-  const score = rows.reduce((n, r) => n + r.points, 0) + (user.hasVaultPin ? 10 : 0);
+  const score = rows.reduce((n, r) => n + r.points, 0) + (user.hasVaultPin ? 12 : 0);
   const [shown, setShown] = useState(0);
   useEffect(() => { const t = setTimeout(() => setShown(score), 60); return () => clearTimeout(t); }, [score]);
   const ring = useRef(null);

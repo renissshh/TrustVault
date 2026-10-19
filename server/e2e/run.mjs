@@ -285,22 +285,41 @@ try {
   r = await admin.call(`/records/students/${sid}`);
   ok(r.data.documents.length === 0 && !r.data.access, 'record detail hidden before consent');
   r = await admin.call(`/records/students/${sid}/request`, { method: 'POST', body: { reason: 'Placement document check' } });
-  ok(r.status === 201, 'access requested');
-  ok(await mailArrives('rahul@demo.test', /asking to see your records/), 'student emailed about the request');
+  ok(r.status === 400, 'a request must tick at least one document type');
+  r = await admin.call(`/records/students/${sid}/request`, { method: 'POST', body: { types: ['pan', 'aadhaar', 'nonsense'], reason: 'Placement document check' } });
+  ok(r.status === 201, 'faculty asked for PAN + Aadhaar');
+  ok(await mailArrives('rahul@demo.test', /asking for your documents/), 'student emailed about the request');
   r = await student.call('/auth/me');
   ok(r.data.pendingAccess === 1, 'student sees 1 pending request');
-  const reqId = (await student.call('/access')).data[0].id;
-  r = await student.call(`/access/${reqId}`, { method: 'POST', body: { decision: 'approve' } });
-  ok(r.status === 200, 'student approved for 24 hours');
+  let mine = (await student.call('/access')).data[0];
+  ok(mine.types.join() === 'pan,aadhaar', 'unknown document types are dropped from the request');
+  const reqId = mine.id;
+  r = await student.call(`/access/${reqId}`, { method: 'POST', body: { decision: 'approve', types: ['pan'] } });
+  ok(r.status === 200, 'student approved only the PAN');
   r = await admin.call(`/records/students/${sid}`);
-  ok(r.data.documents.length === 3 && r.data.access.status === 'approved', 'admin now sees the record');
+  ok(r.data.documents.length === 1 && r.data.documents[0].type === 'pan' && r.data.documents[0].canOpen, 'faculty sees only the approved PAN, ready to open once');
+  r = await admin.call(`/documents/${otherId}/view`, { method: 'POST', body: { pin: '135790' } });
+  ok(r.status === 403, 'a document type the student did not approve stays closed');
   r = await admin.call(`/documents/${panId}/view`, { method: 'POST', body: { pin: '135790' } });
-  ok(r.status === 200, 'admin views the verified PAN with consent');
+  ok(r.status === 200, 'faculty views the verified PAN with consent');
+  r = await admin.call(`/documents/${panId}/view`, { method: 'POST', body: { pin: '135790' } });
+  ok(r.status === 403 && /one time|once/i.test(r.data.error), 'second view of the same document refused (one-time access)');
+  mine = (await student.call('/access')).data.find((a) => a.id === reqId);
+  ok(mine.status === 'used' && mine.opened === 1, 'request closes once every approved document was opened');
   r = await student.call('/auth/activity');
   ok(r.data.some((a) => a.action === 'record.view' && a.user?.name === 'Priya Admin'), 'student sees the access in the activity log');
-  r = await student.call(`/access/${reqId}`, { method: 'POST', body: { decision: 'revoke' } });
+  r = await admin.call(`/records/students/${sid}/request`, { method: 'POST', body: { types: ['pan'] } });
+  const again = (await student.call('/access')).data.find((a) => a.status === 'pending').id;
+  r = await student.call(`/access/${again}`, { method: 'POST', body: { decision: 'approve' } });
+  r = await student.call(`/access/${again}`, { method: 'POST', body: { decision: 'revoke' } });
   r = await admin.call(`/documents/${panId}/view`, { method: 'POST', body: { pin: '135790' } });
   ok(r.status === 403, 'access revoked by the student');
+  r = await admin.call('/admin/requests');
+  ok(r.data.length >= 2 && r.data.some((a) => a.status === 'used' && a.granted.join() === 'pan'), 'administrator sees every request and answer');
+  r = await client().call('/auth/login', { method: 'POST', body: { email: 'rahul@demo.test', password: PASSWORD, as: 'faculty' } });
+  ok(r.status === 403 && /student account/.test(r.data.error), 'a student cannot use the faculty sign-in');
+  r = await client().call('/auth/login', { method: 'POST', body: { email: 'admin@demo.test', password: PASSWORD, as: 'student' } });
+  ok(r.status === 403 && /administrator account/.test(r.data.error), 'an administrator cannot use the student sign-in');
 
   // ===== Re-file "Other" =====
   r = await student.call(`/documents/${otherId}/type`, { method: 'PATCH', body: { type: 'license', number: 'ZZ12 20110012345' } });
@@ -329,6 +348,27 @@ try {
   const zipFile = fs.readdirSync(MAIL).find((n) => n.endsWith('.zip'));
   const zipBuf = fs.readFileSync(path.join(MAIL, zipFile));
   ok((zipBuf.readUInt16LE(6) & 1) === 1 && !lastMail('rahul@demo.test').includes(r.data.zipPassword), 'emailed ZIP is encrypted and the password is NOT in the email');
+  r = await student.call('/documents/export', { method: 'POST', body: { targetKB: 5, pin: '482915' } });
+  ok(r.status === 400, 'a size limit below 20 KB is refused');
+  r = await student.call('/documents/export', { method: 'POST', body: { targetKB: 40, ids: [panId, aadhaar.id], pin: '482915' } });
+  ok(r.status === 200 && r.data.sizes.length === 2 && r.data.sizes.every((x) => +x.match(/(\d+) KB$/)[1] <= 40), 'files shrunk to fit a 40 KB limit', r.data.sizes?.join('; '));
+
+  // ===== 10th / 12th marksheets: stored, no checks =====
+  r = await upload(student, { type: 'class10' }, { file: [await card([['SECONDARY SCHOOL CERTIFICATE', 40, 140], ['RAHUL SHARMA', 44, 260]]), '10th.png'] });
+  ok(r.status === 201 && r.data.status === 'stored', '10th marksheet stored without verification');
+  const tenthId = r.data.id;
+
+  // ===== Documents are compared with each other, never with the account name =====
+  r = await upload(student, { type: 'certificate' }, { file: [await card([['BONAFIDE CERTIFICATE', 44, 140], ['THIS IS TO CERTIFY THAT', 34, 240], ['RAHUL SHARMA', 48, 340], ['DEMO COLLEGE CHENNAI', 34, 440]]), 'cert.png'] });
+  const certId = r.data.id;
+  r = await upload(student, { type: 'certificate' }, { file: [await card([['COURSE COMPLETION CERTIFICATE', 40, 140], ['AWARDED TO', 34, 240], ['ANITA VERMA', 48, 340], ['KOLKATA', 34, 440]]), 'cert2.png'] });
+  const strangerId = r.data.id;
+  docs = await waitChecks(student);
+  const match = (id) => docs.find((d) => d.id === id).autoCheck;
+  ok(match(tenthId).state === 'skipped' && !match(tenthId).checks.length, '10th marksheet is not checked');
+  ok(match(certId).checks.some((c) => c.name === 'Matches your other documents' && c.ok), "certificate matches the student's other documents", match(certId).checks.find((c) => c.name.startsWith('Matches'))?.detail);
+  ok(match(strangerId).checks.some((c) => c.name === 'Matches your other documents' && !c.ok), "a certificate in someone else's name is flagged", match(strangerId).checks.find((c) => c.name.startsWith('Matches'))?.detail);
+  ok(!match(certId).checks.some((c) => /holder name|5th letter/i.test(c.name)), 'no check compares the document with the account name');
 
   // ===== Share link =====
   r = await student.call('/shares', { method: 'POST', body: { docId: panId, email: 'hr@company.test', hours: 24, pin: '482915' } });

@@ -37,7 +37,7 @@ function SetupChecklist({ user, docs }) {
     ['Set your 6-digit vault PIN', user.hasVaultPin, '/security'],
     ['Upload your PAN card', has('pan'), '/documents?upload=pan'],
     ['Upload your Aadhaar card', has('aadhaar'), '/documents?upload=aadhaar'],
-    ['Upload a marksheet or certificate', has('marksheet', 'certificate'), '/documents?upload=marksheet'],
+    ['Upload your 10th and 12th marksheets', has('class10') && has('class12'), '/documents?upload=class10'],
     ['Get a document verified', docs.some((d) => d.status === 'verified'), null],
   ];
   const done = steps.filter((s) => s[1]).length;
@@ -140,7 +140,7 @@ export default function Dashboard() {
 
       {pendingAccess > 0 && (
         <Callout tone="info" className="flex flex-wrap items-center justify-between gap-3">
-          <span className="flex items-center gap-2"><KeyRound className="size-4" /> {pendingAccess} verifier request(s) waiting for your permission.</span>
+          <span className="flex items-center gap-2"><KeyRound className="size-4" /> {pendingAccess} faculty request(s) waiting for your answer.</span>
           <Button asChild size="sm" variant="secondary"><Link to="/access">Review requests</Link></Button>
         </Callout>
       )}
@@ -156,7 +156,7 @@ export default function Dashboard() {
 
       <div className="grid gap-6 lg:grid-cols-2 2xl:grid-cols-3" data-tour="charts">
         <Card className="lg:col-span-2 2xl:col-span-1">
-          <CardHeader><CardTitle>Identity progress</CardTitle><Button asChild variant="link"><Link to="/documents">Checklist →</Link></Button></CardHeader>
+          <CardHeader><CardTitle>Document progress</CardTitle><Button asChild variant="link"><Link to="/documents">Checklist →</Link></Button></CardHeader>
           {!loading && <IdentityRing docs={docs} user={user} />}
         </Card>
         <Card>

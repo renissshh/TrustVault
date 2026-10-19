@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { User, Document, Block, Audit, Session, Invite } from '../models.js';
+import { User, Document, Block, Audit, Session, Invite, AccessRequest } from '../models.js';
 import { randomToken, sha256 } from '../lib/crypto.js';
 import { addBlock, checkIntegrity } from '../lib/ledger.js';
 import { sendMail } from '../lib/mail.js';
@@ -136,6 +136,18 @@ r.delete('/invites/:id', admin, async (req, res) => {
 
 r.get('/audit', admin, async (req, res) => {
   res.json(await Audit.find().sort({ createdAt: -1 }).limit(200).populate('user', 'name role').populate('subject', 'name'));
+});
+
+// Every document request faculty sent and how students answered, newest first.
+r.get('/requests', admin, async (req, res) => {
+  const list = await AccessRequest.find().sort({ createdAt: -1 }).limit(300)
+    .populate('verifier', 'name email').populate('student', 'name email studentId');
+  res.json(list.map((a) => ({
+    id: a.id, faculty: a.verifier && { name: a.verifier.name, email: a.verifier.email },
+    student: a.student && { name: a.student.name, email: a.student.email, studentId: a.student.studentId },
+    types: a.types, granted: a.granted, opened: a.opened.length, reason: a.reason,
+    status: a.status === 'approved' && a.expiresAt < new Date() ? 'expired' : a.status, requestedAt: a.createdAt, updatedAt: a.updatedAt,
+  })));
 });
 
 r.get('/ledger', admin, async (req, res) => res.json(await Block.find().sort({ index: -1 }).limit(100)));

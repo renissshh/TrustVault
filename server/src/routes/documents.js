@@ -4,10 +4,10 @@ import multer from 'multer';
 import QRCode from 'qrcode';
 import config from '../config.js';
 import { Document, Export, Share } from '../models.js';
-import { sha256, storeFile, removeFile, openDocument, encryptText, randomToken } from '../lib/crypto.js';
+import { sha256, storeFile, removeFile, openDocument, encryptText, decryptText, randomToken } from '../lib/crypto.js';
 import { runChecks, normalizeNumber, numberIsValid, maskNumber, STRICT_TYPES, NUMBER_HINTS } from '../lib/verify.js';
-import { sniffType, watermark, compress, zip, mergeSides } from '../lib/files.js';
-import { assertDocAccess } from '../lib/access.js';
+import { sniffType, watermark, compress, compressTo, zip, mergeSides } from '../lib/files.js';
+import { assertDocAccess, useGrant } from '../lib/access.js';
 import { addBlock } from '../lib/ledger.js';
 import { sendMail } from '../lib/mail.js';
 import { httpError, audit, esc, maskEmail } from '../lib/util.js';
@@ -15,8 +15,11 @@ import { requireVault } from '../middleware/auth.js';
 
 export const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 export const TYPE_LABELS = {
-  pan: 'PAN Card', aadhaar: 'Aadhaar Card', license: 'Driving Licence', marksheet: 'Marksheet', certificate: 'Certificate', other: 'Other document',
+  pan: 'PAN Card', aadhaar: 'Aadhaar Card', license: 'Driving Licence', class10: '10th Marksheet', class12: '12th Marksheet',
+  marksheet: 'Semester Marksheet', certificate: 'College Certificate', other: 'Other document',
 };
+// Kept safely but not checked or sent for verification: 10th and 12th marksheets, and "Other".
+export const UNCHECKED = ['class10', 'class12'];
 
 function readNumber(type, raw) {
   const number = normalizeNumber(raw);
@@ -24,16 +27,23 @@ function readNumber(type, raw) {
   return number;
 }
 
-const initialStatus = (type) => (type === 'other' ? 'stored' : 'pending');
+const initialStatus = (type) => (type === 'other' || UNCHECKED.includes(type) ? 'stored' : 'pending');
 
 // OCR can take a few seconds, so it runs after we've replied. The page polls for the result.
 function checkInBackground(doc, sources, number, duplicate) {
-  runChecks({ type: doc.type, number, sources, duplicate })
-    .then((autoCheck) => doc.updateOne({ autoCheck }))
+  if (UNCHECKED.includes(doc.type)) return doc.updateOne({ autoCheck: { state: 'skipped', checks: [] } }).catch(() => {});
+  otherWords(doc)
+    .then((others) => runChecks({ type: doc.type, number, sources, duplicate, others }))
+    .then(({ words, ...autoCheck }) => doc.updateOne({ autoCheck, wordsEnc: encryptText(JSON.stringify(words)) }))
     .catch((e) => {
       console.error('Auto-check failed:', e);
       return doc.updateOne({ autoCheck: { state: 'failed', score: 0, checks: [] } });
     });
+}
+// Words read from the owner's other checked documents, for the "matches your other documents" check.
+async function otherWords(doc) {
+  const others = await Document.find({ owner: doc.owner, _id: { $ne: doc._id }, wordsEnc: { $exists: true } });
+  return others.map((o) => { try { return { label: TYPE_LABELS[o.type], words: JSON.parse(decryptText(o.wordsEnc)) }; } catch { return null; } }).filter(Boolean);
 }
 const MAX_ATTACHMENT = 18 * 1024 * 1024; // Gmail's limit is 25 MB including encoding overhead
 const kb = (n) => Math.ceil(n / 1024);
@@ -109,12 +119,13 @@ r.post('/:id/view', async (req, res) => {
   const doc = await Document.findById(req.params.id).populate('owner', 'name email');
   if (!doc) throw httpError(404, 'Document not found.');
   const own = doc.owner._id.equals(req.user._id);
-  if (!own) await assertDocAccess(req.user, doc);
+  const grant = own ? null : await assertDocAccess(req.user, doc);
   await requireVault(req);
 
   const buf = await openDocument(doc);
   const label = `${req.user.email} | ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC | TrustVault`;
   const out = await watermark(buf, doc.mime, label);
+  if (grant) await useGrant(grant, doc); // one-time access: this document is now used up for this request
   await audit(req, own ? 'document.view' : 'record.view', doc.title, doc.owner._id);
   if (!own) {
     sendMail({
@@ -147,24 +158,31 @@ r.delete('/:id', async (req, res) => {
 // Compress -> ZIP -> email. Nothing is downloaded in the browser.
 r.post('/export', async (req, res) => {
   const { ids = [], quality = 'medium' } = req.body ?? {};
-  if (!['original', 'medium', 'small'].includes(quality)) throw httpError(400, 'Choose a size: original, medium or small.');
+  // targetKB: each file must be at most this size (e.g. 200 for "max 200 KB" on an application form)
+  const targetKB = req.body?.targetKB ? Math.round(Number(req.body.targetKB)) : null;
+  if (targetKB != null && !(targetKB >= 20 && targetKB <= 10240)) throw httpError(400, 'Choose a size limit between 20 KB and 10240 KB.');
+  if (!targetKB && !['original', 'medium', 'small'].includes(quality)) throw httpError(400, 'Choose a size: original, medium or small.');
   await requireVault(req);
   const docs = await Document.find({ owner: req.user._id, ...(ids.length && { _id: { $in: ids } }) });
   if (!docs.length) throw httpError(400, 'No documents selected.');
 
   let before = 0;
   const entries = [];
+  const tooBig = [];
   for (const [i, doc] of docs.entries()) {
     const buf = await openDocument(doc);
     before += buf.length;
-    const { buf: out, ext } = await compress(buf, doc.mime, quality);
+    const { buf: out, ext, fits = true } = targetKB ? await compressTo(buf, doc.mime, targetKB * 1024) : await compress(buf, doc.mime, quality);
     const base = doc.title.replace(/[^\w\- ]+/g, '').trim() || 'document';
-    entries.push({ name: `${i + 1}-${base}.${ext}`, buf: out });
+    if (!fits) tooBig.push(`${doc.title} (${kb(out.length)} KB)`);
+    entries.push({ name: `${i + 1}-${base}.${ext}`, buf: out, kb: kb(out.length) });
   }
   // The password is shown on screen only - never emailed - so a hacked inbox alone can't open the ZIP.
   const password = zipPassword();
   const archive = await zip(entries, password);
-  const summary = `${docs.length} file(s): ${kb(before)} KB reduced to ${kb(archive.length)} KB (${quality} quality)`;
+  const sizes = entries.map((e) => `${e.name} - ${e.kb} KB`);
+  const summary = `${docs.length} file(s): ${kb(before)} KB reduced to ${kb(archive.length)} KB (${targetKB ? `each file max ${targetKB} KB` : `${quality} quality`})`;
+  const note = tooBig.length ? ` Could not get under ${targetKB} KB: ${tooBig.join(', ')} - PDFs can only be shrunk a little; upload a photo instead.` : '';
   const howToOpen = `<p>The ZIP is <b>password-protected (AES-256)</b>. The password was shown on screen when you requested it - it is not in this email.</p>
     <p><b>Windows' own "Extract All" cannot open it.</b> Use the free <a href="https://www.7-zip.org/">7-Zip</a>, WinRAR, or your phone's file manager:</p>
     <ol><li>Save the ZIP.</li><li>Right-click it and choose <b>7-Zip &rarr; Extract Here</b> (on Windows 11, click <b>Show more options</b> first).</li><li>Type the password.</li></ol>`;
@@ -172,7 +190,7 @@ r.post('/export', async (req, res) => {
   if (archive.length <= MAX_ATTACHMENT) {
     await sendMail({
       to: req.user.email, subject: 'Your TrustVault documents', title: 'Your documents are attached',
-      body: `<p>${summary}.</p>${howToOpen}`,
+      body: `<p>${summary}.${esc(note)}</p><ul>${sizes.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>${howToOpen}`,
       attachments: [{ filename: `trustvault-${new Date().toISOString().slice(0, 10)}.zip`, content: archive }],
     });
   } else {
@@ -185,7 +203,7 @@ r.post('/export', async (req, res) => {
     });
   }
   await audit(req, 'document.export', summary);
-  res.json({ sentTo: maskEmail(req.user.email), summary, before, after: archive.length, zipPassword: password });
+  res.json({ sentTo: maskEmail(req.user.email), summary: summary + note, sizes, before, after: archive.length, zipPassword: password });
 });
 
 export default r;

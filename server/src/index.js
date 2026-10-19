@@ -15,6 +15,7 @@ import recordRoutes from './routes/records.js';
 import adminRoutes from './routes/admin.js';
 import publicRoutes from './routes/public.js';
 import accessRoutes from './routes/access.js';
+import devMailRoutes from './routes/devmail.js';
 import { startJobs } from './jobs.js';
 
 const app = express();
@@ -34,6 +35,8 @@ app.use('/api/records', requireAuth, requireRole('verifier', 'admin'), recordRou
 app.use('/api/admin', requireAuth, adminRoutes);
 app.use('/api/access', requireAuth, accessRoutes);
 app.use('/api/public', publicRoutes);
+if (config.demoMailbox) app.use('/api/dev/mail', devMailRoutes);
+app.get('/api/dev/mailbox', (req, res) => res.json({ enabled: config.demoMailbox }));
 app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
 
 // After "npm run build", the same server also serves the React website.

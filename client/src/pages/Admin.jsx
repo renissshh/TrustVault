@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Settings, Link2, Check, CheckCircle2, XCircle, Search, Download, MailPlus, Lock } from 'lucide-react';
-import { api, fmtDate, actionLabel, cleanDetail } from '@/lib/api';
+import { api, fmtDate, actionLabel, cleanDetail, TYPE_LABELS, ROLE_LABELS } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -26,14 +26,14 @@ function Overview() {
   if (!stats.data) return <SkeletonRows rows={3} />;
   const data = stats.data;
   const items = [
-    ['Students', data.users.student ?? 0, 'violet'], ['Verifiers', data.users.verifier ?? 0, 'sky'],
+    ['Students', data.users.student ?? 0, 'violet'], ['Faculty', data.users.verifier ?? 0, 'sky'],
     ['Verified docs', data.documents.verified ?? 0, 'green'], ['Pending docs', data.documents.pending ?? 0, 'amber'],
     ['Rejected docs', data.documents.rejected ?? 0, 'card'], ['Sign-ins (24h)', data.logins24h, 'card'],
     ['Ledger blocks', data.blocks, 'ink'], ['Tampered files', data.tampered, data.tampered ? 'red' : 'card'],
   ];
   // the donut wants one entry per document; the stats give counts per status
   const docs = Object.entries(data.documents).flatMap(([status, n]) => Array.from({ length: n }, () => ({ status })));
-  const roles = [['Students', data.users.student ?? 0, 'var(--violet)'], ['Verifiers', data.users.verifier ?? 0, 'var(--info)'], ['Admins', data.users.admin ?? 0, 'var(--pink)']];
+  const roles = [['Students', data.users.student ?? 0, 'var(--violet)'], ['Faculty', data.users.verifier ?? 0, 'var(--info)'], ['Admins', data.users.admin ?? 0, 'var(--pink)']];
   const most = Math.max(1, ...roles.map(([, n]) => n));
   return (
     <div className="grid gap-6">
@@ -69,7 +69,7 @@ function Overview() {
 }
 
 // ---------- Users: search, filter by role, change role, unlock, reset 2FA ----------
-const ROLE_FILTERS = [['all', 'Everyone'], ['student', 'Students'], ['verifier', 'Verifiers'], ['admin', 'Admins'], ['locked', 'Locked']];
+const ROLE_FILTERS = [['all', 'Everyone'], ['student', 'Students'], ['verifier', 'Faculty'], ['admin', 'Administrators'], ['locked', 'Locked']];
 
 function Users() {
   const { data, error, reload } = useAsync(() => api('/admin/users'));
@@ -104,9 +104,9 @@ function Users() {
               <TableCell>{u.email}</TableCell><TableCell className="font-mono">{u.studentId || '-'}</TableCell>
               <TableCell>{u.totpEnabled ? <Check className="size-4 text-success" aria-label="On" /> : <span aria-label="Off">-</span>}</TableCell>
               <TableCell>
-                <Select value={u.role} onValueChange={(role) => act(() => api(`/admin/users/${u.id}`, { method: 'PATCH', body: { role } }), `${u.name} is now ${role}.`)}>
+                <Select value={u.role} onValueChange={(role) => act(() => api(`/admin/users/${u.id}`, { method: 'PATCH', body: { role } }), `${u.name} is now ${ROLE_LABELS[role]}.`)}>
                   <SelectTrigger size="sm" className="w-28 bg-card" aria-label={`Role of ${u.name}`}><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectItem value="student">student</SelectItem><SelectItem value="verifier">verifier</SelectItem><SelectItem value="admin">admin</SelectItem></SelectContent>
+                  <SelectContent><SelectItem value="student">Student</SelectItem><SelectItem value="verifier">Faculty</SelectItem><SelectItem value="admin">Administrator</SelectItem></SelectContent>
                 </Select>
               </TableCell>
               <TableCell className="whitespace-nowrap">{fmtDate(u.createdAt)}</TableCell>
@@ -158,7 +158,7 @@ function Invites() {
           <Field label="Role">
             <Select value={role} onValueChange={setRole}>
               <SelectTrigger className="h-10 w-full bg-card"><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value="verifier">Verifier - reviews documents</SelectItem><SelectItem value="admin">Admin - full control</SelectItem></SelectContent>
+              <SelectContent><SelectItem value="verifier">Faculty - requests and reviews documents</SelectItem><SelectItem value="admin">Administrator - full control</SelectItem></SelectContent>
             </Select>
           </Field>
           <ErrorText>{formError}</ErrorText>
@@ -167,7 +167,7 @@ function Invites() {
       </Card>
       <div className="grid gap-3">
         <ErrorText>{error}</ErrorText>
-        {data && !data.length && <EmptyState icon={MailPlus} title="No invitations yet" steps={[[MailPlus, 'Enter their email and pick verifier or admin'], [Link2, 'They get a one-time link that works only for that address'], [Check, 'They set a password and Google Authenticator, then appear in Users']]}>
+        {data && !data.length && <EmptyState icon={MailPlus} title="No invitations yet" steps={[[MailPlus, 'Enter their email and pick faculty or admin'], [Link2, 'They get a one-time link that works only for that address'], [Check, 'They set a password and Google Authenticator, then appear in Users']]}>
           Bring in a verifier or another admin without waiting for them to register first.
         </EmptyState>}
         {data?.length > 0 && (
@@ -266,14 +266,55 @@ function AllAudit() {
   );
 }
 
-const TABS = { Overview, Users, Invitations: Invites, Ledger, 'Audit log': AllAudit };
+// ---------- Requests: every document request faculty sent, and how students answered ----------
+const REQ_FILTERS = [['all', 'All'], ['pending', 'Waiting'], ['approved', 'Shared'], ['used', 'Opened'], ['denied', 'Denied'], ['revoked', 'Withdrawn'], ['expired', 'Expired']];
+function Requests() {
+  const { data, error, loading } = useAsync(() => api('/admin/requests'));
+  const [filter, setFilter] = useState('all');
+  const [q, setQ] = useState('');
+  const all = data ?? [];
+  const needle = q.trim().toLowerCase();
+  const shown = all.filter((a) => (filter === 'all' || a.status === filter)
+    && (!needle || `${a.faculty?.name} ${a.student?.name} ${a.student?.studentId}`.toLowerCase().includes(needle)));
+  const types = (list = []) => list.map((t) => TYPE_LABELS[t]).join(', ') || '-';
+  return (
+    <div className="grid gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Segmented label="Filter requests" value={filter} onChange={setFilter} options={REQ_FILTERS.map(([k, label]) => [k, label, all.filter((a) => k === 'all' || a.status === k).length])} />
+        <SearchBox value={q} onChange={setQ} placeholder="Search faculty, student or roll number…" label="Search requests" />
+      </div>
+      <ErrorText>{error}</ErrorText>
+      {loading ? <SkeletonRows /> : (
+        <Table>
+          <TableHeader><TableRow><TableHead>Sent</TableHead><TableHead>Faculty</TableHead><TableHead>Student</TableHead><TableHead>Asked for</TableHead><TableHead>Shared</TableHead><TableHead>Opened</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
+          <TableBody>
+            {shown.map((a) => (
+              <TableRow key={a.id}>
+                <TableCell className="whitespace-nowrap">{fmtDate(a.requestedAt)}</TableCell>
+                <TableCell className="font-semibold">{a.faculty?.name ?? '-'}</TableCell>
+                <TableCell><span className="grid"><b>{a.student?.name ?? '-'}</b><small className="font-mono text-muted-foreground">{a.student?.studentId}</small></span></TableCell>
+                <TableCell className="min-w-44">{types(a.types)}</TableCell>
+                <TableCell className="min-w-36">{['approved', 'used', 'expired', 'revoked'].includes(a.status) ? types(a.granted) : '-'}</TableCell>
+                <TableCell className="font-mono">{a.opened}</TableCell>
+                <TableCell><StatusBadge status={a.status}>{REQ_FILTERS.find(([k]) => k === a.status)?.[1] ?? a.status}</StatusBadge></TableCell>
+              </TableRow>
+            ))}
+            {data && !shown.length && <TableRow><TableCell colSpan={7} className="text-muted-foreground">No requests match.</TableCell></TableRow>}
+          </TableBody>
+        </Table>
+      )}
+    </div>
+  );
+}
+
+const TABS = { Overview, Users, Requests, Invitations: Invites, Ledger, 'Audit log': AllAudit };
 
 export default function Admin() {
   const [tab, setTab] = useState('Overview');
   const Tab = TABS[tab];
   return (
     <div className="grid gap-8">
-      <PageHeader icon={Settings} kicker="Administrator" title="Admin Console">Users, invitations, the hash ledger and the full audit trail.</PageHeader>
+      <PageHeader icon={Settings} kicker="Administrator" title="Admin Console">Users, faculty requests, invitations, the hash ledger and the full audit trail.</PageHeader>
       <Segmented label="Admin sections" value={tab} onChange={setTab} options={Object.keys(TABS).map((t) => [t, t])} />
       <div key={tab} className="animate-rise"><Tab /></div>
     </div>

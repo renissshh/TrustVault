@@ -11,7 +11,9 @@
     "make-admin": "npm run make-admin --prefix server --",
     "test": "npm test --prefix server",
     "test:e2e": "npm run test:e2e --prefix server",
-    "test:ui": "node tests/ui/run.mjs"
+    "test:ui": "node tests/ui/run.mjs",
+    "demo": "npm run demo --prefix server",
+    "demo:codes": "npm run demo:codes --prefix server"
   },
   "devDependencies": {
     "concurrently": "^9.1.0"

@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 const AWAY = [
   [(a) => a.action === 'document.verified', BadgeCheck, (n) => `${n} document${n > 1 ? 's were' : ' was'} verified`, '/documents', 'var(--success)'],
   [(a) => a.action === 'document.rejected', XCircle, (n) => `${n} document${n > 1 ? 's were' : ' was'} rejected`, '/documents', 'var(--destructive)'],
-  [(a) => a.action === 'access.request', KeyRound, (n) => `${n} verifier${n > 1 ? 's' : ''} asked to see your records`, '/access', '#fbbf24'],
+  [(a) => a.action === 'access.request', KeyRound, (n) => `${n} faculty request${n > 1 ? 's' : ''} for your documents`, '/access', '#fbbf24'],
   [(a) => a.action === 'record.view' || a.action === 'record.open', Eye, (n) => `Your records were opened ${n} time${n > 1 ? 's' : ''}`, '/activity', 'var(--info)'],
   [(a) => a.action === 'share.view', Link2, (n) => `Your shared links were opened ${n} time${n > 1 ? 's' : ''}`, '/shares', 'var(--violet)'],
   [(a) => a.action === 'login.failed', ShieldAlert, (n) => `${n} failed sign-in attempt${n > 1 ? 's' : ''}`, '/activity', 'var(--destructive)'],
@@ -63,9 +63,10 @@ export function nextStep({ user, docs, pendingAccess }) {
   if (pendingAccess > 0) return [KeyRound, `Answer ${pendingAccess} access request${pendingAccess > 1 ? 's' : ''}`, 'A verifier is waiting for your permission to see your records.', '/access', 'Review'];
   if (rejected) return [XCircle, `Replace "${rejected.title}"`, rejected.reviewNote ? `It was rejected: ${rejected.reviewNote}` : 'It was rejected. Upload a clearer copy.', `/documents?upload=${rejected.type}`, 'Upload again'];
   if (!docs.length) return [Upload, 'Upload your first document', 'Start with your PAN or Aadhaar. It is encrypted and checked in seconds.', '/documents?upload=pan', 'Upload'];
-  if (!has('pan')) return [Upload, 'Add your PAN card', 'It is one of the three documents on your identity checklist.', '/documents?upload=pan', 'Upload'];
+  if (!has('pan')) return [Upload, 'Add your PAN card', 'It is one of the four documents on your checklist.', '/documents?upload=pan', 'Upload'];
   if (!has('aadhaar')) return [Upload, 'Add your Aadhaar card', 'Use a masked Aadhaar with only the last 4 digits showing.', '/documents?upload=aadhaar', 'Upload'];
-  if (!has('marksheet')) return [Upload, 'Add a marksheet', 'It completes your identity checklist.', '/documents?upload=marksheet', 'Upload'];
+  if (!has('class10')) return [Upload, 'Add your 10th marksheet', 'Faculty often ask for it. It is stored as it is.', '/documents?upload=class10', 'Upload'];
+  if (!has('class12')) return [Upload, 'Add your 12th marksheet', 'Faculty often ask for it. It is stored as it is.', '/documents?upload=class12', 'Upload'];
   if (user.backupCodesLeft < 4) return [LifeBuoy, 'Get new backup codes', `Only ${user.backupCodesLeft} left. They sign you in if you lose your phone.`, '/security', 'Open security'];
   if (verified) return [QrCode, `Share "${verified.title}"`, 'It is verified. Show its QR code or send a time-limited link.', '/documents', 'Open vault'];
   return [PartyPopper, 'You are all set', 'Everything is uploaded and protected. Your documents are waiting for review.', '/documents', 'Open vault'];

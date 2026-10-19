@@ -18,7 +18,12 @@ export async function api(path, { method = 'GET', body, form, raw } = {}) {
 export const fmtDate = (d) => (d ? new Date(d).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '-');
 export const fmtDay = (d) => (d ? new Date(d).toLocaleDateString(undefined, { dateStyle: 'medium' }) : '-');
 export const fmtSize = (n) => (n > 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.ceil(n / 1024)} KB`);
-export const TYPE_LABELS = { pan: 'PAN Card', aadhaar: 'Aadhaar Card', license: 'Driving Licence', marksheet: 'Marksheet', certificate: 'Certificate', other: 'Other' };
+export const TYPE_LABELS = {
+  pan: 'PAN Card', aadhaar: 'Aadhaar Card', license: 'Driving Licence', class10: '10th Marksheet', class12: '12th Marksheet',
+  marksheet: 'Semester Marksheet', certificate: 'College Certificate', other: 'Other',
+};
+// The role is stored as "verifier"; people call it faculty.
+export const ROLE_LABELS = { student: 'Student', verifier: 'Faculty', admin: 'Administrator' };
 
 // Activity-log codes -> plain words for people.
 const ACTIONS = {
@@ -38,7 +43,8 @@ export const cleanDetail = (s = '') => s.replace(' | ', ' · ').replace(/^(.+?) 
 
 export const SECTIONS = [
   { title: 'Identity documents', types: ['pan', 'aadhaar', 'license'], note: 'Checked automatically, then verified by an authorized verifier.' },
-  { title: 'Academic documents', types: ['marksheet', 'certificate'], note: 'Checked automatically, then verified by an authorized verifier.' },
+  { title: 'School marksheets', types: ['class10', 'class12'], note: 'Stored safely as they are. Not checked or sent for verification.' },
+  { title: 'College documents', types: ['marksheet', 'certificate'], note: 'Checked automatically, then verified by an authorized verifier.' },
   { title: 'Other documents', types: ['other'], note: 'Stored securely and checked for originality only - not sent for official verification.' },
 ];
 
@@ -46,6 +52,8 @@ export const NUMBER_FIELD = {
   pan: { label: 'PAN number', placeholder: 'ABCDE1234F', required: true },
   aadhaar: { label: 'Aadhaar number', placeholder: '1234 5678 9012', required: true },
   license: { label: 'Driving licence number', placeholder: 'MH12 20110012345', required: true },
+  class10: { label: 'Register number (optional)', placeholder: '' },
+  class12: { label: 'Register number (optional)', placeholder: '' },
   marksheet: { label: 'Roll / register number (optional)', placeholder: '' },
   certificate: { label: 'Certificate number (optional)', placeholder: '' },
   other: { label: 'Reference number (optional)', placeholder: '' },

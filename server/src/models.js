@@ -26,12 +26,17 @@ export const User = model('User', new Schema({
   avatarV: { type: Number, default: 0 }, // 0 = no photo; otherwise changes on every upload (cache-busting)
 }, { timestamps: true }));
 
-// A verifier asks a student for permission to see their records. Approved access lasts 24 hours.
+// A faculty member (role "verifier") ticks the document types they need and asks the student.
+// The student approves all or some of them. Each approved document can then be opened ONE time by that
+// faculty member (within 24 hours); after that they have to ask again.
 export const AccessRequest = model('AccessRequest', new Schema({
   verifier: { ...ref('User'), index: true },
   student: { ...ref('User'), index: true },
   reason: String,
-  status: { type: String, enum: ['pending', 'approved', 'denied', 'revoked'], default: 'pending' },
+  types: [String], // document types asked for
+  granted: [String], // document types the student approved
+  opened: [Schema.Types.ObjectId], // documents already opened (one-time access)
+  status: { type: String, enum: ['pending', 'approved', 'denied', 'revoked', 'used'], default: 'pending' },
   expiresAt: Date,
 }, { timestamps: true }));
 
@@ -69,7 +74,7 @@ const check = new Schema({ name: String, ok: Boolean, detail: String }, { _id: f
 
 export const Document = model('Document', new Schema({
   owner: { ...ref('User'), index: true },
-  type: { type: String, enum: ['pan', 'aadhaar', 'license', 'marksheet', 'certificate', 'other'] },
+  type: { type: String, enum: ['pan', 'aadhaar', 'license', 'class10', 'class12', 'marksheet', 'certificate', 'other'] },
   title: String,
   numberEnc: String,
   numberMasked: String,
@@ -82,6 +87,7 @@ export const Document = model('Document', new Schema({
   // "stored" = Other documents: kept safely and checked for originality, but not sent for official verification.
   status: { type: String, enum: ['pending', 'verified', 'rejected', 'stored'], default: 'pending' },
   autoCheck: { state: { type: String, default: 'running' }, score: Number, checks: [check], detectedType: String },
+  wordsEnc: String, // encrypted list of words read from the document, used to cross-check the owner's other documents
   reviewNote: String,
   reviewedBy: ref('User'),
   reviewedAt: Date,

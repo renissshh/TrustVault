@@ -61,8 +61,8 @@ export default function Activity() {
   return (
     <div className="grid gap-8">
       <PageHeader icon={History} kicker="Tamper-evident audit trail" title="Activity Log"
-        stats={[['events recorded', logs.length], ['sign-ins', logs.filter((a) => a.action === 'login').length], ['views by verifiers', byOthers, byOthers ? 'warn' : '']]}>
-        Everything done with your account - including every time an authorized verifier opened your records (highlighted).
+        stats={[['events recorded', logs.length], ['sign-ins', logs.filter((a) => a.action === 'login').length], ['views by faculty', byOthers, byOthers ? 'warn' : '']]}>
+        Everything done with your account - including every time a faculty member opened your documents (highlighted).
       </PageHeader>
       <ErrorText>{error}</ErrorText>
       <Segmented label="Filter activity" value={filter} onChange={setFilter}

@@ -29,15 +29,20 @@ Sign in with three locks, upload and encrypt, automatic checks, and QR proof any
 ## What it does
 
 - **Encrypted vault.** Every file is locked with AES-256-GCM before it touches the disk. Document numbers are shown masked.
-- **Three-step sign-in.** Password, an email code, then Google Authenticator. A separate 6-digit PIN protects the vault.
-- **Automatic checks.** PAN format, Aadhaar checksum, OCR of the document text and signs of editing, scored out of 100.
-- **Human verification with consent.** A verifier approves or rejects. To open a student's record they must ask, and the student approves for 24 hours.
+- **Three-step sign-in, separate for each role.** Student, Faculty and Administrator tabs; each account can only use its own. Password, an email code, then Google Authenticator. A separate 6-digit PIN protects the vault.
+- **Automatic checks.** PAN format, Aadhaar checksum, OCR of the document text and signs of editing, scored out of 100. Each document is also compared with the student's **other** documents (shared name and details), never with the account name. 10th and 12th marksheets are stored as they are, without checks.
+- **Faculty requests with consent.** Faculty tick the documents they need (10th, 12th, PAN, Aadhaar, licence, college certificate...) and send a request. The student shares all or only some, and each shared document opens **one time**. The administrator sees every request and answer.
+- **Shrink and email.** Students email themselves an encrypted ZIP and can set a size limit per file (e.g. max 200 KB for an application form).
 - **Proof anyone can check.** A verified document gets a QR code. Scanning it shows the result without an account.
 - **Tamper-evident history.** Uploads and decisions are chained by SHA-256; changing one record breaks the chain.
 
 **Stack:** React (Vite) · Tailwind CSS · shadcn/ui · Motion · Node.js + Express · MongoDB · AES-256-GCM · TOTP · Tesseract OCR
 
 **Who can sign up:** MCA students only. The roll number must look like `23MX347`: the 2-digit year the student joined, `MX`, then a 3-digit number. Other formats, future years and a second account for the same roll number are refused. Verifiers and admins join through an invitation and need no roll number.
+
+## Demo on a laptop
+
+`npm run demo` creates 10 students, 2 faculty and 1 administrator with SPECIMEN documents in the local database; [DEMO-GUIDE.md](DEMO-GUIDE.md) has the step-by-step demo. Without an email service, emails appear on the built-in demo mailbox page.
 
 ## Screens
 
