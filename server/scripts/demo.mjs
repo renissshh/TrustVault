@@ -29,10 +29,11 @@ if (!local && !process.argv.includes('--yes-online')) {
 }
 
 // ---------- people ----------
-const ADMIN = { name: 'Admin Office', email: 'admin@trustvault.demo', role: 'admin' };
+// Staff get their own ID documents too (no school or college papers); `holder` is the name printed on their cards.
+const ADMIN = { name: 'Admin Office', holder: 'Kavitha Subramanian', email: 'admin@trustvault.demo', role: 'admin', sex: 'F', city: 'Coimbatore', state: 'TN', dob: '12/06/1984' };
 const FACULTY = [
-  { name: 'Dr. Priya Raman', email: 'priya.raman@trustvault.demo', role: 'verifier' },
-  { name: 'Prof. Arun Kumar', email: 'arun.kumar@trustvault.demo', role: 'verifier' },
+  { name: 'Dr. Priya Raman', holder: 'Priya Raman', email: 'priya.raman@trustvault.demo', role: 'verifier', sex: 'F', city: 'Coimbatore', state: 'TN', dob: '21/02/1986' },
+  { name: 'Prof. Arun Kumar', holder: 'Arun Kumar', email: 'arun.kumar@trustvault.demo', role: 'verifier', sex: 'M', city: 'Palakkad', state: 'KL', dob: '09/11/1981' },
 ];
 const STUDENTS = [
   ['Rahul Sharma', '23MX301', 'M', 'Chennai', 'TN'], ['Ananya Iyer', '23MX302', 'F', 'Coimbatore', 'TN'],
@@ -71,20 +72,21 @@ const digits = (n) => Array.from({ length: n }, () => rnd(10)).join('');
 function aadhaarNumber() {
   for (;;) { const base = `${2 + rnd(8)}${digits(10)}`; for (let d = 0; d < 10; d++) if (verhoeff(base + d)) return base + d; }
 }
-const panNumber = (s) => `${String.fromCharCode(65 + rnd(26), 65 + rnd(26), 65 + rnd(26))}P${s.name.split(' ').pop()[0].toUpperCase()}${digits(4)}${String.fromCharCode(65 + rnd(26))}`;
+const panNumber = (s) => `${String.fromCharCode(65 + rnd(26), 65 + rnd(26), 65 + rnd(26))}P${(s.holder ?? s.name).split(' ').pop()[0].toUpperCase()}${digits(4)}${String.fromCharCode(65 + rnd(26))}`;
 const RTO = { TN: '38', KL: '07', RJ: '14', TG: '09', GJ: '01', KA: '05' };
 
 function documentsFor(s) {
   const pan = panNumber(s), aad = aadhaarNumber(), dl = `${s.state}${RTO[s.state]}2021${digits(7)}`;
-  const NAME = s.name.toUpperCase();
+  const holder = s.holder ?? s.name, NAME = holder.toUpperCase();
   const list = [
     ['pan', pan, () => card({ band: '#1f4e9c', head: 'INCOME TAX DEPARTMENT', sub: 'Permanent Account Number Card - GOVT. OF INDIA', big: pan, rows: [['Name', NAME], ['Date of birth', s.dob], ['PAN', pan]] })],
-    ['aadhaar', aad, () => card({ band: '#d35400', head: 'GOVERNMENT OF INDIA', sub: 'Aadhaar - demo sample', big: aad.replace(/(\d{4})(?=\d)/g, '$1 '), rows: [['Name', s.name], ['Date of birth', s.dob], ['Gender', s.sex === 'F' ? 'Female' : 'Male'], ['City', s.city]] })],
+    ['aadhaar', aad, () => card({ band: '#d35400', head: 'GOVERNMENT OF INDIA', sub: 'Aadhaar - demo sample', big: aad.replace(/(\d{4})(?=\d)/g, '$1 '), rows: [['Name', holder], ['Date of birth', s.dob], ['Gender', s.sex === 'F' ? 'Female' : 'Male'], ['City', s.city]] })],
     ['class10', '', () => card({ band: '#0f766e', head: 'SECONDARY SCHOOL LEAVING CERTIFICATE', sub: 'Class X - demo sample', photo: false, rows: [['Name', NAME], ['Register no.', digits(7)], ['Total', `${420 + rnd(70)} / 500`], ['Year', '2017']] })],
     ['class12', '', () => card({ band: '#6d28d9', head: 'HIGHER SECONDARY CERTIFICATE', sub: 'Class XII - demo sample', photo: false, rows: [['Name', NAME], ['Register no.', digits(7)], ['Total', `${480 + rnd(110)} / 600`], ['Year', '2019']] })],
     ['certificate', '', () => card({ band: '#b45309', head: 'BONAFIDE CERTIFICATE', sub: 'Department of Computer Applications - demo sample', photo: false, rows: [['This is to certify that', NAME], ['Roll number', s.roll], ['Programme', 'MCA'], ['City', s.city]] })],
   ];
-  if (rnd(2)) list.push(['license', dl, () => card({ band: '#1b7a4b', head: 'UNION OF INDIA - DRIVING LICENCE', sub: 'Transport Department - demo sample', big: `${dl.slice(0, 4)} ${dl.slice(4)}`, rows: [['Name', s.name], ['Date of birth', s.dob], ['City', s.city]] })]);
+  if (s.role !== 'student') return [list[0], list[1], ['license', dl, () => card({ band: '#1b7a4b', head: 'UNION OF INDIA - DRIVING LICENCE', sub: 'Transport Department - demo sample', big: `${dl.slice(0, 4)} ${dl.slice(4)}`, rows: [['Name', holder], ['Date of birth', s.dob], ['City', s.city]] })]];
+  if (rnd(2)) list.push(['license', dl, () => card({ band: '#1b7a4b', head: 'UNION OF INDIA - DRIVING LICENCE', sub: 'Transport Department - demo sample', big: `${dl.slice(0, 4)} ${dl.slice(4)}`, rows: [['Name', holder], ['Date of birth', s.dob], ['City', s.city]] })]);
   return list;
 }
 
@@ -119,7 +121,8 @@ for (const [i, s] of STUDENTS.entries()) students.push({ ...s, user: await makeU
 
 let n = 0;
 const docsByStudent = new Map();
-for (const [i, s] of students.entries()) {
+const staff = [{ ...ADMIN, user: admin }, ...FACULTY.map((f, i) => ({ ...f, user: faculty[i] }))];
+for (const [i, s] of [...students, ...staff].entries()) {
   const mine = [];
   for (const [type, printed, draw] of documentsFor(s)) {
     // one student mistypes their Aadhaar number, so the automatic check fails and it is not verified
@@ -148,7 +151,7 @@ for (const [i, s] of students.entries()) {
     mine.push(doc);
     process.stdout.write(`\r${++n} documents created and checked`);
   }
-  docsByStudent.set(s.roll, mine);
+  if (s.roll) docsByStudent.set(s.roll, mine);
 }
 console.log();
 

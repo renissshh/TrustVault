@@ -13,6 +13,7 @@ import { VaultIntro, TryDemo, ProductPreview } from './landing-extras';
 import { TourVideo } from '@/components/app/tour-video';
 import { ParticleShield } from '@/lib/motion-kit';
 import { StoryScroll } from './landing-story';
+import { ApprovalZoom } from './landing-zoom';
 import '../landing-story.css';
 import '../landing.css';
 
@@ -360,6 +361,7 @@ export default function Landing() {
             <span className="lp-eyebrow">How it works</span>
             <h2 className="lp-h2">Three steps. That's it.</h2>
           </div>
+          <ApprovalZoom />
           <ol className="lp-steps">
             {STEPS.map(([Icon, title, text, tone], i) => (
               <li key={title} className={`lp-step rv ${tone}`} style={{ '--d': i * 150 }}>

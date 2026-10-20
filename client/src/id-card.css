@@ -1,0 +1,67 @@
+/* Blank SPECIMEN ID card (components/app/id-card.jsx). Sizes inside use cqw, so the card looks the same at any width. */
+.idc-wrap { display: grid; justify-items: center; align-content: center; gap: 14px; }
+.idc {
+  --g1: var(--primary); --g2: var(--violet); --g3: var(--pink); --ok: var(--success);
+  /* the card is its own size container: everything inside is sized in cqw; its own corners use % (a box cannot query itself) */
+  position: relative; container-type: inline-size; width: var(--idc-w, 100%); aspect-ratio: 1.586; overflow: hidden; isolation: isolate;
+  border-radius: 5.5% / 8.7%; color: #fff; cursor: pointer; outline: none;
+  background:
+    radial-gradient(120% 90% at 0% 0%, color-mix(in srgb, var(--g1) 85%, transparent), transparent 60%),
+    radial-gradient(110% 100% at 100% 100%, color-mix(in srgb, var(--g3) 80%, transparent), transparent 60%),
+    linear-gradient(135deg, var(--g1), var(--g2) 55%, var(--g3));
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.22) inset, 0 1px 0 rgb(255 255 255 / 0.45) inset, 0 30px 70px -28px var(--g2), 0 0 60px -20px var(--g1);
+  transition: box-shadow 0.6s, filter 0.6s;
+  -webkit-user-select: none; user-select: none;
+}
+.idc-in { height: 100%; padding: 5.2cqw 6cqw; display: grid; grid-template-rows: auto 1fr auto; }
+.idc::before { /* fine diagonal guilloché lines like a printed ID */
+  content: ''; position: absolute; inset: 0; z-index: -1; opacity: 0.22;
+  background: repeating-linear-gradient(115deg, rgb(255 255 255 / 0.5) 0 1px, transparent 1px 9px), repeating-linear-gradient(25deg, rgb(255 255 255 / 0.25) 0 1px, transparent 1px 13px);
+  mask-image: radial-gradient(ellipse at 70% 40%, #000 20%, transparent 75%);
+}
+.idc:focus-visible { box-shadow: 0 0 0 3px var(--background), 0 0 0 5px var(--g1), 0 30px 70px -28px var(--g2); }
+.idc.is-on { box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--ok) 90%, white) inset, 0 30px 70px -28px var(--ok), 0 0 70px -10px color-mix(in srgb, var(--ok) 70%, transparent); }
+
+.idc-glare { position: absolute; inset: 0; z-index: 3; pointer-events: none; opacity: 0; transition: opacity 0.4s;
+  background: radial-gradient(40% 55% at var(--gx, 30%) var(--gy, 20%), rgb(255 255 255 / 0.38), transparent 70%); mix-blend-mode: overlay; }
+.idc:hover .idc-glare, .idc.is-on .idc-glare { opacity: 1; }
+
+.idc-top { display: flex; align-items: center; justify-content: space-between; gap: 2cqw; }
+.idc-brand { display: inline-flex; align-items: center; gap: 1.4cqw; font: 800 4.6cqw/1 var(--font-display); letter-spacing: -0.02em; text-shadow: 0 1px 8px rgb(0 0 0 / 0.25); }
+.idc-state { padding: 1.1cqw 2.6cqw; border-radius: 99px; font: 700 2.5cqw/1 var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase;
+  background: rgb(5 6 10 / 0.35); border: 1px solid rgb(255 255 255 / 0.35); backdrop-filter: blur(6px); transition: background 0.4s, color 0.4s, border-color 0.4s; }
+.idc.is-on .idc-state { background: var(--ok); border-color: var(--ok); color: #05060a; box-shadow: 0 0 18px var(--ok); }
+
+.idc-mid { position: relative; display: flex; align-items: center; gap: 5cqw; }
+.idc-photo { display: grid; place-items: center; flex: none; width: 20cqw; aspect-ratio: 0.8; border-radius: 3cqw; background: rgb(255 255 255 / 0.18); border: 1px solid rgb(255 255 255 / 0.4); backdrop-filter: blur(4px); }
+.idc-photo svg { width: 11cqw; height: 11cqw; opacity: 0.85; }
+.idc dl { display: grid; gap: 2.2cqw; margin: 0; min-width: 0; }
+.idc dt { font: 600 2.3cqw/1 var(--font-mono); letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.78; }
+.idc dd { display: flex; align-items: center; gap: 1.6cqw; margin: 0.8cqw 0 0; font: 700 4.2cqw/1 var(--font-mono); letter-spacing: 0.08em; white-space: nowrap; text-shadow: 0 1px 10px rgb(0 0 0 / 0.25); }
+.idc-tick { display: grid; place-items: center; width: 3.6cqw; height: 3.6cqw; border-radius: 50%; background: var(--ok); color: #05060a; transform: scale(0); transition: transform 0.45s var(--ease-spring) calc(0.35s + var(--i) * 0.14s); }
+.idc-tick svg { width: 2.5cqw; height: 2.5cqw; stroke-width: 4; }
+.idc.is-on .idc-tick { transform: scale(1); }
+.idc-chip { position: absolute; right: 0; top: 50%; width: 12cqw; aspect-ratio: 1.3; translate: 0 -50%; border-radius: 2cqw;
+  background: linear-gradient(135deg, #ffe7a3, #d4a73c 45%, #fff1c7 55%, #b8862b);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.2) inset; }
+.idc-chip::after { content: ''; position: absolute; inset: 22% 18%; border-radius: 1cqw; border: 1px solid rgb(90 60 10 / 0.45); border-left: 0; border-right: 0; }
+.idc-mrz { font: 500 2.25cqw/1.35 var(--font-mono); letter-spacing: 0.06em; opacity: 0.7; white-space: nowrap; overflow: hidden; }
+
+/* the check: a scan line sweeps once, then the stamp lands */
+.idc-scan { position: absolute; z-index: 2; top: 0; bottom: 0; left: -12%; width: 12%; pointer-events: none; opacity: 0;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.55) 70%, #fff); box-shadow: 4px 0 24px rgb(255 255 255 / 0.9); }
+.idc.is-on .idc-scan { animation: idc-scan 0.75s var(--ease-out-expo) both; }
+@keyframes idc-scan { 0% { left: -12%; opacity: 1; } 85% { opacity: 1; } 100% { left: 104%; opacity: 0; } }
+.idc-stamp { position: absolute; z-index: 4; left: 50%; top: 52%; display: inline-flex; align-items: center; gap: 1.6cqw; padding: 1.8cqw 4.4cqw;
+  border: 0.7cqw solid var(--ok); border-radius: 2.4cqw; color: var(--ok); background: rgb(5 6 10 / 0.72); backdrop-filter: blur(6px);
+  font: 900 6.4cqw/1 var(--font-display); letter-spacing: 0.08em; text-transform: uppercase; text-shadow: 0 0 18px var(--ok); box-shadow: 0 0 34px -4px var(--ok);
+  opacity: 0; transform: translate(-50%, -50%) rotate(-9deg) scale(2.2); pointer-events: none; }
+.idc-stamp svg { width: 6.4cqw; height: 6.4cqw; stroke-width: 3.4; }
+.idc.is-on .idc-stamp { opacity: 1; transform: translate(-50%, -50%) rotate(-9deg) scale(1); transition: opacity 0.2s 0.6s, transform 0.5s var(--ease-spring) 0.6s; }
+.idc-hint { font: 500 0.72rem/1 var(--font-mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted-foreground); transition: color 0.4s; }
+.idc.is-on + .idc-hint { color: var(--success); }
+
+@media (prefers-reduced-motion: reduce) {
+  .idc.is-on .idc-scan { animation: none; }
+  .idc-tick, .idc.is-on .idc-stamp { transition: none; }
+}

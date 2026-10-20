@@ -9,4 +9,5 @@ server/.ocr-cache/
 
 # laptop demo accounts (passwords and Authenticator keys)
 DEMO-ACCOUNTS.md
+DEMO-ACCOUNTS.pdf
 demo-accounts.json

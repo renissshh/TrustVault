@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Brand } from '@/components/app/brand';
 import { ThemeToggle } from '@/components/app/account';
 import { Aurora, Words, ease } from '@/lib/fx';
-import { AsciiScan } from '@/lib/ascii-scan';
+import { IdCard } from '@/components/app/id-card';
 import { ErrorText, BackupCodes, OtpInput, PasswordInput, Field, CheckRow, Callout, Segmented, toast, ago } from '@/components/app/kit';
 import { StepTracker, closeDoors, getKnown, setKnown, touchKnown, clearKnown, initialsOf } from '@/components/app/signin-extras';
 
@@ -37,8 +37,10 @@ export function AuthShell({ children }) {
               ))}
             </ul>
           </div>
-          {/* a SPECIMEN PAN card being read by the automatic checks; it takes whatever height is left */}
-          <AsciiScan className="-mx-10 min-h-0 w-auto! flex-1" />
+          {/* a blank sample ID card: hover it and the automatic check verifies it. It fills whatever height is left. */}
+          <div className="min-h-0 flex-1 [container-type:size]" style={{ '--idc-w': 'min(440px, 100cqw, calc((100cqh - 34px) * 1.586))' }}>
+            <IdCard className="h-full justify-items-start" />
+          </div>
           <p className="font-mono text-xs tracking-widest text-muted-foreground uppercase">Sessions end after 60 minutes · every view is logged</p>
         </section>
         <section className="relative grid content-start gap-8 p-4 sm:p-10 lg:content-center">
