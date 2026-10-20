@@ -1,7 +1,7 @@
 // Landing page: Apple-clean layout on a dark neon stage. Styles live in ../landing.css.
 // The page is fully visible without scripts; the effect below only adds motion (scroll reveals,
 // cursor light, card tilt, the sentence that lights up as you scroll).
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, BadgeCheck, Check, Fingerprint, Lock, ScanLine, ShieldCheck, UploadCloud } from 'lucide-react';
 import { api } from '@/lib/api';
@@ -15,6 +15,10 @@ import { ParticleShield } from '@/lib/motion-kit';
 import { StoryScroll } from './landing-story';
 import { ApprovalZoom } from './landing-zoom';
 import { HeroCard } from './landing-hero';
+
+// three.js is large, so the 3D vault loads on its own after the page.
+// ponytail: if that chunk fails to load, the stage stays empty beside the headline; a retry button is the upgrade.
+const TrustVault3D = lazy(() => import('@/components/ui/trustvault-3d').catch(() => ({ default: () => null })));
 import '../landing-story.css';
 import '../landing.css';
 
@@ -178,6 +182,39 @@ function CodeViz() {
 }
 
 
+// three.js needs WebGL 2; without it the page simply starts with the hero.
+function hasWebGL() {
+  try {
+    const gl = document.createElement('canvas').getContext('webgl2');
+    gl?.getExtension('WEBGL_lose_context')?.loseContext();
+    return !!gl;
+  } catch { return false; }
+}
+
+// First screen: the document's journey as a 3D machine (copy above it on phones, beside it on wide screens).
+function Vault3D() {
+  const [ok] = useState(hasWebGL);
+  if (!ok) return null;
+  return (
+    <section className="lp-3d" aria-labelledby="lp-3d-title">
+      <div className="lp-3d-copy">
+        <span className="lp-eyebrow lp-in">Live 3D · 7 stations · 1 chain</span>
+        <h2 id="lp-3d-title" className="lp-in" style={{ animationDelay: '0.1s' }}>Every check, <span className="lp-neon whitespace-nowrap">one by one.</span></h2>
+        <p className="lp-in" style={{ animationDelay: '0.2s' }}>
+          A document passes the sign-in gate, upload, the encrypted vault, the automatic checks and a person&apos;s approval, then gets a QR proof,
+          while the ledger chains every step. Drag to turn it, or pick <b>Top</b> or <b>One document</b> below.
+        </p>
+        <Link to="/register" className="lp-btn lp-in" style={{ animationDelay: '0.3s' }}>Create free account <ArrowRight className="size-5" /></Link>
+      </div>
+      <div className="lp-3d-stage">
+        <Suspense fallback={<div className="lp-3d-wait" aria-hidden="true"><i /></div>}>
+          <TrustVault3D embed height="100%" />
+        </Suspense>
+      </div>
+    </section>
+  );
+}
+
 export default function Landing() {
   const root = useRef(null);
   useLandingMotion(root);
@@ -208,6 +245,8 @@ export default function Landing() {
       </header>
 
       <main>
+        <Vault3D />
+
         <section className="lp-hero">
           <span className="lp-chip lp-in"><i />Digital identity, verified</span>
           <HeroTitle />

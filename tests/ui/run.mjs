@@ -4,7 +4,7 @@
 // seeds a student and an admin, then:
 //   1. opens every page as a guest, the student and the admin, in dark and light, at three screen sizes,
 //      and fails on script errors, failed API calls, sideways scrolling or blank pages;
-//   2. clicks the main interactions (quick search, top menu, wallet card, upload window, landing demo, admin tabs);
+//   2. clicks the main interactions (quick search, top menu, wallet card, upload window, landing demo, the 3D vault, admin tabs);
 //   3. signs in twice through the real screens: password -> email code -> Authenticator -> vault doors -> PIN -> dashboard.
 // Everything it created is removed at the end.
 import fs from 'node:fs'; import os from 'node:os'; import path from 'node:path'; import crypto from 'node:crypto';
@@ -156,6 +156,8 @@ const FACULTY_CLICKS = {
 };
 const GUEST_CLICKS = {
   'sign-up asks for the faculty code': ['/register?as=faculty', `(async () => { ${wait(300)} return !!document.querySelector('input[name=code]') && !document.querySelector('input[name=studentId]'); })()`],
+  // without WebGL 2 the page starts with the hero instead; with it the 3D vault comes first and its controls work
+  '3D vault opens the page and answers its controls': ['/welcome', `(async () => { const s = document.querySelector('.lp-3d'); if (!s) return document.querySelector('main').firstElementChild.classList.contains('lp-hero'); for (let i = 0; i < 100 && !s.querySelector('.tv-loading.done'); i++) ${wait(200)} if (document.querySelector('main').firstElementChild !== s || !s.querySelector('.tv-loading.done')) return false; s.querySelector('[data-mode=document]').click(); ${wait(300)} const followed = s.querySelector('[data-mode=document]').getAttribute('aria-pressed') === 'true' && s.querySelector('.tv-journey').classList.contains('visible'); s.querySelector('[data-camera=top]').click(); const top = window.__trustvaultDebug.getState().camera === 'top'; s.querySelector('[data-tv=tamper]').click(); window.__trustvaultDebug.advance(1); ${wait(600)} const broken = s.querySelector('[data-tv=status-text]').textContent.startsWith('Chain broken'); const wheel = new WheelEvent('wheel', { deltaY: 120, bubbles: true, cancelable: true }); s.querySelector('canvas').dispatchEvent(wheel); return followed && top && broken && !wheel.defaultPrevented; })()`],
   'landing demo runs to VERIFIED': ['/welcome', `(async () => { [...document.querySelectorAll('button')].find((x) => x.textContent.includes('Scan the sample'))?.click(); ${wait(5600)} return !!document.querySelector('.demo[data-state=done] .demo-stamp'); })()`],
 };
 

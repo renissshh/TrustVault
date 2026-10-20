@@ -30,5 +30,6 @@ TrustVault is developed in short Scrum-style sprints. The product owner reviews 
 | Sprint | Backlog | Review + retrospective |
 |---|---|---|
 | Sprint 2 - UI review (20 Oct 2026) | [sprint-2-backlog.md](sprint-2-backlog.md) | [sprint-2-review.md](sprint-2-review.md) |
+| Sprint 3 - main page motion (20 Oct 2026) | [sprint-3-backlog.md](sprint-3-backlog.md) | [sprint-3-review.md](sprint-3-review.md) |
 
 Pipeline: [ci-cd.md](ci-cd.md).
