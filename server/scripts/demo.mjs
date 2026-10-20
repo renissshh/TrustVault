@@ -103,13 +103,14 @@ const accounts = [];
 const ago = (days, hours = 0) => new Date(Date.now() - days * 864e5 - hours * 36e5);
 async function makeUser(p, daysAgo) {
   const secret = authenticator.generateSecret();
+  const backup = Array.from({ length: 8 }, () => crypto.randomBytes(4).toString('hex').toUpperCase().replace(/(.{4})/, '$1-'));
   const u = await User.create({
     name: p.name, email: p.email, role: p.role, studentId: p.roll, passwordHash, emailVerified: true,
-    totpSecret: encryptText(secret), totpEnabled: true, vaultPinHash: pinHash, consentAt: ago(daysAgo), backupCodes: [],
+    totpSecret: encryptText(secret), totpEnabled: true, vaultPinHash: pinHash, consentAt: ago(daysAgo), backupCodes: backup.map(sha256),
   });
   await User.updateOne({ _id: u._id }, { $set: { createdAt: ago(daysAgo) } }, { timestamps: false });
   await Audit.create({ user: u._id, subject: u._id, action: 'register', ip: '127.0.0.1', createdAt: ago(daysAgo) });
-  accounts.push({ ...p, id: u.id, secret });
+  accounts.push({ ...p, id: u.id, secret, backup });
   return u;
 }
 
@@ -196,7 +197,7 @@ for (const a of await Audit.find({ action: 'register' }).populate('user', 'creat
 }
 
 // ---------- the account sheet ----------
-const sheet = accounts.map((a) => ({ name: a.name, email: a.email, role: a.role, roll: a.roll, secret: a.secret }));
+const sheet = accounts.map((a) => ({ name: a.name, email: a.email, role: a.role, roll: a.roll, secret: a.secret, backup: a.backup }));
 fs.writeFileSync(path.join(ROOT, 'demo-accounts.json'), JSON.stringify({ password: PASSWORD, pin: PIN, accounts: sheet }, null, 1));
 const label = { admin: 'Administrator', verifier: 'Faculty', student: 'Student' };
 const md = [

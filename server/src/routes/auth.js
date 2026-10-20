@@ -154,6 +154,9 @@ r.post('/login', async (req, res) => {
   }
   // A device trusted in the last 30 days skips the email code: password + Authenticator is still 2 factors.
   if (user.emailVerified && user.totpEnabled && isTrustedDevice(req, user)) return res.json({ ...(await totpStep(user)), trusted: true });
+  if (config.demoSkipEmail && user.emailVerified && user.totpEnabled && user.email.endsWith('@trustvault.demo')) {
+    return res.json({ ...(await totpStep(user, true)), demo: true });
+  }
   res.json(await otpStep(user, user.emailVerified ? 'otp' : 'verify'));
 });
 

@@ -254,6 +254,7 @@ export default function Login({ mode = 'login' }) {
 
         {step === 'totp' && <>
           {data.trusted && <Callout tone="ok" className="flex items-center gap-2"><Check className="size-4" /> Trusted device - email code skipped.</Callout>}
+          {data.demo && <Callout tone="ok" className="flex items-center gap-2"><Check className="size-4" /> Demo account on this laptop - email code skipped.</Callout>}
           <p className={muted}>Open Google Authenticator and enter the 6-digit code for TrustVault.</p>
           {useBackup
             ? <Field label="Backup code"><Input name="code" required autoFocus placeholder="XXXX-XXXX" className="font-mono" autoComplete="off" /></Field>
@@ -261,7 +262,7 @@ export default function Login({ mode = 'login' }) {
           <Button type="button" variant="link" className="justify-self-center text-xs" onClick={() => setUseBackup(!useBackup)}>
             {useBackup ? 'Use Google Authenticator instead' : 'Lost your phone? Use a backup code'}
           </Button>
-          {!data.trusted && rememberDevice}
+          {!data.trusted && !data.demo && rememberDevice}
         </>}
 
         {step === 'backup' && <BackupCodes codes={data.backupCodes} />}

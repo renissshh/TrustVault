@@ -77,15 +77,16 @@ export function ActivityLine({ activity, days = 14 }) {
 // once stored, as they are not verified); the vault PIN is the last 12.
 const REQUIRED = [['pan', 'PAN card'], ['aadhaar', 'Aadhaar card'], ['class10', '10th marksheet'], ['class12', '12th marksheet']];
 const STATE = {
-  verified: ['Verified', 'var(--success)', Check], pending: ['In review', '#fbbf24', Clock], rejected: ['Rejected', 'var(--destructive)', X],
+  verified: ['Verified', 'var(--success)', Check], stored: ['Stored', 'var(--success)', Check], pending: ['Checking', '#fbbf24', Clock], rejected: ['Not verified', 'var(--destructive)', X],
   missing: ['Add it', 'var(--muted)', Plus],
 };
 export function IdentityRing({ docs, user }) {
   const id = useId().replace(/:/g, '');
   const rows = REQUIRED.map(([type, label]) => {
     const mine = docs.filter((d) => d.type === type);
-    const state = mine.some((d) => d.status === 'verified' || d.status === 'stored') ? 'verified' : mine.some((d) => d.status === 'pending') ? 'pending' : mine.length ? 'rejected' : 'missing';
-    return { type, label, state, points: state === 'verified' ? 22 : state === 'pending' ? 11 : 0 };
+    // 10th / 12th marksheets are stored without checks: they count as done, but say "Stored", not "Verified"
+    const state = mine.some((d) => d.status === 'verified') ? 'verified' : mine.some((d) => d.status === 'stored') ? 'stored' : mine.some((d) => d.status === 'pending') ? 'pending' : mine.length ? 'rejected' : 'missing';
+    return { type, label, state, points: state === 'verified' || state === 'stored' ? 22 : state === 'pending' ? 11 : 0 };
   });
   const score = rows.reduce((n, r) => n + r.points, 0) + (user.hasVaultPin ? 12 : 0);
   const [shown, setShown] = useState(0);

@@ -27,6 +27,9 @@ export default {
   trustProxy: Number(env.TRUST_PROXY) || 'loopback',
   // Laptop demos: show the saved dev emails on a Mailbox page. Off unless asked for, and never with a real email service.
   demoMailbox: env.DEMO_MAILBOX === '1' && !env.SMTP_USER && !env.BREVO_API_KEY,
+  // Laptop demos: the made-up @trustvault.demo accounts cannot receive email, so they skip the email code
+  // (password + Authenticator still apply). Only when asked for and only while the site runs on localhost.
+  demoSkipEmail: env.DEMO_SKIP_EMAIL === '1' && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/?$/.test(env.APP_URL || 'http://localhost:5173'),
   // Secret sign-up codes: only people who know them can create a Faculty or an Administrator account.
   facultyCode: env.FACULTY_CODE || '',
   adminCode: env.ADMIN_CODE || '',

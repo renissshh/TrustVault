@@ -320,6 +320,7 @@
 /* ---------- after sign-in: while you were away, next best step ---------- */
 .away { display: grid; gap: 14px; padding: 22px; border-radius: 28px; border: 1px solid color-mix(in srgb, var(--violet) 45%, transparent); background: linear-gradient(135deg, color-mix(in srgb, var(--violet) 14%, var(--card)), var(--card) 60%); box-shadow: 0 0 70px -30px var(--violet); animation: rise 0.7s var(--ease-out-expo) both; }
 .away-list { display: grid; gap: 10px; }
+.away-list.one { grid-template-columns: 1fr !important; }
 @media (min-width: 800px) { .away-list { grid-template-columns: repeat(2, 1fr); } }
 .away-list li { animation: pop 0.5s var(--ease-spring) both; animation-delay: calc(var(--i) * 110ms + 250ms); }
 .away-list a { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 18px; border: 1px solid color-mix(in srgb, var(--c) 40%, transparent); background: color-mix(in srgb, var(--c) 8%, transparent); transition: transform 0.3s var(--ease-spring), box-shadow 0.3s; }

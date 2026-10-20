@@ -35,7 +35,7 @@ const reachable = (url) => fetch(url, { signal: AbortSignal.timeout(2500) }).the
 const env = {
   ...process.env, PORT: String(PORT), MONGO_URI: MONGO, DATA_DIR: DATA, APP_URL: `http://localhost:${PORT}`,
   JWT_SECRET: crypto.randomBytes(32).toString('hex'), VAULT_KEY: crypto.randomBytes(32).toString('hex'), AUTH_RATE_LIMIT: '1000',
-  FACULTY_CODE: 'FAC-TEST-CODE', ADMIN_CODE: 'ADM-TEST-CODE-XYZ',
+  FACULTY_CODE: 'FAC-TEST-CODE', ADMIN_CODE: 'ADM-TEST-CODE-XYZ', DEMO_SKIP_EMAIL: '1',
 };
 delete env.SMTP_USER; delete env.BREVO_API_KEY; delete env.FILE_STORE; // never send real email from tests; files on disk
 const server = spawn(process.execPath, ['src/index.js'], { cwd: path.join(import.meta.dirname, '..'), env });
@@ -190,7 +190,11 @@ try {
   r = await other.call('/auth/login', { method: 'POST', body: { email: 'rahul@demo.test', password: 'wrong-pass-1' } });
   ok(r.status === 401, 'wrong password rejected');
   r = await other.call('/auth/login', { method: 'POST', body: { email: 'rahul@demo.test', password: PASSWORD } });
-  ok(r.data.next === 'otp', 'new device must enter the email code', r.data.email);
+  ok(r.data.next === 'otp', 'new device must enter the email code (even with the laptop demo switch on)', r.data.email);
+  const demoStudent = client();
+  await signUp(demoStudent, 'Demo Student', 'demo.student@trustvault.demo', { studentId: '24MX950' });
+  const dr = await client().call('/auth/login', { method: 'POST', body: { email: 'demo.student@trustvault.demo', password: PASSWORD } });
+  ok(dr.data.next === 'totp' && dr.data.demo === true, 'laptop demo: a @trustvault.demo account skips the email code, the Authenticator is still asked', JSON.stringify(dr.data).slice(0, 80));
   r = await other.call('/auth/login/otp', { method: 'POST', body: { ticket: r.data.ticket, code: lastCode('rahul@demo.test') } });
   r = await other.call('/auth/login/totp', { method: 'POST', body: { ticket: r.data.ticket, code: used.get(sSecret) } });
   ok(r.status === 400, 'an Authenticator code cannot be replayed');
