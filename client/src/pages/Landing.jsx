@@ -3,7 +3,7 @@
 // cursor light, card tilt, the sentence that lights up as you scroll).
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, BadgeCheck, Check, Fingerprint, Lock, ScanLine, ShieldCheck, UploadCloud, User } from 'lucide-react';
+import { ArrowRight, BadgeCheck, Check, Fingerprint, Lock, ScanLine, ShieldCheck, UploadCloud } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Brand } from '@/components/app/brand';
 import { ThemeToggle } from '@/components/app/account';
@@ -14,6 +14,7 @@ import { LiveShowreel } from '@/components/app/live-showreel';
 import { ParticleShield } from '@/lib/motion-kit';
 import { StoryScroll } from './landing-story';
 import { ApprovalZoom } from './landing-zoom';
+import { HeroCard } from './landing-hero';
 import '../landing-story.css';
 import '../landing.css';
 
@@ -107,8 +108,18 @@ function useLandingMotion(root) {
       const lit = Math.round(p * words.length);
       words.forEach((w, i) => w.classList.toggle('on', i < lit));
     };
-    onScroll();
-    addEventListener('scroll', onScroll, { passive: true });
+    // the hero card slides away to the left once its centre scrolls above 42% of the screen (and back on the way up)
+    const scene = el.querySelector('.lp-scene');
+    const fly = el.querySelector('.lp-fly');
+    const onScrollAll = () => {
+      onScroll();
+      if (!fly || reduce) return;
+      const r = scene.getBoundingClientRect();
+      const mid = r.top + r.height * 0.46; // .lp-stack sits at top: 46%
+      fly.style.setProperty('--exit', Math.min(1, Math.max(0, (innerHeight * 0.42 - mid) / (innerHeight * 0.55))).toFixed(3));
+    };
+    onScrollAll();
+    addEventListener('scroll', onScrollAll, { passive: true });
 
     // cursor light, card tilt, panel spotlight
     const stack = el.querySelector('.lp-stack');
@@ -128,7 +139,7 @@ function useLandingMotion(root) {
     };
     if (!reduce && !matchMedia('(pointer: coarse)').matches) addEventListener('pointermove', onMove, { passive: true });
 
-    return () => { io.disconnect(); mo.disconnect(); clearTimeout(safety); removeEventListener('scroll', onScroll); removeEventListener('pointermove', onMove); el.classList.remove('js'); };
+    return () => { io.disconnect(); mo.disconnect(); clearTimeout(safety); removeEventListener('scroll', onScrollAll); removeEventListener('pointermove', onMove); el.classList.remove('js'); };
   }, [root]);
 }
 
@@ -216,28 +227,7 @@ export default function Landing() {
             <div className="lp-floor" />
             <div className="lp-halo" />
             <div className="lp-ring r1" /><div className="lp-ring r2" />
-            <div className="lp-stack">
-              <div className="lp-card back2" />
-              <div className="lp-card back" />
-              <div className="lp-card">
-                <span className="sheen" /><span className="beam" />
-                <div className="flex items-center justify-between">
-                  <span className="lp-mono text-[clamp(10px,1.3vw,13px)] font-semibold">Income Tax Department</span>
-                  <ShieldCheck className="size-7" />
-                </div>
-                <div className="flex items-end gap-5">
-                  <span className="lp-photo"><User className="size-1/2 text-black/70" /></span>
-                  <div>
-                    <div className="font-mono text-[clamp(20px,3.6vw,38px)] leading-none font-semibold tracking-wider">ABCPS1234F</div>
-                    <div className="mt-2 text-[clamp(11px,1.4vw,15px)] opacity-80">Permanent Account Number · Rahul Sharma</div>
-                  </div>
-                </div>
-                <div className="lp-mono flex items-center justify-between border-t border-white/25 pt-3 text-[clamp(9px,1.2vw,12px)]">
-                  <span>OCR · checksum · number match</span><span className="font-bold">96%</span>
-                </div>
-                <span className="lp-stamp">VERIFIED</span>
-              </div>
-            </div>
+            <HeroCard />
             <div className="lp-sat s1"><b><Lock className="size-5" /></b><span>AES-256 encrypted</span></div>
             <div className="lp-sat s2"><b><ShieldCheck className="size-5" /></b><span>Faculty see it once</span></div>
             <div className="lp-sat s3"><b><Check className="size-5" /></b><span>Checked in seconds</span></div>
