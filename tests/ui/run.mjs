@@ -122,28 +122,37 @@ async function browser() {
   b.size = (w, h) => b.send('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: 1, mobile: w < 600 });
   b.close = () => { ws.close(); proc.kill(); };
   await b.send('Runtime.enable'); await b.send('Page.enable'); await b.send('Network.enable');
+  // keep the page "in front": Edge can open its own startup tab, and a background tab gets no animation frames
+  await b.send('Page.bringToFront'); await b.send('Emulation.setFocusEmulationEnabled', { enabled: true });
   return b;
 }
 
-// ---------- 4. every page, every role, both themes, three sizes ----------
+// ---------- 4. every page, every role, both themes, four sizes (desktop, laptop, tablet, phone) ----------
 const PUBLIC = ['/welcome', '/login', '/login?as=faculty', '/login?as=admin', '/register', '/register?as=faculty', '/register?as=admin', '/privacy', '/tutorial', '/no-such-page'];
-const STUDENT_PAGES = ['/', '/documents', '/documents?upload=aadhaar', '/documents?upload=class10', '/access', '/shares', '/activity', '/security'];
+const STUDENT_PAGES = ['/', '/documents', '/documents?upload=aadhaar', '/documents?upload=class10', '/access', '/shares', '/activity', '/security', '/security?tab=devices'];
 const ADMIN_PAGES = ['/', '/activity', '/security', '/admin'];
-const FACULTY_PAGES = ['/', '/records', '/activity', '/security'];
-const SIZES = [[1900, 940], [1366, 700], [390, 844]];
+const FACULTY_PAGES = ['/', '/records', '/records?batch=23MX', '/documents', '/activity', '/security?tab=personal'];
+const SIZES = [[1900, 940], [1366, 700], [768, 1024], [390, 844]];
 const wait = (ms) => `await new Promise((r) => setTimeout(r, ${ms}));`;
 const CLICKS = {
   'quick search opens (Ctrl+K)': ['/', `(async () => { window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true })); ${wait(500)} return !!document.querySelector('[role=listbox] [role=option]'); })()`],
   'top menu drops down': ['/', `(async () => { const l = [...document.querySelectorAll('nav[aria-label=Main] a')].find((a) => a.textContent.trim().startsWith('Vault')); l?.dispatchEvent(new MouseEvent('mouseover', { bubbles: true })); ${wait(600)} return !!document.querySelector('.mega [role=menuitem]'); })()`],
   'wallet card flips': ['/', `(async () => { document.querySelector('.wl-card.front')?.click(); ${wait(500)} return !!document.querySelector('.wl-card.front.flipped'); })()`],
   'upload window opens from a link': ['/documents?upload=aadhaar', `(async () => { ${wait(300)} return !!document.querySelector('[role=dialog] input[name=number]'); })()`],
+  'vault status shows the 4 required documents': ['/documents', `(async () => { ${wait(600)} return document.querySelectorAll('.vs-step').length === 4 && !!document.querySelector('.vs-ring'); })()`],
+  'a missing document in the status panel opens upload for that type': ['/documents', `(async () => { ${wait(600)} const b = document.querySelector('.vs-step.missing button'); if (!b) return true; b.click(); ${wait(400)} return !!document.querySelector('[role=dialog] input[name=number], [role=dialog] [role=combobox]'); })()`],
+  'dropping a file on an empty slot opens upload with that type and file': ['/documents', `(async () => { ${wait(600)} const slot = document.querySelector('[data-drop-type]'); if (!slot) return false; const dt = new DataTransfer(); dt.items.add(new File(['demo'], 'dropped-file.png', { type: 'image/png' })); slot.dispatchEvent(new DragEvent('dragenter', { dataTransfer: dt, bubbles: true })); ${wait(300)} const overlay = !!document.querySelector('.vd-drop'); slot.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true })); ${wait(600)} return overlay && !document.querySelector('.vd-drop') && !!document.querySelector('[role=dialog]')?.innerText.includes('dropped-file.png'); })()`],
+  'security tabs open one section at a time': ['/security', `(async () => { ${wait(400)} const tiles = document.querySelectorAll('.sec-tile').length; [...document.querySelectorAll('nav[aria-label="Settings sections"] a')].find((a) => a.textContent.includes('Your devices'))?.click(); ${wait(600)} return tiles === 5 && location.search === '?tab=devices' && !!document.getElementById('devices') && !document.getElementById('personal') && !document.querySelector('.sec-tile'); })()`],
+  'home shows recent activity as a short column': ['/', `(async () => { ${wait(500)} const n = document.querySelectorAll('.ra-list li').length; return n > 0 && n <= 6; })()`],
   'activity filter changes': ['/activity', `(async () => { const b = [...document.querySelectorAll('[role=group] button')].find((x) => x.textContent.includes('Documents')); b?.click(); ${wait(400)} return b?.getAttribute('aria-pressed') === 'true'; })()`],
 };
 const ADMIN_CLICKS = {
   'admin tabs all show content': ['/admin', `(async () => { for (const t of ['Users', 'Requests', 'Invitations', 'Ledger', 'Audit log']) { [...document.querySelectorAll('button')].find((x) => x.textContent.trim() === t)?.click(); ${wait(700)} if (!document.querySelector('table, form')) return false; } return true; })()`],
 };
 const FACULTY_CLICKS = {
-  'batch request counts the students in 23MX': ['/records', `(async () => { const i = document.querySelector('input[aria-label="Batch code"]'); const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set; set.call(i, '23MX'); i.dispatchEvent(new Event('input', { bubbles: true })); ${wait(1200)} return document.body.innerText.includes('1 student in 23MX'); })()`],
+  'typing "23" shows batch 23MX as profile cards with the ask form': ['/records', `(async () => { const i = document.querySelector('input[aria-label="Batch"]'); const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set; set.call(i, '23'); i.dispatchEvent(new Event('input', { bubbles: true })); ${wait(1200)} return location.search === '?batch=23MX' && document.querySelector('.rc-chip.on')?.textContent.includes('23MX') && document.querySelectorAll('.rc-card').length === 1 && !!document.querySelector('.rc-ask'); })()`],
+  'a batch with nobody in it says so and suggests real batches': ['/records?batch=26', `(async () => { ${wait(900)} return document.body.innerText.includes('No students in 26MX yet') && [...document.querySelectorAll('button')].some((b) => b.textContent.includes('23MX')); })()`],
+  'All shows every student and no ask form': ['/records', `(async () => { ${wait(900)} return document.querySelector('.rc-chip.on')?.textContent.includes('All') && document.querySelectorAll('.rc-card').length >= 1 && !document.querySelector('.rc-ask'); })()`],
 };
 const GUEST_CLICKS = {
   'sign-up asks for the faculty code': ['/register?as=faculty', `(async () => { ${wait(300)} return !!document.querySelector('input[name=code]') && !document.querySelector('input[name=studentId]'); })()`],
@@ -157,7 +166,7 @@ async function crawl(b, who, cookies, theme, pages, clicks) {
   const { identifier } = await b.send('Page.addScriptToEvaluateOnNewDocument', { source: `sessionStorage.setItem('tv-intro','1');localStorage.setItem('tv-aurora-theme','${theme}');const g=Storage.prototype.getItem;Storage.prototype.getItem=function(k){return String(k).startsWith('tv-tour:')?'1':g.call(this,k)};` });
   const bad = [];
   let count = 0;
-  const open = async (p, [w, h]) => { b.problems = []; await b.size(w, h); await b.send('Page.navigate', { url: SITE + p }); await sleep(1900); };
+  const open = async (p, [w, h]) => { b.problems = []; await b.send('Page.bringToFront'); await b.size(w, h); await b.send('Page.navigate', { url: SITE + p }); await sleep(1900); };
   for (const size of SIZES) {
     for (const p of pages) {
       await open(p, size);
@@ -179,7 +188,7 @@ async function signIn(b, secret, n) {
   const typeInto = async (selector, text) => { await b.run(`document.querySelector('${selector}').focus()`); await b.send('Input.insertText', { text }); };
   const says = (text) => `document.body.innerText.includes(${JSON.stringify(text)})`;
   b.problems = [];
-  await b.send('Network.clearBrowserCookies'); await b.size(1440, 900);
+  await b.send('Network.clearBrowserCookies'); await b.send('Page.bringToFront'); await b.size(1440, 900);
   await b.send('Page.navigate', { url: `${SITE}/login` });
   if (!(await b.until(`!!document.querySelector('input[name=email]')`))) return ok(false, `sign-in ${n}: page opens`);
   await typeInto('input[name=email]', STUDENT); await typeInto('input[name=password]', PASSWORD);
@@ -195,12 +204,15 @@ async function signIn(b, secret, n) {
   // "Hold to enter vault": a short press drains back, a full hold opens the vault
   if (!(await b.until(`!!document.querySelector('.hb')`, 6000))) return ok(false, `sign-in ${n}: hold-to-enter button shows`, await b.run(`document.querySelector('[role=alert]')?.innerText`));
   const [hx, hy] = await b.run(`(() => { const r = document.querySelector('.hb').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; })()`);
-  const mouse = (type) => b.send('Input.dispatchMouseEvent', { type, x: hx, y: hy, button: 'left', clickCount: 1 });
+  const mouse = (type) => b.send('Input.dispatchMouseEvent', { type, x: hx, y: hy, button: 'left', clickCount: type === 'mouseMoved' ? 0 : 1 });
+  await mouse('mouseMoved'); await sleep(150); // like a person: the pointer reaches the button before pressing 
   await mouse('mousePressed'); await sleep(300); await mouse('mouseReleased'); await sleep(700);
   const early = await b.run(`!document.querySelector('.hb.is-done') && !document.querySelector('.ag')`);
   await mouse('mousePressed'); await sleep(1300); await mouse('mouseReleased');
   const doors = await b.until(`!!document.querySelector('.ag')`, 3000);
-  if (!(await b.until(`location.pathname === '/' && !document.querySelector('.ag')`, 9000))) return ok(false, `sign-in ${n}: reaches the dashboard`, await b.run(`document.querySelector('[role=alert]')?.innerText`));
+  if (!(await b.until(`location.pathname === '/' && !document.querySelector('.ag')`, 9000))) {
+    return ok(false, `sign-in ${n}: reaches the dashboard`, await b.run(`JSON.stringify({ path: location.pathname, hold: document.querySelector('.hb')?.className, fill: document.querySelector('.hb')?.style.getPropertyValue('--p'), overlay: !!document.querySelector('.ag'), alert: document.querySelector('[role=alert]')?.innerText, heading: document.querySelector('h1, h2')?.textContent })`) + ' ' + b.problems.slice(0, 3).join(' | '));
+  }
   if (await b.until(says('Unlock your vault'), 2500)) { await typeInto('[aria-label="Unlock your vault"] [role=group] input', PIN); await b.until(`!${says('Unlock your vault')}`, 6000); }
   const home = await b.until(`!!document.querySelector('.wl-card, .wl-empty') && !!document.querySelector('.topnav-bar')`, 8000);
   ok(tracker >= 1 && early && doors && home && !b.problems.length, `sign-in ${n}: password -> email code -> Authenticator -> hold to enter -> Access granted -> PIN -> dashboard`,
@@ -215,7 +227,7 @@ try {
   await startServers();
   const { secrets, studentCookies, adminCookies, facultyCookies } = await seed();
   b = await browser();
-  for (const theme of ['dark', 'light']) {
+  for (const theme of process.env.UI_ONLY === 'signin' ? [] : ['dark', 'light']) { // UI_ONLY=signin: just the sign-in checks
     await crawl(b, 'guest', null, theme, PUBLIC, GUEST_CLICKS);
     await crawl(b, 'student', studentCookies, theme, STUDENT_PAGES, CLICKS);
     await crawl(b, 'admin', adminCookies, theme, ADMIN_PAGES, ADMIN_CLICKS);

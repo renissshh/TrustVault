@@ -1,12 +1,63 @@
-# Runs on every push / pull request: unit tests, website build, and the full end-to-end suite.
-name: CI
+# CI/CD for TrustVault.
+#   CI  - every push and pull request: unit tests + website build, end-to-end API tests, and browser tests
+#         (every page, every role, both themes, three screen sizes) - in parallel.
+#   CD  - pushes to main, only when all three jobs are green: trigger a Render deploy.
+#         Set the repository secret RENDER_DEPLOY_HOOK (Render > service > Settings > Deploy hook) to turn it on;
+#         without it the deploy job explains how and stops, so forks and pull requests never deploy.
+name: CI/CD
 
 on:
   push:
   pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  test:
+  unit-build:
+    name: Unit tests + build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: '**/package-lock.json'
+      - run: npm ci --prefix server
+      - run: npm ci --prefix client
+      - name: Unit tests
+        run: npm test --prefix server
+      - name: Build website
+        run: npm run build --prefix client
+      - uses: actions/upload-artifact@v4
+        with:
+          name: website
+          path: client/dist
+          retention-days: 7
+
+  e2e:
+    name: End-to-end API tests
+    runs-on: ubuntu-latest
+    services:
+      mongo:
+        image: mongo:7
+        ports: ['27017:27017']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: '**/package-lock.json'
+      - run: npm ci --prefix server
+      - name: End-to-end tests
+        run: npm run test:e2e --prefix server
+
+  ui:
+    name: Browser tests (Chrome)
     runs-on: ubuntu-latest
     services:
       mongo:
@@ -21,9 +72,25 @@ jobs:
           cache-dependency-path: '**/package-lock.json'
       - run: npm ci --prefix server
       - run: npm ci --prefix client
-      - name: Unit tests
-        run: npm test --prefix server
-      - name: Build website
-        run: npm run build --prefix client
-      - name: End-to-end tests (105 checks)
-        run: npm run test:e2e --prefix server
+      - name: Browser tests
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+        run: npm run test:ui
+
+  deploy:
+    name: Deploy to Render
+    needs: [unit-build, e2e, ui]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Trigger the Render deploy hook
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "::notice::No RENDER_DEPLOY_HOOK secret, so nothing was deployed. Add it in Settings > Secrets > Actions to deploy automatically after green tests."
+            exit 0
+          fi
+          curl -fsS -X POST "$HOOK" > /dev/null
+          echo "::notice::Deploy started on Render."

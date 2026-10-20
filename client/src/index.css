@@ -367,7 +367,7 @@
 
 /* ---------- identity progress ring ---------- */
 .idr { display: grid; gap: 22px; align-items: center; }
-@media (min-width: 520px) { .idr { grid-template-columns: auto 1fr; } }
+@container (min-width: 440px) { .idr { grid-template-columns: auto 1fr; } }
 .idr-ring { position: relative; width: clamp(150px, 15vw, 210px); aspect-ratio: 1; justify-self: center; }
 .idr-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); overflow: visible; filter: drop-shadow(0 0 14px color-mix(in srgb, var(--violet) 55%, transparent)); }
 .idr-ring .run { stroke-dasharray: 100; stroke-dashoffset: 100; transition: stroke-dashoffset 1.6s var(--ease-out-expo) 0.2s; }
@@ -378,7 +378,7 @@
 .idr-list a, .idr-list div { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 14px; border: 1px solid var(--border); font-size: 14px; font-weight: 600; transition: border-color 0.2s, transform 0.3s var(--ease-spring), background-color 0.2s; }
 .idr-list a:hover { border-color: var(--primary); background: var(--accent); transform: translateX(4px); }
 .idr-list i { display: grid; place-items: center; flex: none; width: 24px; height: 24px; border-radius: 50%; color: var(--on-accent); }
-.idr-list small { margin-left: auto; font: 600 10px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted-foreground); }
+.idr-list small { margin-left: auto; white-space: nowrap; font: 600 10px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted-foreground); }
 
 /* ---------- guided empty states ---------- */
 .es { position: relative; display: grid; justify-items: center; gap: 10px; padding: clamp(28px, 5vw, 56px) 24px; text-align: center; overflow: hidden; border-radius: 28px; border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--border));
@@ -412,14 +412,24 @@
 .dt button:hover .plus { color: var(--on-accent); background: var(--c); border-color: var(--c); rotate: 90deg; }
 
 /* ---------- activity timeline ---------- */
-.tl { position: relative; display: grid; gap: 10px; padding-left: 4px; }
-.tl::before { content: ""; position: absolute; left: 21px; top: 18px; bottom: 18px; width: 2px; border-radius: 2px; background: linear-gradient(180deg, var(--primary), var(--violet), color-mix(in srgb, var(--pink) 40%, transparent)); opacity: 0.45; }
-.tl-item { position: relative; display: flex; align-items: flex-start; gap: 14px; padding: 12px 16px 12px 0; border-radius: 18px; transition: background-color 0.2s, transform 0.3s var(--ease-spring); }
-.tl-item > div { flex: 1; padding: 10px 14px; border-radius: 16px; border: 1px solid var(--border); background: var(--card); transition: border-color 0.2s, box-shadow 0.3s; }
-.tl-item:hover { transform: translateX(4px); }
-.tl-item:hover > div { border-color: color-mix(in srgb, var(--primary) 50%, transparent); box-shadow: 0 0 30px -16px var(--primary); }
-.tl-item.other > div { border-color: color-mix(in srgb, #fbbf24 60%, transparent); background: color-mix(in srgb, #fbbf24 9%, var(--card)); }
-.tl-icon { position: relative; z-index: 1; display: grid; place-items: center; flex: none; width: 36px; height: 36px; margin-top: 4px; border-radius: 50%; color: var(--on-accent); box-shadow: 0 0 0 4px var(--background), 0 0 18px -4px currentColor; }
+/* ---------- activity log: compact rows grouped by day ---------- */
+.al-day { display: grid; gap: 8px; }
+.al-day-label { display: flex; align-items: center; gap: 8px; width: fit-content; padding: 4px 12px; border-radius: 999px; border: 1px solid var(--border); background: var(--muted); font: 600 12px var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted-foreground); }
+.al-day-label span { padding: 0 6px; border-radius: 999px; background: var(--card); color: var(--foreground); }
+.al-list { overflow: hidden; border: 1px solid var(--border); border-radius: 18px; background: color-mix(in srgb, var(--card) 85%, transparent); }
+.al-row { animation: rise 0.45s var(--ease-out-expo) both; animation-delay: calc(min(var(--i), 12) * 35ms); }
+.al-row + .al-row { border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent); }
+.al-line { position: relative; display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 6px 12px 6px 14px; transition: background 0.2s; }
+.al-line::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; border-radius: 3px; background: var(--c); opacity: 0; transition: opacity 0.2s; }
+.al-row:hover .al-line { background: color-mix(in srgb, var(--c) 7%, transparent); }
+.al-row:hover .al-line::before, .al-row.other .al-line::before { opacity: 1; }
+.al-row.other .al-line { background: color-mix(in srgb, #fbbf24 7%, transparent); }
+.al-icon { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 50%; color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent); border: 1.5px solid color-mix(in srgb, var(--c) 55%, transparent); }
+.al-count { display: inline-grid; place-items: center; min-width: 28px; margin-left: 8px; padding: 0 7px; border-radius: 999px; font: 700 11px/18px var(--font-mono); color: var(--on-accent); background: var(--c); vertical-align: 1px; }
+.al-more { display: grid; place-items: center; flex: none; width: 32px; height: 32px; border-radius: 10px; color: var(--muted-foreground); transition: background 0.2s, color 0.2s; }
+.al-more:hover { background: var(--accent); color: var(--foreground); }
+.al-sub { display: grid; gap: 4px; margin: 0 12px 10px 54px; padding: 8px 12px; border-left: 2px solid var(--c); border-radius: 0 12px 12px 0; background: color-mix(in srgb, var(--c) 6%, transparent); font-size: 13px; animation: rise 0.3s var(--ease-out-expo) both; }
+@media (prefers-reduced-motion: reduce) { .al-row, .al-sub { animation: none; } }
 
 /* Animated neon border: a bright arc of the brand gradient travels around the element (sign-in card, dashboard hero). */
 @property --ring-angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
@@ -443,3 +453,98 @@
   }
 }
 @keyframes rise-in { from { opacity: 0; translate: 0 48px; scale: 0.96; filter: blur(6px); } }
+
+/* ---------- home: compact recent-activity column ---------- */
+.ra-list { position: relative; display: grid; gap: 2px; margin-top: 6px; }
+.ra-list::before { content: ""; position: absolute; left: 13px; top: 10px; bottom: 10px; width: 2px; border-radius: 2px; background: linear-gradient(var(--primary), var(--violet), transparent); opacity: 0.35; }
+.ra-list li { position: relative; display: flex; align-items: center; gap: 10px; padding: 7px 6px 7px 0; border-radius: 12px; animation: rise 0.5s var(--ease-out-expo) both; animation-delay: calc(var(--i) * 60ms); transition: background 0.2s; }
+.ra-list li:hover { background: color-mix(in srgb, var(--c) 8%, transparent); }
+.ra-dot { position: relative; z-index: 1; display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 50%; color: var(--c); background: var(--card); border: 1.5px solid color-mix(in srgb, var(--c) 60%, transparent); box-shadow: 0 0 14px -4px var(--c); }
+.ra-count { display: inline-grid; place-items: center; min-width: 26px; padding: 0 6px; border-radius: 999px; font: 700 11px/18px var(--font-mono); color: var(--on-accent); background: var(--c); }
+@media (prefers-reduced-motion: reduce) { .ra-list li { animation: none; } }
+
+/* ---------- security: overview tiles ---------- */
+.sec-tile { display: flex; align-items: center; gap: 14px; padding: 16px 18px; border-radius: 20px; border: 1px solid var(--border); background: var(--card); text-align: left; transition: transform 0.3s var(--ease-spring), border-color 0.2s, box-shadow 0.3s; animation: rise 0.5s var(--ease-out-expo) both; }
+.sec-tile:nth-child(2) { animation-delay: 60ms; } .sec-tile:nth-child(3) { animation-delay: 120ms; } .sec-tile:nth-child(4) { animation-delay: 180ms; } .sec-tile:nth-child(5) { animation-delay: 240ms; }
+.sec-tile:hover, .sec-tile:focus-visible { transform: translateY(-3px); border-color: color-mix(in srgb, var(--c) 55%, transparent); box-shadow: 0 18px 40px -26px var(--c); }
+.sec-tile.danger { border-color: color-mix(in srgb, var(--destructive) 45%, transparent); background: color-mix(in srgb, var(--destructive) 6%, var(--card)); }
+.sec-tile-icon { display: grid; place-items: center; flex: none; width: 44px; height: 44px; border-radius: 14px; color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent); }
+.sec-tile:not(.danger) .sec-tile-icon { color: var(--primary); background: color-mix(in srgb, var(--primary) 14%, transparent); }
+.sec-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c); box-shadow: 0 0 10px var(--c); }
+@media (prefers-reduced-motion: reduce) { .sec-tile { animation: none; } }
+
+/* ---------- student records: batch chips + profile cards ---------- */
+.rc-chip { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 6px 0 14px; border-radius: 999px; border: 1px solid var(--border); background: var(--card); font-size: 14px; font-weight: 700; color: var(--muted-foreground); transition: border-color 0.2s, color 0.2s, background 0.2s, transform 0.25s var(--ease-spring); }
+.rc-chip:hover { border-color: color-mix(in srgb, var(--primary) 55%, transparent); color: var(--foreground); transform: translateY(-1px); }
+.rc-chip.on { border-color: var(--primary); color: var(--foreground); background: color-mix(in srgb, var(--primary) 14%, var(--card)); box-shadow: 0 0 24px -10px var(--primary); }
+.rc-chip-n { display: grid; place-items: center; min-width: 28px; height: 28px; padding: 0 8px; border-radius: 999px; font: 700 12px var(--font-mono); background: var(--muted); color: var(--foreground); }
+.rc-chip.on .rc-chip-n { background: var(--primary); color: var(--on-accent); }
+.rc-card { display: grid; gap: 12px; padding: 18px; border-radius: 22px; border: 1px solid var(--border); background: var(--card); animation: rise 0.5s var(--ease-out-expo) both; animation-delay: calc(min(var(--i), 12) * 45ms); transition: border-color 0.25s, box-shadow 0.3s; }
+.rc-card:hover, .rc-card:focus-visible { border-color: color-mix(in srgb, var(--primary) 55%, transparent); box-shadow: 0 24px 50px -30px var(--primary); }
+.rc-ring { transition: stroke-dasharray 0.9s var(--ease-out-expo); }
+.rc-ask { border-color: color-mix(in srgb, var(--primary) 40%, var(--border)); background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 8%, var(--card)), var(--card) 60%); animation: rise 0.5s var(--ease-out-expo) both; }
+@media (prefers-reduced-motion: reduce) { .rc-card, .rc-ask { animation: none; } }
+
+/* ---------- vault: status panel ---------- */
+.vs { position: relative; display: grid; gap: 28px; align-items: center; padding: 24px; border-radius: 28px; border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--border)); overflow: hidden;
+  background: radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--primary) 14%, transparent), transparent 55%), radial-gradient(100% 120% at 100% 100%, color-mix(in srgb, var(--pink) 10%, transparent), transparent 60%), var(--card);
+  box-shadow: 0 30px 70px -40px var(--glow); animation: rise 0.6s var(--ease-out-expo) both; }
+@media (min-width: 768px) { .vs { grid-template-columns: auto minmax(0, 1fr); } }
+.vs-ring { position: relative; width: 168px; aspect-ratio: 1; justify-self: center; }
+.vs-ring > svg { width: 100%; height: 100%; transform: rotate(-90deg); overflow: visible; }
+.vs-track-c { fill: none; stroke: var(--muted); stroke-width: 9; }
+.vs-run { fill: none; stroke: url(#vs-g); stroke-width: 9; stroke-linecap: round; stroke-dasharray: 100; stroke-dashoffset: calc(100 - var(--p)); filter: drop-shadow(0 0 8px var(--primary)); animation: vs-fill 1.3s var(--ease-out-expo) both; }
+@keyframes vs-fill { from { stroke-dashoffset: 100; } }
+.vs-ticks line { stroke: color-mix(in srgb, var(--violet) 55%, transparent); stroke-width: 1.4; stroke-linecap: round; }
+.vs-ticks { transform-origin: 60px 60px; animation: vs-spin 40s linear infinite; }
+@keyframes vs-spin { to { transform: rotate(360deg); } }
+.vs-core { position: absolute; inset: 22%; display: grid; place-content: center; justify-items: center; border-radius: 50%; color: var(--primary); background: color-mix(in srgb, var(--background) 70%, var(--card)); box-shadow: inset 0 0 30px -10px var(--primary); }
+.vs-core b { font: 800 34px/1 var(--font-mono); color: var(--foreground); } .vs-core b small { font-size: 16px; }
+.vs-core em { font: 600 10px var(--font-mono); font-style: normal; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted-foreground); }
+.vs-steps { position: relative; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 8px; }
+.vs-steps::before, .vs-steps::after { content: ""; position: absolute; top: 26px; left: calc(50% / var(--n)); height: 3px; border-radius: 3px; }
+.vs-steps::before { right: calc(50% / var(--n)); background: var(--muted); }
+.vs-steps::after { width: calc((100% - 100% / var(--n)) * var(--frac)); background: linear-gradient(90deg, var(--success), var(--primary)); box-shadow: 0 0 12px var(--primary); transform-origin: left; animation: vs-line 1.2s var(--ease-out-expo) 0.3s both; }
+@keyframes vs-line { from { transform: scaleX(0); } }
+.vs-step > button, .vs-step > div { position: relative; z-index: 1; display: grid; justify-items: center; gap: 4px; width: 100%; padding: 2px; border-radius: 16px; text-align: center; animation: pop 0.5s var(--ease-spring) both; animation-delay: calc(var(--i) * 90ms + 200ms); }
+.vs-step > button { cursor: pointer; transition: background 0.2s; } .vs-step > button:hover { background: color-mix(in srgb, var(--primary) 8%, transparent); }
+.vs-node { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; color: var(--c); background: var(--card); border: 2px solid color-mix(in srgb, var(--c) 70%, transparent); box-shadow: 0 0 0 5px var(--card), 0 0 22px -6px var(--c); transition: transform 0.3s var(--ease-spring); }
+.vs-step.verified .vs-node, .vs-step.stored .vs-node { color: var(--on-accent); background: var(--c); }
+.vs-step.missing .vs-node { border-style: dashed; color: var(--muted-foreground); box-shadow: 0 0 0 5px var(--card); }
+.vs-step.pending .vs-node { animation: vs-pulse 1.6s ease-in-out infinite; }
+@keyframes vs-pulse { 50% { box-shadow: 0 0 0 5px var(--card), 0 0 0 11px color-mix(in srgb, var(--c) 25%, transparent); } }
+.vs-step > button:hover .vs-node { transform: translateY(-3px) scale(1.06); border-style: solid; border-color: var(--primary); color: var(--primary); }
+.vs-step b { font-size: 13.5px; line-height: 1.2; } .vs-step small { font-size: 11.5px; color: var(--c); font-weight: 600; }
+.vs-step.missing small { color: var(--primary); }
+.vs-stat { display: grid; gap: 2px; padding: 10px 14px; border-radius: 16px; border: 1px solid var(--border); background: color-mix(in srgb, var(--c) 6%, var(--background)); }
+.vs-stat b { font: 700 24px/1 var(--font-mono); color: var(--c); } .vs-stat small { font-size: 12px; color: var(--muted-foreground); }
+@media (max-width: 560px) { .vs-step b { font-size: 11.5px; } .vs-node { width: 44px; height: 44px; } .vs-steps::before, .vs-steps::after { top: 22px; } }
+
+/* ---------- vault: document cards ---------- */
+.vc-card { animation: rise 0.55s var(--ease-out-expo) both; animation-delay: calc(min(var(--i), 10) * 70ms); transition: border-color 0.3s, box-shadow 0.3s; }
+.vc-card:hover { border-color: color-mix(in srgb, var(--primary) 45%, transparent); box-shadow: 0 30px 60px -36px var(--primary); }
+.vc-card.is-verified { border-color: color-mix(in srgb, var(--success) 35%, var(--border)); }
+.vc-sheen { position: absolute; inset: 0 auto 0 -40%; width: 40%; background: linear-gradient(100deg, transparent, rgb(255 255 255 / 0.45), transparent); transform: skewX(-20deg); pointer-events: none; }
+.vc-card:hover .vc-sheen { animation: vc-sheen 0.9s var(--ease-out-expo); }
+@keyframes vc-sheen { to { left: 120%; } }
+.vc-seal { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; color: var(--on-accent); background: var(--success); box-shadow: 0 0 14px -2px var(--success); animation: pop 0.5s var(--ease-spring) 0.4s both; }
+
+/* ---------- vault: drop zones ---------- */
+.dt .dt-drop { display: block; margin-top: 4px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em; color: color-mix(in srgb, var(--c) 80%, var(--muted-foreground)); opacity: 0.85; }
+.dt button { background-image: linear-gradient(90deg, color-mix(in srgb, var(--c) 0%, transparent), color-mix(in srgb, var(--c) 8%, transparent), color-mix(in srgb, var(--c) 0%, transparent)); background-size: 200% 100%; animation: dt-breathe 6s ease-in-out infinite; }
+@keyframes dt-breathe { 50% { background-position: 100% 0; } }
+.dt button .dt-icon { animation: dt-float 4s ease-in-out infinite; }
+.dt button:nth-child(2) .dt-icon { animation-delay: -1.3s; } .dt button:nth-child(3) .dt-icon { animation-delay: -2.6s; }
+@keyframes dt-float { 50% { translate: 0 -4px; } }
+.vd-drop { position: fixed; inset: 0; z-index: 90; display: grid; align-content: start; justify-items: center; padding: 92px 24px 24px; pointer-events: none;
+  background: color-mix(in srgb, var(--background) 28%, transparent); animation: rise 0.25s var(--ease-out-expo) both; }
+.vd-drop::before { content: ""; position: absolute; inset: 14px; border-radius: 32px; border: 3px dashed color-mix(in srgb, var(--primary) 70%, transparent); animation: vd-march 1s linear infinite; }
+@keyframes vd-march { 50% { border-color: color-mix(in srgb, var(--violet) 70%, transparent); } }
+.vd-drop-pill { display: flex; align-items: center; gap: 14px; max-width: min(560px, 100%); padding: 12px 22px 12px 12px; border-radius: 999px; background: color-mix(in srgb, var(--card) 92%, transparent); border: 1px solid color-mix(in srgb, var(--primary) 50%, transparent); box-shadow: 0 20px 50px -20px var(--primary); }
+.vd-drop-ring { display: grid; place-items: center; flex: none; width: 52px; height: 52px; border-radius: 50%; color: var(--on-accent); background: linear-gradient(135deg, var(--primary), var(--violet)); box-shadow: 0 0 30px -4px var(--primary); animation: dt-float 1.6s ease-in-out infinite; }
+.vd-drop b { display: block; font: 800 18px var(--font-display); } .vd-drop small { color: var(--muted-foreground); font-size: 13px; }
+/* while a file is dragged over the page, the slots light up as drop targets */
+.is-dragging-file .dt button { border-style: solid; border-color: var(--c); box-shadow: 0 0 0 4px color-mix(in srgb, var(--c) 20%, transparent), 0 0 40px -12px var(--c); }
+@media (prefers-reduced-motion: reduce) {
+  .vs, .vs-run, .vs-ticks, .vs-steps::after, .vs-step > button, .vs-step > div, .vs-step.pending .vs-node, .vc-card, .vc-seal, .dt button, .dt button .dt-icon, .vd-drop, .vd-drop::before, .vd-drop-ring { animation: none; }
+}

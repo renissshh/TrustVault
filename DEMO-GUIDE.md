@@ -44,19 +44,23 @@ Every student has a PAN, Aadhaar, 10th marksheet, 12th marksheet and a college b
 
 **Part A: the student (Meera Krishnan, 23MX306)**
 1. Sign in with the **Student** tab.
-2. **Home**: her documents in the wallet, document progress, and a notification that faculty are asking for documents.
+2. **Home**: her documents in the wallet, **Needs you** (the faculty request waiting for her), **Your documents** (the progress ring) and the short **Recent activity** column on the right.
 3. **Vault → My Documents**:
-   - Point out the groups: identity documents (checked), **school marksheets** (10th/12th, stored as they are, no checks) and college documents.
+   - The **vault status** panel at the top: a completion ring and the 4 required documents as a step track. A missing one is a button that opens the upload window for that type.
+   - **Drag a file** from the desktop onto the page: a "drop to upload" overlay appears; drop it on a slot (e.g. *Other*) to choose its type.
+   - Point out the groups: identity documents (checked), **school marksheets** (10th/12th, stored as they are, no checks) and college documents. Hover a card: it tilts and shimmers; verified ones carry a seal.
    - Open **Automatic checks** on her Aadhaar: it was compared with her other documents ("shares MEERA KRISHNAN … with your PAN Card"), never with her account name.
 4. **Email me a ZIP**: choose **Size limit**, type `150` KB, send. For a demo account the email and its ZIP land in `server\dev-mail\` (every file under 150 KB); for a real account they arrive in Gmail.
 5. **Privacy → Access Requests**: Dr. Priya asked for 5 documents. **Untick** two of them and press **Share 3 of 5**.
 
 **Part B: the faculty member (Dr. Priya Raman)**
 1. Sign out, then sign in with the **Faculty** tab. The Student tab would refuse this account.
-2. **Students → Student Records**: all 10 students and Dr. Priya's access to each.
+2. **Students → Student Records**: batch chips **All · 24MX · 23MX** with counts, and every student as a profile card (roll number, verified documents ring, Dr. Priya's access). Type `24` in the **Batch** box: only the 24MX students stay. Type `26`: "No students in 26MX yet", with buttons for the batches that exist.
 3. Open **Meera Krishnan**: only the 3 documents she shared are listed. Press **Open once** on one: it opens with Dr. Priya's email watermarked across it. Close it, and it now says **Already opened**.
 4. Open **Lakshmi Venkat** (no access yet): tick **10th Marksheet** and **12th Marksheet**, add a reason, press **Send request**. Lakshmi is notified.
-5. **Ask a whole batch**: type `23MX`. It counts the students in that batch. Tick **PAN Card** and **College Certificate**, press **Send to all students in 23MX**. Students who already have a waiting request from Dr. Priya are skipped. Each student then decides on their own **Access Requests** page.
+5. **Ask a whole batch**: pick the **23MX** chip (or type `23`). Under the students, the **Ask all 6 students in 23MX** form appears. Tick **PAN Card** and **College Certificate**, press **Send to all 6 students in 23MX**. Students who already have a waiting request from Dr. Priya are skipped. Each student then decides on their own **Access Requests** page.
+6. **Home → Recent activity**: the batch request shows as one line with a count (**Access requested ×6**), not six lines. **Privacy → Activity Log** has the full history: search, filters, pages of 15, and each grouped line opens to show every event.
+7. **Privacy → Security**: the Overview shows the score and one tile per section; click **Your devices** and only the devices open, at its own link (`/security?tab=devices`). The browser's Back button returns to the Overview.
 
 **Part C: the administrator (Admin Office)**
 1. Sign in with the **Administrator** tab.

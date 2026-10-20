@@ -1,10 +1,11 @@
 // Account settings: a section menu, then tidy rows.
 // Nothing sensitive is edited in place - each row opens a step-by-step flow (see components/app/secure.jsx).
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { motion } from 'motion/react';
 import {
   ShieldCheck, KeyRound, LifeBuoy, AlertTriangle, Check, X, User, IdCard, Mail, Lock, Unlock, Smartphone,
-  MonitorSmartphone, Monitor, Palette, ChevronRight, Gauge, LogOut, ShieldAlert,
+  MonitorSmartphone, Monitor, Palette, ChevronRight, ChevronLeft, Gauge, LogOut, ShieldAlert,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
@@ -28,7 +29,7 @@ const SECTIONS = [
 
 function Group({ id, title, desc, children, danger }) {
   return (
-    <section id={id} className={cn('scroll-mt-24 overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-brutal', danger && 'border-destructive/70')}>
+    <section id={id} className={cn('overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-brutal', danger && 'border-destructive/70')}>
       <header className={cn('border-b border-border px-5 py-3', danger ? 'border-destructive/70 bg-destructive/15' : 'bg-muted/60')}>
         <h2 className="text-lg">{title}</h2>{desc && <p className="text-xs text-muted-foreground">{desc}</p>}
       </header>
@@ -182,9 +183,11 @@ function ProfileEdit({ onClose }) {
         <Field label="Full name" hint="Must match your documents exactly - the automatic checks compare them.">
           <Input name="name" defaultValue={user.name} required minLength={2} autoComplete="name" autoFocus />
         </Field>
-        <Field label="MCA roll number" hint="MCA students only: the 2-digit year you joined, MX, then your 3-digit number.">
-          <Input name="studentId" defaultValue={user.studentId ?? ''} required={user.role === 'student'} placeholder="e.g. 23MX347" autoComplete="off" className="font-mono uppercase placeholder:normal-case" maxLength={12} />
-        </Field>
+        {user.role === 'student' && (
+          <Field label="MCA roll number" hint="MCA students only: the 2-digit year you joined, MX, then your 3-digit number.">
+            <Input name="studentId" defaultValue={user.studentId ?? ''} required placeholder="e.g. 23MX347" autoComplete="off" className="font-mono uppercase placeholder:normal-case" maxLength={12} />
+          </Field>
+        )}
         <ErrorText>{error}</ErrorText>
         <Button>Save</Button>
       </form>
@@ -192,25 +195,40 @@ function ProfileEdit({ onClose }) {
   );
 }
 
+const TAB_IDS = SECTIONS.map(([id]) => id);
+
+// One summary tile on the Overview: what the section holds, its state, and a way in.
+function Tile({ icon: Icon, title, lines, state = 'ok', onOpen, danger }) {
+  const tone = danger ? 'var(--destructive)' : state === 'warn' ? '#fbbf24' : 'var(--success)';
+  return (
+    <button type="button" onClick={onOpen} style={{ '--c': tone }} className={cn('sec-tile group', danger && 'danger')}>
+      <span className="sec-tile-icon"><Icon className="size-5" /></span>
+      <span className="grid min-w-0 flex-1 gap-1 text-left">
+        <b className="flex items-center gap-2">{title}{!danger && <span className="sec-dot" role="img" aria-label={state === 'warn' ? 'needs attention' : 'all good'} />}</b>
+        {lines.map((l) => <small key={l} className="truncate text-muted-foreground">{l}</small>)}
+      </span>
+      <ChevronRight className="size-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1" />
+    </button>
+  );
+}
+
 export default function Security() {
   const { user, vaultUnlocked, setVault, elevatedUntil } = useAuth();
   const sessions = useAsync(() => api('/auth/sessions'));
+  const [params, setParams] = useSearchParams();
+  const tab = TAB_IDS.includes(params.get('tab')) ? params.get('tab') : 'overview';
+  const open = (id) => { setParams(id === 'overview' ? {} : { tab: id }); window.scrollTo({ top: 0, behavior: 'smooth' }); };
   const [flow, setFlow] = useState(null);
   const [editing, setEditing] = useState(false);
   const [showAll, setShowAll] = useState(false);
-  const [active, setActive] = useState('overview');
-
-  // section menu follows the scroll position
-  useEffect(() => {
-    const io = new IntersectionObserver((entries) => {
-      const hit = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
-      if (hit) setActive(hit.target.id);
-    }, { rootMargin: '-20% 0px -65% 0px' });
-    SECTIONS.forEach(([id]) => { const el = document.getElementById(id); if (el) io.observe(el); });
-    return () => io.disconnect();
-  }, []);
+  const student = user.role === 'student';
 
   const revoke = async (id) => { await api(`/auth/sessions/${id}`, { method: 'DELETE' }); toast('Device signed out.'); sessions.reload(); };
+  const revokeOthers = async () => {
+    for (const s of (sessions.data ?? []).filter((x) => x.active && !x.current)) await api(`/auth/sessions/${s.id}`, { method: 'DELETE' });
+    toast('All other devices signed out.');
+    sessions.reload();
+  };
   const lockNow = async () => { await api('/auth/vault/lock', { method: 'POST' }); setVault(false); toast('Vault locked.'); };
 
   const list = sessions.data ?? [];
@@ -226,6 +244,88 @@ export default function Security() {
   const grade = score >= 90 ? 'Excellent' : score >= 70 ? 'Good' : 'Needs attention';
   const verifiedMin = elevatedUntil && new Date(elevatedUntil) > new Date() ? Math.max(1, Math.round((new Date(elevatedUntil) - Date.now()) / 60e3)) : 0;
   const shown = showAll ? list : list.filter((s) => s.active).concat(list.filter((s) => !s.active).slice(0, 2));
+  const dark = document.documentElement.classList.contains('dark');
+
+  const sections = {
+    overview: <>
+      <Card className="grid gap-5 sm:grid-cols-[auto_1fr] sm:items-center">
+        <div className={cn('grid size-36 animate-pop place-items-center rounded-full text-ink shadow-glow', score >= 90 ? 'bg-linear-to-br from-success to-primary' : score >= 70 ? 'bg-linear-to-br from-primary to-violet' : 'bg-destructive')}>
+          <span className="text-center leading-none"><b className="block font-mono text-6xl font-semibold"><CountUp value={score} /></b><small className="font-mono text-[11px] font-semibold uppercase">{grade}</small></span>
+        </div>
+        <div className="grid gap-3">
+          <div><h2 className="text-2xl">Security score</h2><p className="text-sm text-muted-foreground">Every protection you turn on raises your score. Aim for 100.</p></div>
+          <ul className="grid gap-x-10 gap-y-1.5 text-sm md:grid-cols-2">
+            {factors.map(([label, ok, pts]) => (
+              <li key={label} className="flex items-center gap-2">
+                <span className={cn('grid size-5 shrink-0 place-items-center rounded-full text-ink', ok ? 'bg-success' : 'border border-border bg-card text-card-foreground')}>{ok ? <Check className="size-3" /> : <X className="size-3" />}</span>
+                <span className="flex-1">{label}</span><span className="font-mono text-xs text-muted-foreground">+{pts}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </Card>
+      <div className="grid gap-3 md:grid-cols-2">
+        <Tile icon={User} title="Personal info" onOpen={() => open('personal')} state={student && !user.studentId ? 'warn' : 'ok'}
+          lines={[user.name, student ? `Roll no. ${user.studentId || 'not added yet'}` : user.email]} />
+        <Tile icon={ShieldCheck} title="Sign-in & security" onOpen={() => open('signin')} state={user.hasVaultPin && user.backupCodesLeft >= 4 ? 'ok' : 'warn'}
+          lines={[`Vault PIN ${user.hasVaultPin ? 'on' : 'not set'} · Authenticator on`, `${user.backupCodesLeft} of 8 backup codes left`]} />
+        <Tile icon={MonitorSmartphone} title="Your devices" onOpen={() => open('devices')} state={otherActive ? 'warn' : 'ok'}
+          lines={[otherActive ? `${otherActive} other device${otherActive > 1 ? 's are' : ' is'} signed in` : 'Only this device is signed in', 'See where you are signed in']} />
+        <Tile icon={Palette} title="Preferences" onOpen={() => open('prefs')} lines={[`${dark ? 'Dark' : 'Light'} theme`, 'Vault PIN asked once per session']} />
+        <Tile icon={AlertTriangle} title="Delete account" danger onOpen={() => open('danger')} lines={['Permanently erase your account and documents']} />
+      </div>
+    </>,
+    personal: (
+      <Group id="personal" title="Personal info" desc="Shown on your profile and compared with your documents.">
+        <Row icon={User} title="Full name" value={user.name} action="Edit" onClick={() => setEditing(true)} />
+        {student
+          ? <Row icon={IdCard} title="Roll number" value={user.studentId || 'Not added yet'} status={user.studentId ? undefined : 'warn'} action={user.studentId ? 'Edit' : 'Add'} onClick={() => setEditing(true)} />
+          : <Row icon={IdCard} title="Role" value={user.role === 'admin' ? 'Administrator' : 'Faculty'} />}
+        <Row icon={Mail} title="Email" value={`${user.email} · sign-in codes are sent here`} />
+      </Group>
+    ),
+    signin: (
+      <Group id="signin" title="Sign-in & security" desc="Changes marked with a lock ask you to confirm it's you: password, then an email code, then Google Authenticator.">
+        <Row icon={KeyRound} title="Vault PIN" secure action={user.hasVaultPin ? 'Change' : 'Set up'} onClick={() => setFlow('pin')}
+          value={user.hasVaultPin ? (vaultUnlocked ? 'On · unlocked for this session' : 'On · vault is locked') : 'Not set - needed to open your documents'}
+          status={user.hasVaultPin ? 'ok' : 'warn'}
+          extra={user.hasVaultPin && vaultUnlocked && <Button type="button" size="sm" variant="ghost" onClick={lockNow}><Lock /> Lock now</Button>} />
+        <Row icon={Lock} title="Password" value="Breach-checked · changing it signs out other devices" status="ok" secure action="Change" onClick={() => setFlow('password')} />
+        <Row icon={Smartphone} title="Google Authenticator" value="On · asked at every sign-in" status="ok" />
+        <Row icon={LifeBuoy} title="Backup codes" value={`${user.backupCodesLeft} of 8 left · for when you lose your phone`} status={user.backupCodesLeft >= 4 ? 'ok' : 'warn'} secure action="Get new codes" onClick={() => setFlow('codes')} />
+        <Row icon={MonitorSmartphone} title="Trusted devices" value="Trusted devices skip the email code for 30 days" secure action="Forget all" onClick={() => setFlow('devices')} />
+      </Group>
+    ),
+    devices: (
+      <Group id="devices" title="Your devices" desc={otherActive ? `${otherActive} other device(s) are signed in right now.` : 'Only this device is signed in right now.'}>
+        {shown.map((s) => (
+          <div key={s.id} className="flex flex-wrap items-center gap-3 border-b border-border px-5 py-3">
+            <span className={cn('grid size-9 shrink-0 place-items-center rounded-lg border border-border', s.active ? 'bg-success text-ink' : 'bg-muted')}><Monitor className="size-4" /></span>
+            <span className="grid min-w-40 flex-1 gap-0.5 text-sm">
+              <b className="flex flex-wrap items-center gap-2">{s.device} {s.current && <Badge variant="success">this device</Badge>}</b>
+              <span className="text-xs text-muted-foreground">{friendlyIp(s.ip)} · {s.location} · {s.active ? `signed in ${ago(s.createdAt)}` : `ended · ${ago(s.createdAt)}`}</span>
+            </span>
+            {s.active && !s.current && <Button size="sm" variant="destructive" onClick={() => revoke(s.id)}><LogOut /> Sign out</Button>}
+          </div>
+        ))}
+        <div className="flex flex-wrap items-center justify-between gap-2 px-5 py-3">
+          {list.length > shown.length ? <Button variant="link" className="px-0" onClick={() => setShowAll(true)}>Show {list.length - shown.length} earlier sign-ins</Button> : <span />}
+          {otherActive > 1 && <Button size="sm" variant="outline" onClick={revokeOthers}><LogOut /> Sign out all other devices</Button>}
+        </div>
+      </Group>
+    ),
+    prefs: (
+      <Group id="prefs" title="Preferences">
+        <Row icon={Palette} title="Appearance" value="Light or dark theme" extra={<ThemeToggle />} />
+        <Row icon={vaultUnlocked ? Unlock : Lock} title="Vault session" value="The PIN is asked once after you sign in, then the vault stays open until you sign out or the session ends." />
+      </Group>
+    ),
+    danger: (
+      <Group id="danger" title="Delete account" danger desc="Your right to erasure under the DPDP Act 2023. This cannot be undone.">
+        <Row icon={AlertTriangle} title="Delete my account and all documents" value="Needs a security check, then typing DELETE" secure action="Delete" onClick={() => setFlow('remove')} />
+      </Group>
+    ),
+  };
 
   return (
     <div className="grid gap-8">
@@ -233,76 +333,27 @@ export default function Security() {
         Your password, email code and Google Authenticator protect sign-in. Your vault PIN protects your documents.
       </PageHeader>
 
-      <div className="grid items-start gap-6 lg:grid-cols-[13rem_1fr]">
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[14rem_minmax(0,1fr)]">
         <nav className="top-24 flex gap-2 overflow-x-auto pb-1 lg:sticky lg:grid lg:overflow-visible" aria-label="Settings sections">
           {SECTIONS.map(([id, label, Icon]) => (
-            <a key={id} href={`#${id}`} aria-current={active === id ? 'true' : undefined}
-              className={cn('flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-200', active === id ? 'neon-fill text-ink shadow-glow' : 'text-muted-foreground hover:bg-accent hover:text-foreground')}
-              onClick={(e) => { e.preventDefault(); document.getElementById(id)?.scrollIntoView({ block: 'start' }); }}>
+            <a key={id} href={id === 'overview' ? '/security' : `/security?tab=${id}`} aria-current={tab === id ? 'page' : undefined}
+              className={cn('flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-200',
+                tab === id ? 'neon-fill text-ink shadow-glow' : 'text-muted-foreground hover:bg-accent hover:text-foreground')}
+              onClick={(e) => { e.preventDefault(); open(id); }}>
               <Icon className="size-4" /> {label}
             </a>
           ))}
           {verifiedMin > 0 && <Badge variant="success" className="mt-2 shrink-0 self-center"><ShieldCheck /> Verified for {verifiedMin} min</Badge>}
         </nav>
 
-        <div className="grid items-start gap-6 2xl:block 2xl:columns-2 2xl:gap-6 2xl:[&>*]:mb-6 2xl:[&>*]:break-inside-avoid">
-          <Card id="overview" className="grid scroll-mt-24 gap-5 sm:grid-cols-[auto_1fr] sm:items-center 2xl:[column-span:all]">
-            <div className={cn('grid size-36 animate-pop place-items-center rounded-full text-ink shadow-glow', score >= 90 ? 'bg-linear-to-br from-success to-primary' : score >= 70 ? 'bg-linear-to-br from-primary to-violet' : 'bg-destructive')}>
-              <span className="text-center leading-none"><b className="block font-mono text-6xl font-semibold"><CountUp value={score} /></b><small className="font-mono text-[11px] font-semibold uppercase">{grade}</small></span>
-            </div>
-            <div className="grid gap-3">
-              <div><h2 className="text-2xl">Security score</h2><p className="text-sm text-muted-foreground">Every protection you turn on raises your score. Aim for 100.</p></div>
-              <ul className="grid gap-x-10 gap-y-1.5 text-sm 2xl:grid-cols-2">
-                {factors.map(([label, ok, pts]) => (
-                  <li key={label} className="flex items-center gap-2">
-                    <span className={cn('grid size-5 shrink-0 place-items-center rounded-full text-ink', ok ? 'bg-success' : 'border border-border bg-card text-card-foreground')}>{ok ? <Check className="size-3" /> : <X className="size-3" />}</span>
-                    <span className="flex-1">{label}</span><span className="font-mono text-xs text-muted-foreground">+{pts}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </Card>
-
-          <Group id="personal" title="Personal info" desc="Shown on your profile and compared with your documents.">
-            <Row icon={User} title="Full name" value={user.name} action="Edit" onClick={() => setEditing(true)} />
-            <Row icon={IdCard} title="Student ID / Roll number" value={user.studentId || 'Not added yet'} status={user.studentId ? undefined : 'warn'} action={user.studentId ? 'Edit' : 'Add'} onClick={() => setEditing(true)} />
-            <Row icon={Mail} title="Email" value={`${user.email} · sign-in codes are sent here`} />
-          </Group>
-
-          <Group id="signin" title="Sign-in & security" desc="Changes marked with a lock ask you to confirm it's you: password, then an email code, then Google Authenticator.">
-            <Row icon={KeyRound} title="Vault PIN" secure action={user.hasVaultPin ? 'Change' : 'Set up'} onClick={() => setFlow('pin')}
-              value={user.hasVaultPin ? (vaultUnlocked ? 'On · unlocked for this session' : 'On · vault is locked') : 'Not set - needed to open your documents'}
-              status={user.hasVaultPin ? 'ok' : 'warn'}
-              extra={user.hasVaultPin && vaultUnlocked && <Button type="button" size="sm" variant="ghost" onClick={lockNow}><Lock /> Lock now</Button>} />
-            <Row icon={Lock} title="Password" value="Breach-checked · changing it signs out other devices" status="ok" secure action="Change" onClick={() => setFlow('password')} />
-            <Row icon={Smartphone} title="Google Authenticator" value="On · asked at every sign-in" status="ok" />
-            <Row icon={LifeBuoy} title="Backup codes" value={`${user.backupCodesLeft} of 8 left · for when you lose your phone`} status={user.backupCodesLeft >= 4 ? 'ok' : 'warn'} secure action="Get new codes" onClick={() => setFlow('codes')} />
-            <Row icon={MonitorSmartphone} title="Trusted devices" value="Trusted devices skip the email code for 30 days" secure action="Forget all" onClick={() => setFlow('devices')} />
-          </Group>
-
-          <Group id="devices" title="Your devices" desc={otherActive ? `${otherActive} other device(s) are signed in right now.` : 'Only this device is signed in right now.'}>
-            {shown.map((s) => (
-              <div key={s.id} className="flex flex-wrap items-center gap-3 border-border px-5 py-3 [&:not(:last-child)]:border-b">
-                <span className={cn('grid size-9 shrink-0 place-items-center rounded-lg border border-border', s.active ? 'bg-success text-ink' : 'bg-muted')}><Monitor className="size-4" /></span>
-                <span className="grid min-w-40 flex-1 gap-0.5 text-sm">
-                  <b className="flex flex-wrap items-center gap-2">{s.device} {s.current && <Badge variant="success">this device</Badge>}</b>
-                  <span className="text-xs text-muted-foreground">{friendlyIp(s.ip)} · {s.location} · {s.active ? `signed in ${ago(s.createdAt)}` : `ended · ${ago(s.createdAt)}`}</span>
-                </span>
-                {s.active && !s.current && <Button size="sm" variant="destructive" onClick={() => revoke(s.id)}><LogOut /> Sign out</Button>}
-              </div>
-            ))}
-            {list.length > shown.length && <Button variant="link" className="justify-self-start px-5 py-3" onClick={() => setShowAll(true)}>Show {list.length - shown.length} earlier sign-ins</Button>}
-          </Group>
-
-          <Group id="prefs" title="Preferences">
-            <Row icon={Palette} title="Appearance" value="Light or dark theme" extra={<ThemeToggle />} />
-            <Row icon={vaultUnlocked ? Unlock : Lock} title="Vault session" value="The PIN is asked once after you sign in, then the vault stays open until you sign out or the session ends." />
-          </Group>
-
-          <Group id="danger" title="Delete account" danger desc="Your right to erasure under the DPDP Act 2023. This cannot be undone.">
-            <Row icon={AlertTriangle} title="Delete my account and all documents" value="Needs a security check, then typing DELETE" secure action="Delete" onClick={() => setFlow('remove')} />
-          </Group>
-        </div>
+        <motion.div key={tab} className="grid min-w-0 max-w-4xl gap-6" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}>
+          {tab !== 'overview' && (
+            <button type="button" onClick={() => open('overview')} className="flex w-fit items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-foreground">
+              <ChevronLeft className="size-4" /> Overview
+            </button>
+          )}
+          {sections[tab]}
+        </motion.div>
       </div>
 
       {flow && (

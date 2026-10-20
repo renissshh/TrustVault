@@ -346,6 +346,17 @@ try {
   r = await faculty.call('/records/batch-request', { method: 'POST', body: { group: '2023', types: ['pan'] } });
   ok(r.status === 400, 'a batch must look like 26MX');
   ok((await faculty.call('/records/batch/23MX')).data.students === 1, 'faculty can see how many students are in a batch');
+  r = await faculty.call('/records/batches');
+  ok(r.status === 200 && r.data.some((b) => b.group === '23MX' && b.students === 1), 'faculty get every batch with its student count', JSON.stringify(r.data));
+  r = await faculty.call('/records/students?batch=23');
+  ok(r.status === 200 && r.data.length === 1 && r.data.every((st) => st.studentId.startsWith('23MX')), 'typing just "23" lists the students of batch 23MX');
+  r = await faculty.call('/records/students?batch=26MX');
+  ok(r.status === 200 && r.data.length === 0, 'a batch with no students is an empty list, not an error');
+  r = await faculty.call('/records/students?batch=all');
+  ok(r.status === 200 && r.data.length >= 1, '"All" lists every student');
+  r = await faculty.call('/records/students?batch=2023');
+  ok(r.status === 400, 'a malformed batch is refused');
+  ok((await student.call('/records/batches')).status === 403, 'students cannot list batches');
   r = await client().call('/auth/login', { method: 'POST', body: { email: 'rahul@demo.test', password: PASSWORD, as: 'faculty' } });
   ok(r.status === 403 && /student account/.test(r.data.error), 'a student cannot use the faculty sign-in');
   r = await client().call('/auth/login', { method: 'POST', body: { email: 'admin@demo.test', password: PASSWORD, as: 'student' } });

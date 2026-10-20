@@ -1,6 +1,6 @@
 import { useDeferredValue, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Award, Hourglass, School, BookOpen, Car, CreditCard, FileText, Fingerprint, GraduationCap, Upload, Camera, Mail, Eye, Share2, Trash2, Repeat, Lightbulb, Copy, FolderLock, Search, ChevronDown, Check, Plus, CheckCircle2 } from 'lucide-react';
+import { Award, Hourglass, School, BookOpen, Car, CreditCard, FileText, Fingerprint, GraduationCap, Upload, Camera, Mail, Eye, Share2, Trash2, Repeat, Lightbulb, Copy, FolderLock, Search, ChevronDown, Check, Plus, CheckCircle2, Lock, Unlock, BadgeCheck } from 'lucide-react';
 import { api, fmtDate, fmtDay, fmtSize, TYPE_LABELS, SECTIONS, NUMBER_FIELD } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth';
@@ -10,11 +10,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   useAsync, Modal, StatusBadge, ErrorText, PinForm, DocViewer, ScoreBar, CheckList, SkeletonRows, ask, toast, PageHeader, Segmented,
-  Field, CheckRow, Callout, EmptyState, copyText, DocStatus,
+  Field, CheckRow, Callout, EmptyState, copyText, DocStatus, CountUp,
 } from '@/components/app/kit';
 
 // What a student is expected to keep here. 10th and 12th marksheets are stored, not verified, so storing them counts.
@@ -110,9 +109,9 @@ function FilePick({ label, file, setFile, optional }) {
   );
 }
 
-function UploadModal({ onClose, onDone, initialType = 'pan' }) {
+function UploadModal({ onClose, onDone, initialType = 'pan', initialFile = null }) {
   const [type, setType] = useState(NUMBER_FIELD[initialType] ? initialType : 'pan');
-  const [file, setFile] = useState(null);
+  const [file, setFile] = useState(initialFile);
   const [back, setBack] = useState(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -273,18 +272,19 @@ function ShareModal({ doc, onClose }) {
 }
 
 
-function DocCard({ d, open, onToggle, onAction }) {
+function DocCard({ d, i = 0, open, onToggle, onAction }) {
   const suggested = d.autoCheck?.detectedType;
   const tips = d.autoCheck?.state === 'done' && d.status === 'rejected' ? tipsFor(d.autoCheck.checks) : [];
   return (
-    <article data-spot className={cn('grid gap-3 overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-brutal transition-[transform,border-color,box-shadow] duration-300 ease-[var(--ease-out-expo)] hover:-translate-y-1 hover:border-primary/40 hover:shadow-brutal-lg', d.tampered && 'border-destructive')}>
-      <div className={cn('flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-2 text-ink', TYPE_TONE[d.type], d.type === 'other' && 'text-foreground')}>
+    <article data-spot data-tilt="translateY(-4px)" style={{ '--i': i }} className={cn('vc-card grid gap-3 overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-brutal', d.status === 'verified' && 'is-verified', d.tampered && 'border-destructive')}>
+      <div className={cn('vc-band relative flex flex-wrap items-center justify-between gap-2 overflow-hidden border-b border-border px-4 py-2 text-ink', TYPE_TONE[d.type], d.type === 'other' && 'text-foreground')}>
+        <span className="vc-sheen" aria-hidden="true" />
         <span className="font-mono text-[11px] font-semibold tracking-widest uppercase">{TYPE_LABELS[d.type]}{d.sides > 1 && ' · front + back'}</span>
         <span className="flex gap-1.5">{d.tampered && <Badge variant="destructive">Tampered</Badge>}<DocStatus status={d.status} /></span>
       </div>
       <div className="grid gap-3 px-4 pb-4">
         <div>
-          <h3 className="text-lg leading-tight">{d.title}</h3>
+          <h3 className="flex items-center gap-2 text-lg leading-tight">{d.title}{d.status === 'verified' && <span className="vc-seal" role="img" aria-label="Verified"><BadgeCheck className="size-4" /></span>}</h3>
           <p className="text-xs text-muted-foreground"><span className="font-mono">{d.numberMasked || d.originalName}</span> · {fmtSize(d.size)} · {fmtDate(d.createdAt)}{d.expiryDate && <> · expires {fmtDay(d.expiryDate)}</>}</p>
         </div>
         {suggested && d.status !== 'verified' && (
@@ -323,6 +323,85 @@ function DocCard({ d, open, onToggle, onAction }) {
   );
 }
 
+// Guess a document type from a dropped file's name ("Aadhaar front.jpg" -> aadhaar); PAN when nothing matches.
+const guessType = (name = '') => {
+  const n = name.toLowerCase();
+  if (/aadha?r|uidai/.test(n)) return 'aadhaar';
+  if (/licen[cs]e|\bdl\b|driving/.test(n)) return 'license';
+  if (/10th|class ?10|sslc|x[ _-]?std/.test(n)) return 'class10';
+  if (/12th|class ?12|hsc|plus ?two/.test(n)) return 'class12';
+  if (/mark ?sheet|semester|grade/.test(n)) return 'marksheet';
+  if (/certificate|bonafide|bonafied/.test(n)) return 'certificate';
+  if (/\bpan\b|pan[ _-]?card/.test(n)) return 'pan';
+  return 'pan';
+};
+
+const NODE = {
+  verified: ['Verified', 'var(--success)'], stored: ['Stored', 'var(--success)'], pending: ['Checking…', '#fbbf24'],
+  rejected: ['Not verified · retry', 'var(--destructive)'], missing: ['Add it', 'var(--muted-foreground)'],
+};
+
+// The vault at a glance: completion ring, the required documents as a step track, and live counts.
+function VaultStatus({ list, required, onAdd }) {
+  const stateOf = (t) => {
+    const mine = list.filter((d) => d.type === t);
+    if (mine.some((d) => d.status === 'verified')) return 'verified';
+    if (mine.some(isDone)) return 'stored';
+    if (mine.some((d) => d.status === 'pending')) return 'pending';
+    return mine.length ? 'rejected' : 'missing';
+  };
+  const states = required.map((t) => [t, stateOf(t)]);
+  const done = states.filter(([, s]) => s === 'verified' || s === 'stored').length;
+  const pct = Math.round((done / required.length) * 100);
+  const n = (s) => list.filter((d) => d.status === s).length;
+  const stats = [['In your vault', list.length, 'var(--primary)'], ['Verified', n('verified'), 'var(--success)'], ['Checking', n('pending'), '#fbbf24'], ['Not verified', n('rejected'), 'var(--destructive)']];
+  return (
+    <section className="vs" aria-label="Vault status">
+      <div className="vs-ring" style={{ '--p': pct }} role="img" aria-label={`${done} of ${required.length} required documents done`}>
+        <svg viewBox="0 0 120 120">
+          <defs><linearGradient id="vs-g" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stopColor="var(--primary)" /><stop offset="0.6" stopColor="var(--violet)" /><stop offset="1" stopColor="var(--pink)" /></linearGradient></defs>
+          <circle cx="60" cy="60" r="52" className="vs-track-c" />
+          <circle cx="60" cy="60" r="52" className="vs-run" pathLength="100" />
+          <g className="vs-ticks">{Array.from({ length: 24 }, (_, i) => <line key={i} x1="60" y1="2" x2="60" y2={i % 6 ? 6 : 9} transform={`rotate(${i * 15} 60 60)`} />)}</g>
+        </svg>
+        <span className="vs-core">
+          {pct === 100 ? <Lock className="size-6" /> : <Unlock className="size-6" />}
+          <b>{pct}<small>%</small></b>
+          <em>{pct === 100 ? 'sealed' : 'complete'}</em>
+        </span>
+      </div>
+
+      <div className="grid min-w-0 gap-4">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-xl">{pct === 100 ? 'Your vault is complete' : `${required.length - done} document${required.length - done === 1 ? '' : 's'} to go`}</h2>
+          <span className="font-mono text-xs text-muted-foreground">{done} of {required.length} done</span>
+        </div>
+        <ol className="vs-steps" style={{ '--n': required.length, '--frac': done / required.length }}>
+          {states.map(([t, s], i) => {
+            const [Icon] = TYPE_TILE[t];
+            const [label, tone] = NODE[s];
+            const act = s === 'missing' || s === 'rejected';
+            const inner = <>
+              <span className="vs-node">{s === 'verified' || s === 'stored' ? <Check className="size-5" /> : <Icon className="size-5" />}</span>
+              <b>{TYPE_LABELS[t]}</b><small>{label}</small>
+            </>;
+            return (
+              <li key={t} style={{ '--c': tone, '--i': i }} className={cn('vs-step', s)}>
+                {act ? <button type="button" onClick={() => onAdd(t)} aria-label={`Upload your ${TYPE_LABELS[t]}`}>{inner}</button> : <div>{inner}</div>}
+              </li>
+            );
+          })}
+        </ol>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {stats.map(([label, value, tone]) => (
+            <span key={label} className="vs-stat" style={{ '--c': tone }}><b><CountUp value={value} /></b><small>{label}</small></span>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function Documents() {
   const { data, loading, error, reload } = useAsync(() => api('/documents'));
   const [params, setParams] = useSearchParams();
@@ -346,8 +425,34 @@ export default function Documents() {
     return () => clearInterval(t);
   }, [running]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const verifiedTypes = REQUIRED.filter((t) => list.some((d) => d.type === t && isDone(d)));
+  const staff = user.role !== 'student';
+  const required = staff ? ['pan', 'aadhaar', 'license'] : REQUIRED;
+  const sections = staff ? SECTIONS.filter((s) => s.types.includes('pan') || s.types.includes('other')) : SECTIONS;
   const close = () => setModal(null);
+  const upload = (type, file) => setModal({ kind: 'upload', type, file });
+
+  // Drag a file anywhere on the page: a "drop to upload" overlay; dropped on a slot, it takes that slot's type.
+  const [dragging, setDragging] = useState(false);
+  useEffect(() => { document.body.classList.toggle('is-dragging-file', dragging); return () => document.body.classList.remove('is-dragging-file'); }, [dragging]);
+  useEffect(() => {
+    if (modal) return undefined;
+    let depth = 0;
+    const hasFile = (e) => [...(e.dataTransfer?.types ?? [])].includes('Files');
+    const enter = (e) => { if (!hasFile(e)) return; depth += 1; setDragging(true); };
+    const leave = (e) => { if (!hasFile(e)) return; depth = Math.max(0, depth - 1); if (!depth) setDragging(false); };
+    const over = (e) => { if (hasFile(e)) e.preventDefault(); };
+    const drop = (e) => {
+      if (!hasFile(e)) return;
+      e.preventDefault(); depth = 0; setDragging(false);
+      const file = e.dataTransfer.files[0];
+      if (!file) return;
+      const slot = e.target.closest?.('[data-drop-type]')?.dataset.dropType;
+      upload(slot ?? guessType(file.name), file);
+    };
+    window.addEventListener('dragenter', enter); window.addEventListener('dragleave', leave);
+    window.addEventListener('dragover', over); window.addEventListener('drop', drop);
+    return () => { window.removeEventListener('dragenter', enter); window.removeEventListener('dragleave', leave); window.removeEventListener('dragover', over); window.removeEventListener('drop', drop); };
+  }, [modal]); // eslint-disable-line react-hooks/exhaustive-deps
   const done = () => { close(); reload(); };
   const onAction = async (kind, doc) => {
     if (kind !== 'delete') return setModal({ kind, doc });
@@ -361,7 +466,7 @@ export default function Documents() {
   const shown = list.filter((d) => FILTERS[filter][1](d)
     && (!search || `${d.title} ${TYPE_LABELS[d.type]} ${d.numberMasked} ${d.originalName}`.toLowerCase().includes(search.toLowerCase())));
   const grouped = filter === 'all' && !search;
-  const card = (d) => <DocCard key={d.id} d={d} open={open === d.id} onToggle={() => setOpen(open === d.id ? null : d.id)} onAction={onAction} />;
+  const card = (d, i) => <DocCard key={d.id} d={d} i={i} open={open === d.id} onToggle={() => setOpen(open === d.id ? null : d.id)} onAction={onAction} />;
   const grid = 'grid items-start gap-4 lg:grid-cols-2 2xl:grid-cols-3';
 
   return (
@@ -374,7 +479,6 @@ export default function Documents() {
           <Button variant="outline" disabled={!list.length} onClick={() => setModal({ kind: 'export' })}><Mail /> Email me a ZIP</Button>
           <Button onClick={() => setModal({ kind: 'upload' })}><Upload /> Upload document</Button>
         </>}
-        stats={[['in your vault', list.length], ['verified', list.filter((d) => d.status === 'verified').length, 'ok'], ['waiting for review', list.filter((d) => d.status === 'pending').length, 'warn']]}
       >
         AES-256 encrypted · SHA-256 fingerprinted · checked for originality.
       </PageHeader>
@@ -388,18 +492,12 @@ export default function Documents() {
         </label>
       </div>
 
-      <Card className="grid gap-3">
-        <div className="flex items-center justify-between gap-2"><b>Document checklist</b><span className="font-mono text-xs">{verifiedTypes.length} of {REQUIRED.length} done</span></div>
-        <Progress value={(verifiedTypes.length / REQUIRED.length) * 100} aria-label="Identity checklist progress" />
-        <div className="flex flex-wrap gap-2">
-          {REQUIRED.map((t) => <Badge key={t} variant={verifiedTypes.includes(t) ? 'success' : 'outline'}>{verifiedTypes.includes(t) && <Check />}{TYPE_LABELS[t]}</Badge>)}
-        </div>
-      </Card>
+      {!loading && <VaultStatus list={list} required={required} onAdd={(t) => upload(t)} />}
 
       <ErrorText>{error}</ErrorText>
       {loading && <SkeletonRows rows={3} />}
 
-      {!loading && grouped && SECTIONS.map((s) => {
+      {!loading && grouped && sections.map((s) => {
         const docs = list.filter((d) => s.types.includes(d.type));
         return (
           <section key={s.title} className="grid gap-4">
@@ -413,9 +511,9 @@ export default function Documents() {
                 {s.types.map((t) => {
                   const [Icon, hint, tone] = TYPE_TILE[t];
                   return (
-                    <button key={t} type="button" style={{ '--c': tone }} onClick={() => setModal({ kind: 'upload', type: t })}>
+                    <button key={t} type="button" style={{ '--c': tone }} data-drop-type={t} onClick={() => upload(t)}>
                       <span className="dt-icon"><Icon className="size-6" /></span>
-                      <span><b>{TYPE_LABELS[t]}</b><small>{hint}</small></span>
+                      <span><b>{TYPE_LABELS[t]}</b><small>{hint}</small><small className="dt-drop">Click, or drop a file here</small></span>
                       <span className="plus"><Plus className="size-4" /></span>
                     </button>
                   );
@@ -431,7 +529,15 @@ export default function Documents() {
           : <EmptyState icon={Search} title="Nothing found">No documents match{search && <> "<b>{search}</b>"</>}.</EmptyState>
       )}
 
-      {modal?.kind === 'upload' && <UploadModal onClose={close} onDone={done} initialType={modal.type} />}
+      {modal?.kind === 'upload' && <UploadModal onClose={close} onDone={done} initialType={modal.type} initialFile={modal.file} />}
+      {dragging && (
+        <div className="vd-drop" aria-hidden="true">
+          <div className="vd-drop-pill">
+            <span className="vd-drop-ring"><Upload className="size-6" /></span>
+            <span><b>Drop to upload into your vault</b><small>Drop it on a glowing slot to choose the type, or anywhere and the type is guessed from the file name.</small></span>
+          </div>
+        </div>
+      )}
       {modal?.kind === 'retype' && <ChangeTypeModal doc={modal.doc} onClose={close} onDone={done} />}
       {modal?.kind === 'export' && <ExportModal docs={list} onClose={close} />}
       {modal?.kind === 'view' && <DocViewer doc={modal.doc} onClose={close} />}

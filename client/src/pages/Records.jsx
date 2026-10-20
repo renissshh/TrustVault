@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { Lock, Search, GraduationCap, ArrowLeft, Hourglass, Mail, ShieldCheck, Eye, Check, Users } from 'lucide-react';
+import { useDeferredValue, useState } from 'react';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Lock, Search, GraduationCap, ArrowLeft, Hourglass, Mail, ShieldCheck, Eye, Check, Users, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { api, fmtDate, fmtDay, TYPE_LABELS } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useAsync, ErrorText, StatusBadge, DocStatus, DocViewer, ScoreBar, SkeletonRows, toast, PageHeader, Field, EmptyState, Initials } from '@/components/app/kit';
+import { useAsync, ErrorText, StatusBadge, DocStatus, DocViewer, ScoreBar, SkeletonRows, toast, PageHeader, Field, EmptyState, Initials, Callout } from '@/components/app/kit';
 
 const accessLabel = (a) => {
   if (!a) return <span className="text-muted-foreground">No access</span>;
@@ -17,35 +17,106 @@ const accessLabel = (a) => {
   return <StatusBadge status={a.status} />;
 };
 
+// "26", "26mx" or "26 MX" -> "26MX"; "", "all" -> "ALL"; anything else -> null (still typing)
+const parseBatch = (text) => {
+  const t = text.toUpperCase().replace(/\s/g, '');
+  if (!t || t === 'ALL') return 'ALL';
+  const m = t.match(/^(\d{2})(MX)?$/);
+  return m ? `${m[1]}MX` : null;
+};
+
+// A student as a profile card: who, which batch, how many documents are verified, and where your request stands.
+function StudentCard({ s, i }) {
+  const pct = s.total ? s.verified / s.total : 0;
+  return (
+    <Link to={`/records/${s.id}`} className="rc-card group" style={{ '--i': i }} data-tilt="translateY(-4px)">
+      <span className="flex items-center gap-3">
+        <Initials name={s.name} size={46} />
+        <span className="grid min-w-0">
+          <b className="truncate">{s.name}</b>
+          <span className="font-mono text-xs tracking-wider text-primary">{s.studentId || '-'}</span>
+        </span>
+        <svg viewBox="0 0 36 36" className="ml-auto size-11 shrink-0 -rotate-90" role="img" aria-label={`${s.verified} of ${s.total} documents verified`}>
+          <circle cx="18" cy="18" r="15" fill="none" className="stroke-muted" strokeWidth="4" />
+          <circle cx="18" cy="18" r="15" fill="none" stroke="var(--success)" strokeWidth="4" strokeLinecap="round" pathLength="100" strokeDasharray={`${pct * 100} 100`} className="rc-ring" />
+          <text x="18" y="18" className="rotate-90 fill-foreground font-mono text-[9px] font-semibold" style={{ transformOrigin: '18px 18px' }} textAnchor="middle" dominantBaseline="central">{s.verified}/{s.total}</text>
+        </svg>
+      </span>
+      <span className="truncate text-xs text-muted-foreground">{s.email}</span>
+      <span className="flex items-center justify-between gap-2">
+        {accessLabel(s.access)}
+        <span className="flex items-center gap-1 text-xs font-semibold text-muted-foreground transition-colors group-hover:text-primary">Open <ChevronRight className="size-3.5 transition-transform group-hover:translate-x-0.5" /></span>
+      </span>
+    </Link>
+  );
+}
+
 export function StudentList() {
+  const [params, setParams] = useSearchParams();
+  const batch = parseBatch(params.get('batch') ?? '') ?? 'ALL';
+  const [typed, setTyped] = useState(batch === 'ALL' ? '' : batch);
   const [q, setQ] = useState('');
-  const { data, error, loading } = useAsync(() => api(`/records/students?q=${encodeURIComponent(q)}`), [q]);
+  const query = useDeferredValue(q.trim());
+  const batches = useAsync(() => api('/records/batches'));
+  const { data, error, loading, reload } = useAsync(() => api(`/records/students?batch=${batch}&q=${encodeURIComponent(query)}`), [batch, query]);
+  const pick = (b) => { setTyped(b === 'ALL' ? '' : b); setParams(b === 'ALL' ? {} : { batch: b }, { replace: true }); };
+  const onType = (v) => { setTyped(v); const b = parseBatch(v); if (b) setParams(b === 'ALL' ? {} : { batch: b }, { replace: true }); };
+  const list = data ?? [];
+  const known = batches.data ?? [];
+  const total = known.reduce((n, b) => n + b.students, 0);
+  const pending = parseBatch(typed) === null;
+
   return (
     <div className="grid gap-8">
       <PageHeader icon={GraduationCap} kicker="Consent-based access" title="Student Records"
-        stats={[['students', data?.length ?? 0], ['you can open now', data?.filter((s) => s.access?.status === 'approved').length ?? 0, 'ok'], ['requests pending', data?.filter((s) => s.access?.status === 'pending').length ?? 0, 'warn']]}>
-        Tick the documents you need and ask the student. They approve all or some, and each approved document opens one time.
+        stats={[['students', total], ['you can open now', list.filter((s) => s.access?.status === 'approved').length, 'ok'], ['requests waiting', list.filter((s) => s.access?.status === 'pending').length, 'warn']]}>
+        Pick a batch to see its students. Tick the documents you need and ask them; each student approves all or some, and each approved document opens one time.
       </PageHeader>
-      <BatchRequest />
-      <label className="relative max-w-md">
-        <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input type="search" className="pl-9" placeholder="Search by name, email or roll number…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search students" />
-      </label>
-      <ErrorText>{error}</ErrorText>
-      {loading ? <SkeletonRows /> : (
-        <Table>
-          <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Roll no.</TableHead><TableHead>Email</TableHead><TableHead>Verified</TableHead><TableHead>Your access</TableHead></TableRow></TableHeader>
-          <TableBody>
-            {data?.map((s) => (
-              <TableRow key={s.id}>
-                <TableCell><Link to={`/records/${s.id}`} className="group flex items-center gap-3 font-semibold"><Initials name={s.name} size={34} /><span className="underline decoration-primary/40 underline-offset-4 transition-colors group-hover:text-primary group-hover:decoration-primary">{s.name}</span></Link></TableCell><TableCell className="font-mono">{s.studentId || '-'}</TableCell><TableCell>{s.email}</TableCell>
-                <TableCell><span className="flex items-center gap-2 font-mono text-xs"><span className="block h-2 w-24 overflow-hidden rounded-full bg-muted"><i className="block h-full rounded-full bg-success" style={{ width: `${s.total ? (s.verified / s.total) * 100 : 0}%` }} /></span>{s.verified}/{s.total}</span></TableCell><TableCell>{accessLabel(s.access)}</TableCell>
-              </TableRow>
+
+      <Card className="grid gap-4">
+        <div className="flex flex-wrap items-end gap-4">
+          <Field label="Batch" className="w-56" hint={pending ? 'Like 26 or 26MX' : 'Type a joining year, or All'}>
+            <Input value={typed} onChange={(e) => onType(e.target.value)} placeholder="All, 26, 23MX…" maxLength={6} className="font-mono uppercase placeholder:normal-case" aria-label="Batch" />
+          </Field>
+          <div className="flex flex-wrap gap-2 pb-6" role="group" aria-label="Batches">
+            {[{ group: 'ALL', students: total }, ...known].map((b) => (
+              <button key={b.group} type="button" aria-pressed={batch === b.group} onClick={() => pick(b.group)}
+                className={cn('rc-chip', batch === b.group && 'on')}>
+                <span className="font-mono tracking-wider">{b.group === 'ALL' ? 'All' : b.group}</span><span className="rc-chip-n">{b.students}</span>
+              </button>
             ))}
-            {data && !data.length && <TableRow><TableCell colSpan={5} className="text-muted-foreground">No students found.</TableCell></TableRow>}
-          </TableBody>
-        </Table>
-      )}
+          </div>
+          <label className="relative ml-auto w-full pb-6 sm:w-72">
+            <Search className="pointer-events-none absolute top-[38%] left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input type="search" className="pl-9" placeholder="Search name, email or roll no…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search students" />
+          </label>
+        </div>
+      </Card>
+
+      <section className="grid gap-4" aria-live="polite">
+        <h2 className="flex items-baseline gap-3 text-2xl">
+          {batch === 'ALL' ? 'All batches' : <span className="font-mono tracking-wider">{batch}</span>}
+          <span className="text-base font-semibold text-muted-foreground">{loading ? '…' : `${list.length} student${list.length === 1 ? '' : 's'}`}{query && ` matching "${query}"`}</span>
+        </h2>
+        <ErrorText>{error}</ErrorText>
+        {loading && !data ? <SkeletonRows rows={3} /> : list.length ? (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">{list.map((s, i) => <StudentCard key={s.id} s={s} i={i} />)}</div>
+        ) : (
+          <EmptyState icon={Users} title={batch !== 'ALL' && !query ? `No students in ${batch} yet` : 'No students found'}
+            action={known.length > 0 && (
+              <span className="flex flex-wrap justify-center gap-2">
+                {known.map((b) => <Button key={b.group} size="sm" variant="outline" onClick={() => { setQ(''); pick(b.group); }}>{b.group} · {b.students}</Button>)}
+                <Button size="sm" variant="ghost" onClick={() => { setQ(''); pick('ALL'); }}>Show all</Button>
+              </span>
+            )}>
+            {batch !== 'ALL' && !query ? 'Nobody has signed up with a roll number from this batch. These batches have students:' : 'Try another name or roll number, or one of these batches:'}
+          </EmptyState>
+        )}
+      </section>
+
+      {batch !== 'ALL' && list.length > 0 && !query
+        ? <BatchRequest group={batch} count={list.length} onSent={reload} />
+        : <Callout tone="info" className="flex items-center gap-2"><Users className="size-4 shrink-0" /> Pick a batch above to ask all of its students for documents at once.</Callout>}
     </div>
   );
 }
@@ -146,41 +217,32 @@ export function StudentRecord() {
   );
 }
 
-// Ask a whole batch (every roll number starting with e.g. 26MX) for the same documents.
-function BatchRequest() {
-  const [group, setGroup] = useState('');
-  const [count, setCount] = useState(null);
+// Ask every student of the selected batch for the same documents. Each student decides for themselves.
+function BatchRequest({ group, count, onSent }) {
   const [picked, setPicked] = useState([]);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-  const code = group.toUpperCase().replace(/\s/g, '');
-  const valid = /^\d{2}MX$/.test(code);
-  useEffect(() => {
-    setCount(null);
-    if (!valid) return undefined;
-    const t = setTimeout(() => api(`/records/batch/${code}`).then((r) => setCount(r.students), () => setCount(0)), 250);
-    return () => clearTimeout(t);
-  }, [code, valid]);
   const toggle = (t) => setPicked((p) => (p.includes(t) ? p.filter((x) => x !== t) : [...p, t]));
   const send = async (e) => {
     e.preventDefault();
+    const form = e.currentTarget;
     setError(''); setBusy(true);
     try {
-      const r = await api('/records/batch-request', { method: 'POST', body: { group: code, types: picked, reason: new FormData(e.currentTarget).get('reason') } });
-      toast(`Request sent to ${r.sent} student${r.sent === 1 ? '' : 's'} in ${r.group}${r.skipped ? ` (${r.skipped} already had a request waiting)` : ''}.`);
+      const r = await api('/records/batch-request', { method: 'POST', body: { group, types: picked, reason: new FormData(form).get('reason') } });
+      toast(r.sent
+        ? `Request sent to ${r.sent} student${r.sent === 1 ? '' : 's'} in ${r.group}${r.skipped ? ` (${r.skipped} already had a request waiting)` : ''}.`
+        : `Everyone in ${r.group} already has a request from you waiting.`);
       setPicked([]);
+      form.reset();
+      onSent?.();
     } catch (err) { setError(err.message); }
     setBusy(false);
   };
   return (
-    <Card>
+    <Card className="rc-ask">
       <form className="grid gap-4" onSubmit={send}>
-        <h2 className="flex items-center gap-2 text-xl"><Users className="size-5" /> Ask a whole batch</h2>
-        <p className="text-sm text-muted-foreground">Type a batch, tick the documents, and every student in it gets the request. Each student decides for themselves.</p>
-        <div className="flex flex-wrap items-end gap-3">
-          <Field label="Batch" className="w-40"><Input value={group} onChange={(e) => setGroup(e.target.value)} placeholder="e.g. 26MX" maxLength={6} className="font-mono uppercase placeholder:normal-case" aria-label="Batch code" /></Field>
-          <span className="pb-2 text-sm text-muted-foreground">{!code ? 'The 2-digit joining year, then MX' : !valid ? 'Like 26MX' : count == null ? 'Counting…' : <><b className="text-foreground">{count}</b> student{count === 1 ? '' : 's'} in {code}</>}</span>
-        </div>
+        <h2 className="flex items-center gap-2 text-xl"><Users className="size-5" /> Ask all {count} students in <span className="font-mono tracking-wider text-primary">{group}</span></h2>
+        <p className="text-sm text-muted-foreground">Tick the documents you need. Every student in {group} gets the request and decides for themselves. Students who already have a request from you waiting are skipped.</p>
         <div className="flex flex-wrap gap-2" role="group" aria-label="Documents to ask for">
           {REQUESTABLE.map((t) => {
             const on = picked.includes(t);
@@ -195,8 +257,8 @@ function BatchRequest() {
         </div>
         <Field label="Reason (optional)"><Input name="reason" maxLength={300} placeholder="e.g. Documents for the TCS placement drive" /></Field>
         <ErrorText>{error}</ErrorText>
-        <Button className="justify-self-start" disabled={busy || !valid || !count || !picked.length}>
-          Send to {valid && count ? `all ${count} students in ${code}` : 'the batch'}
+        <Button className="justify-self-start" disabled={busy || !picked.length}>
+          {busy ? 'Sending…' : picked.length ? `Send to all ${count} students in ${group}` : 'Tick at least one document'}
         </Button>
       </form>
     </Card>

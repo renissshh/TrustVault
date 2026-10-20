@@ -20,6 +20,7 @@ import { SoundToggle } from './fx-global';
 import { CommandButton, CommandPalette } from './command';
 import { Tour } from './tour';
 import '../../app.css';
+import { Constellation } from '@/lib/constellation';
 import { Modal, OtpInput, ErrorText, toast } from './kit';
 
 // ---------- Session countdown + "Stay signed in" warning 2 minutes before the hour ends ----------
@@ -179,7 +180,7 @@ export function Layout() {
   return (
     <MotionConfig reducedMotion="user">
       <div className="min-h-dvh">
-        <div className="app-stage" aria-hidden="true"><i /><i /><i /></div>
+        <div className="app-stage" aria-hidden="true"><i /><i /><i /><Constellation /></div>
         <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-lg focus:bg-primary focus:px-3 focus:py-2 focus:text-ink">Skip to content</a>
 
         <header className="topnav" onMouseLeave={hideSoon} onMouseEnter={() => clearTimeout(timer.current)}>

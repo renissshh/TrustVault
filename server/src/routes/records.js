@@ -23,10 +23,12 @@ async function latestRequests(verifier, studentIds) {
   return map;
 }
 
+// ?q= searches name, email and roll number; ?batch=23MX (or 23) keeps one batch. Up to 200 students.
 r.get('/students', async (req, res) => {
   const q = String(req.query.q ?? '').trim();
   const match = q ? { $or: ['name', 'email', 'studentId'].map((f) => ({ [f]: new RegExp(escapeRegex(q), 'i') })) } : {};
-  const students = await User.find({ role: 'student', ...match }).sort({ name: 1 }).limit(100);
+  const batch = req.query.batch && String(req.query.batch).toUpperCase() !== 'ALL' ? { studentId: inBatch(batchOf(req.query.batch)) } : {};
+  const students = await User.find({ role: 'student', ...match, ...batch }).sort({ studentId: 1, name: 1 }).limit(200);
   const ids = students.map((s) => s._id);
   const [counts, access] = await Promise.all([
     Document.aggregate([
@@ -65,8 +67,10 @@ function requestedTypes(body) {
   return types;
 }
 // Batch codes are the first 4 characters of a roll number: joining year + MX, e.g. 26MX.
+// "26MX", "26 mx" or just "26" -> "26MX"
 const batchOf = (group) => {
-  const g = String(group ?? '').toUpperCase().replace(/\s/g, '');
+  let g = String(group ?? '').toUpperCase().replace(/\s/g, '');
+  if (/^\d{2}$/.test(g)) g += 'MX';
   if (!/^\d{2}MX$/.test(g)) throw httpError(400, 'Type a batch like 26MX: the 2-digit joining year, then MX.');
   return g;
 };
@@ -79,6 +83,16 @@ const requestMail = (req, student, types, reason) => sendMail({
     <p><a href="${config.appUrl}/access">Approve or deny the request</a>. You can approve only some of them.
     Each approved document can be opened <b>one time</b> within ${GRANT_HOURS} hours. Nothing is shared unless you approve.</p>`,
 }).catch((e) => console.error(e.message));
+
+// Every batch that has students, newest first: [{ group: '24MX', students: 4 }, ...]
+r.get('/batches', async (req, res) => {
+  const rows = await User.aggregate([
+    { $match: { role: 'student', studentId: /^\d{2}MX\d{3}$/ } },
+    { $group: { _id: { $substrCP: ['$studentId', 0, 4] }, n: { $sum: 1 } } },
+    { $sort: { _id: -1 } },
+  ]);
+  res.json(rows.map((b) => ({ group: b._id, students: b.n })));
+});
 
 // How many students are in a batch (shown before faculty send a batch request).
 r.get('/batch/:group', async (req, res) => {

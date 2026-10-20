@@ -116,7 +116,7 @@ export function IdentityRing({ docs, user }) {
         })}
         {user.hasVaultPin
           ? <div><i style={{ background: 'var(--success)', boxShadow: '0 0 14px -2px var(--success)' }}><KeyRound className="size-3.5" /></i>Vault PIN<small>Set</small></div>
-          : <Link to="/security"><i style={{ background: 'var(--muted)' }}><KeyRound className="size-3.5" /></i>Vault PIN<small>Set it</small></Link>}
+          : <Link to="/security?tab=signin"><i style={{ background: 'var(--muted)' }}><KeyRound className="size-3.5" /></i>Vault PIN<small>Set it</small></Link>}
       </div>
     </div>
   );

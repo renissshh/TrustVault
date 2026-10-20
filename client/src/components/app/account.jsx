@@ -201,8 +201,8 @@ export function AccountMenu() {
   const minutesLeft = Math.max(0, Math.round((new Date(expiresAt) - Date.now()) / 60e3));
   const steps = [
     ['Add a profile photo', user.avatarV > 0, () => input.current?.click()],
-    ...(student ? [['Add your roll number', Boolean(user.studentId), () => navigate('/security')]] : []),
-    ['Set your vault PIN', user.hasVaultPin, () => navigate('/security')],
+    ...(student ? [['Add your roll number', Boolean(user.studentId), () => navigate('/security?tab=personal')]] : []),
+    ['Set your vault PIN', user.hasVaultPin, () => navigate('/security?tab=signin')],
     ['Upload a document', (docs?.length ?? 0) > 0, () => navigate('/documents?upload=pan')],
     ['Get a document verified', verified > 0, () => navigate('/documents')],
   ];

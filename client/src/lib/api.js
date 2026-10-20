@@ -61,3 +61,13 @@ export const NUMBER_FIELD = {
 
 // "Dr. Priya Raman" -> "Priya": the first name without a title, for greetings.
 export const firstName = (name = '') => name.trim().replace(/^(dr|prof|mr|mrs|ms|miss)\.?\s+/i, '').split(/\s+/)[0];
+
+// Consecutive events with the same action, detail and person become one row with a count
+// (a batch request to 4 students is logged once per student, and shows as "×4").
+export const groupRuns = (events = []) => events.reduce((out, e) => {
+  const last = out.at(-1);
+  if (last && last.action === e.action && last.detail === e.detail && (last.user?._id ?? null) === (e.user?._id ?? null)) {
+    last.count += 1; last.items.push(e);
+  } else out.push({ ...e, count: 1, items: [e] });
+  return out;
+}, []);

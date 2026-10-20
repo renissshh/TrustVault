@@ -9,7 +9,7 @@ MCA students keep their ID and academic documents in an encrypted vault. Documen
 **[Live demo: trustvault-5lgg.onrender.com](https://trustvault-5lgg.onrender.com)** · **[Android app (APK)](https://github.com/SriNithish-JK/TrustVault/releases/latest/download/TrustVault.apk)** (free hosting: the first visit can take a minute to wake up; use sample documents only)
 
 [![CI](https://github.com/SriNithish-JK/TrustVault/actions/workflows/ci.yml/badge.svg)](https://github.com/SriNithish-JK/TrustVault/actions/workflows/ci.yml)
-![End-to-end checks](https://img.shields.io/badge/end--to--end_checks-131-19e6ff)
+![End-to-end checks](https://img.shields.io/badge/end--to--end_checks-140-19e6ff)
 ![License](https://img.shields.io/badge/license-MIT-b56bff)
 ![React](https://img.shields.io/badge/React-19-61dafb?logo=react&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-Express-5fa04e?logo=nodedotjs&logoColor=white)
@@ -38,6 +38,10 @@ The 24-second showreel on the main page is live motion graphics, drawn in the br
 **Stack:** React (Vite) · Tailwind CSS · shadcn/ui · Motion · Node.js + Express · MongoDB · AES-256-GCM · TOTP · Tesseract OCR
 
 **Who can sign up:** MCA students only. The roll number must look like `23MX347`: the 2-digit year the student joined, `MX`, then a 3-digit number. Other formats, future years and a second account for the same roll number are refused. **Faculty** sign up with the faculty code and **administrators** with the administrator code (`FACULTY_CODE` / `ADMIN_CODE` in `server/.env`, made by `npm run setup`), or join through an invitation. They need no roll number.
+
+## How it is built
+
+Agile sprints: the product owner reviews the running app, each point becomes a user story with acceptance criteria, and every story ships with tests. Every push runs unit, end-to-end and browser tests on GitHub (CI), and the live site deploys only when they all pass (CD). See [docs/agile](docs/agile/README.md) for the process, the sprint backlog and review (with before/after screenshots), and [the CI/CD pipeline](docs/agile/ci-cd.md).
 
 ## Demo on a laptop
 
@@ -283,7 +287,7 @@ content games/
 13. Set `SESSION_MINUTES=3` in `.env` → the *Stay signed in?* warning appears → let it expire → only the Authenticator code is asked.
 13. Sign out → **Forgot password?** → email code + Authenticator → new password.
 14. Open the site on a phone (bottom navigation, *Take photo*, front + back Aadhaar).
-15. Run `npm run test:e2e` live – 131 checks pass in about a minute.
+15. Run `npm run test:e2e` live – 140 checks pass in about a minute.
 
 ## Limitations (be honest in the report)
 

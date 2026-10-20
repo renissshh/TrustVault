@@ -3,7 +3,7 @@
 // (signed-in devices on Security, charts on Activity and Admin).
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Upload, FolderLock, Users, GraduationCap, ShieldCheck, History, ArrowRight, Eye, Hourglass, KeyRound, XCircle, AlertTriangle } from 'lucide-react';
+import { Upload, FolderLock, Users, GraduationCap, ShieldCheck, History, ArrowRight, Eye, Hourglass, KeyRound, XCircle, AlertTriangle, FileCheck2 } from 'lucide-react';
 import { api, firstName } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ import { useVerifiedCelebration } from '@/lib/confetti';
 import { Wallet } from '@/components/app/wallet';
 import { IdentityRing } from '@/components/app/charts';
 import { NeedsYou, RecentActivity } from '@/components/app/insights';
-import { useAsync, Callout, toast } from '@/components/app/kit';
+import { useAsync, Callout, toast, DocStatus } from '@/components/app/kit';
 
 const greeting = () => {
   const h = new Date().getHours();
@@ -36,12 +36,54 @@ function Figure({ value, label, tone = 'var(--primary)', icon: Icon, to }) {
 function YourDocuments({ docs, user }) {
   const n = (s) => docs.filter((d) => d.status === s).length;
   return (
-    <Card>
+    <Card className="[container-type:inline-size]">
       <CardHeader><CardTitle>Your documents</CardTitle><Button asChild variant="link"><Link to="/documents">Open vault →</Link></Button></CardHeader>
       <IdentityRing docs={docs} user={user} />
       <p className="mt-2 text-sm text-muted-foreground [&_b]:text-foreground">
         <b>{docs.length}</b> in your vault · <b>{n('verified')}</b> verified{n('pending') > 0 && <> · <b>{n('pending')}</b> being checked</>}{n('rejected') > 0 && <> · <b className="text-destructive!">{n('rejected')}</b> not verified</>}
       </p>
+    </Card>
+  );
+}
+
+// Faculty and administrators: their own ID documents, one line each.
+const DOC_TONE = { verified: 'var(--success)', stored: 'var(--success)', pending: '#fbbf24', rejected: 'var(--destructive)' };
+function DocsMini({ docs }) {
+  return (
+    <Card>
+      <CardHeader><CardTitle>Your documents</CardTitle><Button asChild variant="link"><Link to="/documents">Open vault →</Link></Button></CardHeader>
+      {docs.length ? (
+        <ul className="grid gap-2">
+          {docs.slice(0, 4).map((d) => (
+            <li key={d.id}>
+              <Link to="/documents" className="flex items-center gap-3 rounded-xl border border-border px-3 py-2 transition-colors hover:border-primary/50">
+                <span className="grid size-8 shrink-0 place-items-center rounded-lg" style={{ color: DOC_TONE[d.status] ?? 'var(--muted-foreground)', background: `color-mix(in srgb, ${DOC_TONE[d.status] ?? 'var(--muted-foreground)'} 15%, transparent)` }}><FileCheck2 className="size-4" /></span>
+                <span className="grid min-w-0 flex-1"><b className="truncate text-sm">{d.title}</b><small className="truncate font-mono text-xs text-muted-foreground">{d.numberMasked || d.originalName}</small></span>
+                <DocStatus status={d.status} />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      ) : <p className="text-sm text-muted-foreground">No documents yet. <Link to="/documents?upload=pan" className="font-semibold underline">Add your PAN card</Link>.</p>}
+    </Card>
+  );
+}
+
+// Faculty: every batch that has students, one tap to open it in Student records.
+function YourBatches() {
+  const batches = useAsync(() => api('/records/batches')).data ?? [];
+  return (
+    <Card>
+      <CardHeader><CardTitle>Batches</CardTitle><Button asChild variant="link"><Link to="/records">All students →</Link></Button></CardHeader>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        {batches.map((b) => (
+          <Link key={b.group} to={`/records?batch=${b.group}`} className="group grid gap-0.5 rounded-xl border border-border px-3 py-2.5 transition-[border-color,transform] hover:-translate-y-0.5 hover:border-primary/60">
+            <b className="font-mono text-lg tracking-wider text-primary">{b.group}</b>
+            <small className="text-xs text-muted-foreground">{b.students} student{b.students === 1 ? '' : 's'} <ArrowRight className="inline size-3 opacity-0 transition-opacity group-hover:opacity-100" /></small>
+          </Link>
+        ))}
+        {!batches.length && <p className="col-span-full text-sm text-muted-foreground">No students have signed up yet.</p>}
+      </div>
     </Card>
   );
 }
@@ -92,6 +134,16 @@ function CollegeGlance({ stats }) {
         <Figure icon={Hourglass} value={waiting} label="Requests waiting" tone="#fbbf24" to="/admin" />
       </div>
       <p className="mt-3 text-sm text-muted-foreground">{stats.logins24h} sign-ins in the last 24 hours · {stats.blocks} ledger blocks</p>
+      {waiting > 0 && (
+        <ul className="mt-4 grid gap-2">
+          {requests.filter((r) => r.status === 'pending').slice(0, 4).map((r) => (
+            <li key={r.id} className="flex items-center gap-3 rounded-xl border border-amber-400/40 bg-amber-400/8 px-3 py-2 text-sm">
+              <Hourglass className="size-4 shrink-0 text-amber-400" />
+              <span className="min-w-0 flex-1 truncate"><b>{r.faculty?.name}</b> asked <b>{r.student?.name}</b> <span className="font-mono text-xs text-muted-foreground">{r.student?.studentId}</span></span>
+            </li>
+          ))}
+        </ul>
+      )}
     </Card>
   );
 }
@@ -140,20 +192,25 @@ export default function Dashboard() {
         <div className="relative" data-tilt="">{!loading && <Wallet docs={docs} holder={user.name.toUpperCase()} />}</div>
       </section>
 
-      {!loading && (role === 'student' ? (
-        <>
-          <div className="grid items-start gap-6 lg:grid-cols-2" data-tour="charts">
-            <NeedsYou user={user} docs={docs} pendingAccess={pendingAccess} />
-            <YourDocuments docs={docs} user={user} />
+      {!loading && (
+        <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_23rem]">
+          <div className="grid min-w-0 grid-cols-1 gap-6" data-tour="charts">
+            {role === 'student' ? (
+              <div className="grid items-start gap-6 lg:grid-cols-2">
+                <NeedsYou user={user} docs={docs} pendingAccess={pendingAccess} />
+                <YourDocuments docs={docs} user={user} />
+              </div>
+            ) : role === 'verifier' ? <>
+              <FacultyRequests />
+              <div className="grid items-start gap-6 lg:grid-cols-2"><YourBatches /><DocsMini docs={docs} /></div>
+            </> : <>
+              <CollegeGlance stats={stats} />
+              <DocsMini docs={docs} />
+            </>}
           </div>
-          <RecentActivity activity={activity} user={user} />
-        </>
-      ) : (
-        <div className="grid items-start gap-6 xl:grid-cols-[1.4fr_1fr]" data-tour="charts">
-          {role === 'verifier' ? <FacultyRequests /> : <CollegeGlance stats={stats} />}
-          <RecentActivity activity={activity} user={user} />
+          <RecentActivity activity={activity} user={user} className="xl:sticky! xl:top-24" />
         </div>
-      ))}
+      )}
     </div>
   );
 }
