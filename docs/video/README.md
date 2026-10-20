@@ -27,12 +27,13 @@ node_modules/ffmpeg-static/ffmpeg -i tour.mp4 -vf scale=1280:-2 -c:v libx264 -cr
 
 `render.mjs` expects Chrome at `C:/Program Files/Google/Chrome/Application/chrome.exe`; change `executablePath` on other systems.
 
-## 24-second showreel
+## 24-second showreel (live on the site)
 
-`client/public/media/trustvault-showreel.mp4` (the main page video: muted on a loop while on screen, with a sound toggle) is rendered the same way from `showreel.src.html`. It combines the tour and the earlier 15-second reel into one product showreel, in the format of the "showreel" prompts on prompt-motion.com: product UI, kinetic type and a 120 BPM soundtrack with every cut on the beat. One canvas, every frame drawn from the time; colours are the site's dark palette, Electric Night.
+The showreel is code, not a video file: `client/src/lib/showreel.js` draws any frame for a time `t` on a canvas, and the main page plays it live (`components/app/live-showreel.jsx`): 60 fps, sharp at any size, paused off screen, sound synthesised in the browser on request. It combines the tour and the earlier 15-second reel, in the format of the "showreel" prompts on prompt-motion.com: product UI, kinetic type, 120 BPM with every cut on the beat, in the Electric Night colours.
+
+`showreel.src.html` imports the same module, so an MP4 can still be filmed when needed (for social posts):
 
 ```bash
 node -e "const fs=require('fs');fs.writeFileSync('showreel.html',fs.readFileSync('showreel.src.html','utf8').replace('/*FONTS*/',fs.readFileSync('fonts.css','utf8')))"
 node render.mjs showreel.html showreel.mp4 30 3 8
-node_modules/ffmpeg-static/ffmpeg -i showreel.mp4 -vf scale=1280:-2 -c:v libx264 -crf 23 -preset slow -pix_fmt yuv420p -c:a aac -b:a 128k -movflags +faststart trustvault-showreel.mp4
 ```

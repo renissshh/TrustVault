@@ -10,7 +10,7 @@ import { ThemeToggle } from '@/components/app/account';
 import { useAsync, CountUp } from '@/components/app/kit';
 import { SoundToggle } from '@/components/app/fx-global';
 import { VaultIntro, TryDemo, ProductPreview } from './landing-extras';
-import { ShowreelVideo } from '@/components/app/tour-video';
+import { LiveShowreel } from '@/components/app/live-showreel';
 import { ParticleShield } from '@/lib/motion-kit';
 import { StoryScroll } from './landing-story';
 import { ApprovalZoom } from './landing-zoom';
@@ -381,7 +381,7 @@ export default function Landing() {
             <h2 className="lp-h2" style={{ maxWidth: '16ch' }}>24 seconds. <span className="lp-neon" style={{ animation: 'shimmer 5s linear infinite' }}>All of it.</span></h2>
             <p className="lp-lead">Three locks, automatic checks, a whole batch asked at once, files that open once, and a ledger that tells you if anything changed.</p>
           </div>
-          <div className="rv zoom mt-10 w-full max-w-5xl"><ShowreelVideo /></div>
+          <div className="rv zoom mt-10 w-full max-w-5xl"><LiveShowreel /></div>
           <div className="lp-cta rv mt-8"><Link to="/tutorial" className="lp-btn ghost">Full 60-second tour and tutorial <ArrowRight className="size-5" /></Link></div>
         </section>
 

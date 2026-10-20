@@ -22,9 +22,9 @@ MCA students keep their ID and academic documents in an encrypted vault. Documen
 
 ## Showreel and tour
 
-[![Watch the TrustVault showreel](client/public/media/trustvault-showreel.jpg)](client/public/media/trustvault-showreel.mp4)
+[![The TrustVault showreel](docs/screenshots/showreel.jpg)](https://trustvault-5lgg.onrender.com/welcome#showreel)
 
-The 24-second showreel on the main page: three-lock sign-in, upload and encryption, automatic checks, a faculty batch request, a file that opens once, and the tamper-evident ledger, cut to a 120 BPM soundtrack. The full [60-second tour](client/public/media/trustvault-tour.mp4) (sign in, upload, automatic checks, sharing with faculty) plays on the tutorial page. Made from code with the [motion-graphics](https://github.com/Barty-Bart/motion-graphics) explainer skill ([how](docs/video/README.md)). New here? Follow the [step-by-step tutorial](https://trustvault-5lgg.onrender.com/tutorial), which includes demo documents to try.
+The 24-second showreel on the main page is live motion graphics, drawn in the browser in real time (no video file; sound is synthesised on request): three-lock sign-in, upload and encryption, automatic checks, a faculty batch request, a file that opens once, and the tamper-evident ledger, cut to a 120 BPM soundtrack. The full [60-second tour](client/public/media/trustvault-tour.mp4) (sign in, upload, automatic checks, sharing with faculty) plays on the tutorial page. Made from code with the [motion-graphics](https://github.com/Barty-Bart/motion-graphics) explainer skill ([how](docs/video/README.md)). New here? Follow the [step-by-step tutorial](https://trustvault-5lgg.onrender.com/tutorial), which includes demo documents to try.
 
 ## What it does
 
