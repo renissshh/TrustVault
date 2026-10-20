@@ -195,9 +195,16 @@ try {
   await signUp(demoStudent, 'Demo Student', 'demo.student@trustvault.demo', { studentId: '24MX950' });
   const dr = await client().call('/auth/login', { method: 'POST', body: { email: 'demo.student@trustvault.demo', password: PASSWORD } });
   ok(dr.data.next === 'totp' && dr.data.demo === true, 'laptop demo: a @trustvault.demo account skips the email code, the Authenticator is still asked', JSON.stringify(dr.data).slice(0, 80));
+  const dc = await client().call('/auth/login/demo-code', { method: 'POST', body: { ticket: dr.data.ticket } });
+  ok(/^\d{6}$/.test(dc.data.code ?? ''), 'laptop demo: the sign-in screen can show a demo account its current Authenticator code');
   r = await other.call('/auth/login/otp', { method: 'POST', body: { ticket: r.data.ticket, code: lastCode('rahul@demo.test') } });
   r = await other.call('/auth/login/totp', { method: 'POST', body: { ticket: r.data.ticket, code: used.get(sSecret) } });
   ok(r.status === 400, 'an Authenticator code cannot be replayed');
+  const realOne = client();
+  r = await realOne.call('/auth/login', { method: 'POST', body: { email: 'rahul@demo.test', password: PASSWORD } });
+  r = await realOne.call('/auth/login/otp', { method: 'POST', body: { ticket: r.data.ticket, code: lastCode('rahul@demo.test') } });
+  const notDemo = await client().call('/auth/login/demo-code', { method: 'POST', body: { ticket: r.data.ticket } });
+  ok(r.data.next === 'totp' && notDemo.status === 404, 'a real account never gets its Authenticator code shown', notDemo.status);
 
   // ===== Vault PIN + uploads =====
   const phone = client(); // a second, fully signed-in device

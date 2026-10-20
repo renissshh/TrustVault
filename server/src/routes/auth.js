@@ -200,6 +200,15 @@ r.post('/login/otp', async (req, res) => {
   res.json(await totpStep(await User.findById(uid), true));
 });
 
+// Laptop demo only: show a @trustvault.demo account its current Authenticator code on the sign-in screen
+// (same switch as skipping the email code; needs the ticket from a correct password).
+r.post('/login/demo-code', async (req, res) => {
+  const { uid } = readTicket(req.body?.ticket, 'totp');
+  const user = await User.findById(uid);
+  if (!config.demoSkipEmail || !user?.totpSecret || !user.email.endsWith('@trustvault.demo')) throw httpError(404, 'Not available.');
+  res.json({ code: authenticator.generate(decryptText(user.totpSecret)), left: 30 - (Math.floor(Date.now() / 1000) % 30) });
+});
+
 r.post('/login/totp', async (req, res) => {
   const { uid, full } = readTicket(req.body?.ticket, 'totp');
   const user = await User.findById(uid);

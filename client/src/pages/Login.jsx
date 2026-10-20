@@ -59,6 +59,27 @@ export function AuthShell({ children }) {
   );
 }
 
+// Laptop demo accounts: the current Authenticator code, refreshed every 30 seconds, with a button to use it.
+function DemoCode({ ticket, onUse, busy }) {
+  const [c, setC] = useState(null);
+  const [left, setLeft] = useState(0);
+  useEffect(() => {
+    let alive = true, timer;
+    const load = () => api('/auth/login/demo-code', { method: 'POST', body: { ticket } })
+      .then((r) => { if (alive) { setC(r.code); setLeft(r.left); } }, () => alive && setC(null));
+    load();
+    timer = setInterval(() => setLeft((n) => { if (n <= 1) { load(); return 30; } return n - 1; }), 1000);
+    return () => { alive = false; clearInterval(timer); };
+  }, [ticket]);
+  if (!c) return null;
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/40 bg-primary/8 px-4 py-3">
+      <span className="grid text-sm"><small className="font-mono text-[11px] tracking-widest text-muted-foreground uppercase">Demo code · new in {left}s</small><b className="font-mono text-2xl tracking-[0.3em]">{c}</b></span>
+      <Button type="button" size="sm" disabled={busy} onClick={() => onUse(c)}>Use this code</Button>
+    </div>
+  );
+}
+
 const TITLES = {
   login: 'Sign in', register: 'Create your account', 'verify-email': 'Verify your email', otp: 'Check your email',
   totp: 'Google Authenticator', 'totp-setup': 'Set up Google Authenticator', backup: 'Save your backup codes',
@@ -122,6 +143,11 @@ export default function Login({ mode = 'login' }) {
     navigate('/');
   };
   const post = (path, body) => api(path, { method: 'POST', body });
+  const applyDemoCode = async (code) => {
+    setError(''); setBusy(true);
+    try { await post('/auth/login/totp', { ticket: data.ticket, code }); go('enter', { trust: false }); } catch (err) { setError(err.message); }
+    setBusy(false);
+  };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -254,7 +280,10 @@ export default function Login({ mode = 'login' }) {
 
         {step === 'totp' && <>
           {data.trusted && <Callout tone="ok" className="flex items-center gap-2"><Check className="size-4" /> Trusted device - email code skipped.</Callout>}
-          {data.demo && <Callout tone="ok" className="flex items-center gap-2"><Check className="size-4" /> Demo account on this laptop - email code skipped.</Callout>}
+          {data.demo && <>
+            <Callout tone="ok" className="flex items-center gap-2"><Check className="size-4" /> Demo account on this laptop - email code skipped.</Callout>
+            <DemoCode ticket={data.ticket} busy={busy} onUse={applyDemoCode} />
+          </>}
           <p className={muted}>Open Google Authenticator and enter the 6-digit code for TrustVault.</p>
           {useBackup
             ? <Field label="Backup code"><Input name="code" required autoFocus placeholder="XXXX-XXXX" className="font-mono" autoComplete="off" /></Field>
