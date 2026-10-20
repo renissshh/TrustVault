@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, MotionConfig } from 'motion/react';
 import { Lock, Smartphone, Link2, ScanLine, Check, MailCheck } from 'lucide-react';
-import { api } from '@/lib/api';
+import { api, firstName } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,7 @@ import { Brand } from '@/components/app/brand';
 import { ThemeToggle } from '@/components/app/account';
 import { Aurora, Words, ease } from '@/lib/fx';
 import { IdCard } from '@/components/app/id-card';
+import { HoldButton } from '@/components/app/hold-button';
 import { ErrorText, BackupCodes, OtpInput, PasswordInput, Field, CheckRow, Callout, Segmented, toast, ago } from '@/components/app/kit';
 import { StepTracker, closeDoors, getKnown, setKnown, touchKnown, clearKnown, initialsOf } from '@/components/app/signin-extras';
 
@@ -61,7 +62,7 @@ export function AuthShell({ children }) {
 const TITLES = {
   login: 'Sign in', register: 'Create your account', 'verify-email': 'Verify your email', otp: 'Check your email',
   totp: 'Google Authenticator', 'totp-setup': 'Set up Google Authenticator', backup: 'Save your backup codes',
-  forgot: 'Reset your password', reset: 'Choose a new password',
+  forgot: 'Reset your password', reset: 'Choose a new password', enter: "You're verified",
 };
 const SUBMIT = { login: 'Continue', register: 'Create account', backup: "I've saved them - continue", forgot: 'Send reset code', reset: 'Reset password' };
 // which tracker a step belongs to, and where it sits in it
@@ -70,6 +71,7 @@ const FLOWS = {
   register: [['Your details', 'Email code', 'Authenticator', 'Backup codes'], 0], 'verify-email': [['Your details', 'Email code', 'Authenticator', 'Backup codes'], 1],
   'totp-setup': [['Your details', 'Email code', 'Authenticator', 'Backup codes'], 2], backup: [['Your details', 'Email code', 'Authenticator', 'Backup codes'], 3],
   forgot: [['Your email', 'New password'], 0], reset: [['Your email', 'New password'], 1],
+  enter: [['Password', 'Email code', 'Authenticator'], 3],
 };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -110,11 +112,12 @@ export default function Login({ mode = 'login' }) {
     setUseBackup(false);
     if (next === 'otp' || next === 'verify-email' || next === 'reset') setCooldown(30);
   };
-  // Signed in: the vault doors close over the form and open again on the dashboard.
-  const finish = async (trustDevice) => {
-    closeDoors();
-    await sleep(matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 380);
-    if (trustDevice) await api('/auth/me').then((me) => setKnown(me.user), () => {}); else touchKnown();
+  // Signed in and the person held "Enter vault": Access granted plays from the button, then opens on the dashboard.
+  const finish = async (trustDevice, origin) => {
+    const me = await api('/auth/me').catch(() => null);
+    closeDoors({ name: me && firstName(me.user.name), origin });
+    await sleep(matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 650); // the page is covered by then
+    if (trustDevice && me) setKnown(me.user); else touchKnown();
     await refresh();
     navigate('/');
   };
@@ -135,10 +138,10 @@ export default function Login({ mode = 'login' }) {
         case 'totp-setup': {
           const trust = f.remember === 'on' || Boolean(data.trusted);
           const r = await post('/auth/login/totp', { ticket: data.ticket, code: f.code, remember: f.remember === 'on' });
-          if (r.backupCodes) go('backup', { backupCodes: r.backupCodes, trust }); else await finish(trust);
+          if (r.backupCodes) go('backup', { backupCodes: r.backupCodes, trust }); else go('enter', { trust });
           break;
         }
-        case 'backup': await finish(data.trust); break;
+        case 'backup': go('enter'); break;
         case 'forgot': { const r = await post('/auth/forgot', f); go('reset', { ...r, emailRaw: f.email }); break; }
         case 'reset':
           await post('/auth/reset', { ticket: data.ticket, code: f.code, totp: f.totp, password: f.password });
@@ -263,6 +266,11 @@ export default function Login({ mode = 'login' }) {
 
         {step === 'backup' && <BackupCodes codes={data.backupCodes} />}
 
+        {step === 'enter' && <>
+          <p className={muted}>Password, email code and Authenticator all passed. Hold the button to open your vault.</p>
+          <HoldButton label="Hold to enter vault" doneLabel="Access granted" onConfirm={(origin) => finish(data.trust, origin)} />
+        </>}
+
         {step === 'forgot' && <>
           <p className={muted}>Enter your account email. We'll send a code to reset your password.</p>
           <Field label="Email"><Input name="email" type="email" required autoFocus autoComplete="email" defaultValue={known?.email} onChange={(e) => setData((d) => ({ ...d, emailRaw: e.target.value }))} /></Field>
@@ -280,7 +288,7 @@ export default function Login({ mode = 'login' }) {
         </>}
 
         <ErrorText>{error}</ErrorText>
-        <Button size="lg" disabled={busy}>{busy ? 'Please wait…' : SUBMIT[step] ?? 'Verify'}</Button>
+        {step !== 'enter' && <Button size="lg" disabled={busy}>{busy ? 'Please wait…' : SUBMIT[step] ?? 'Verify'}</Button>}
 
         <div className="grid justify-items-center gap-2 text-sm">
           {mailbox && <p><a href="/mailbox" target="_blank" rel="noreferrer" className="font-semibold text-primary underline underline-offset-4">Open the demo mailbox</a> to read sign-in codes.</p>}

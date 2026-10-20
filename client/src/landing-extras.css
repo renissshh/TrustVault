@@ -1,26 +1,4 @@
-/* Landing extras: vault-door intro, try-it demo, product preview. Builds on landing.css - same tokens, same look. */
-
-/* ---------- vault-door intro (first visit in a tab) ---------- */
-.vd { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; cursor: pointer; overflow: hidden; }
-.vd .door { position: absolute; top: 0; bottom: 0; width: 50.5%; background: linear-gradient(90deg, #05050b, #0d0d18); animation: vd-open 0.9s cubic-bezier(0.7, 0, 0.2, 1) 1.75s forwards; }
-.vd .door.l { left: 0; border-right: 2px solid var(--primary); box-shadow: 14px 0 60px -10px var(--primary); --to: -102%; }
-.vd .door.r { right: 0; border-left: 2px solid var(--violet); box-shadow: -14px 0 60px -10px var(--violet); --to: 102%; background: linear-gradient(270deg, #05050b, #0d0d18); }
-.vd .door::after { content: ""; position: absolute; inset: 0; opacity: 0.5; background-image: linear-gradient(color-mix(in srgb, var(--primary) 16%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--violet) 16%, transparent) 1px, transparent 1px); background-size: 56px 56px; }
-.vd .dial { position: relative; z-index: 2; width: min(300px, 62vw); aspect-ratio: 1; display: grid; place-items: center; animation: vd-dial-out 0.5s ease-in 1.6s forwards; }
-.vd .dial svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-.vd .ticks { transform-origin: 50% 50%; animation: vd-turn 1.3s cubic-bezier(0.6, 0, 0.2, 1) 0.15s both; }
-.vd .arc { stroke-dasharray: 100; stroke-dashoffset: 100; animation: vd-arc 1.25s ease-out 0.2s forwards; filter: drop-shadow(0 0 12px var(--primary)); }
-.vd .core { display: grid; place-items: center; width: 42%; aspect-ratio: 1; border-radius: 50%; color: #00131a; background: linear-gradient(135deg, var(--primary), var(--violet)); box-shadow: 0 0 60px 0 var(--primary), 0 0 120px 0 var(--violet); animation: vd-core 1.5s ease-in-out both; }
-.vd .msg { position: absolute; z-index: 2; top: calc(50% + min(190px, 40vw)); left: 0; right: 0; text-align: center; font: 700 13px/1 var(--font-mono); letter-spacing: 0.34em; text-transform: uppercase; color: var(--primary); text-shadow: 0 0 18px var(--primary); animation: vd-dial-out 0.4s ease-in 1.6s forwards; }
-.vd .msg b { display: block; animation: vd-msg 1.5s steps(1) both; }
-.vd .msg b + b { position: absolute; inset: 0; color: var(--success); text-shadow: 0 0 18px var(--success); animation: vd-msg2 1.5s steps(1) both; }
-@keyframes vd-open { to { transform: translateX(var(--to)); } }
-@keyframes vd-turn { from { rotate: -220deg; } 60% { rotate: 40deg; } to { rotate: 0deg; } }
-@keyframes vd-arc { to { stroke-dashoffset: 0; } }
-@keyframes vd-core { 0% { scale: 0.4; opacity: 0; } 30% { scale: 1; opacity: 1; } 85% { scale: 1; } 100% { scale: 1.25; } }
-@keyframes vd-dial-out { to { opacity: 0; scale: 1.6; } }
-@keyframes vd-msg { 0% { opacity: 1; } 75% { opacity: 0; } }
-@keyframes vd-msg2 { 0% { opacity: 0; } 75% { opacity: 1; } }
+/* Landing extras: try-it demo, product preview (the intro lives in enter.css). Builds on landing.css - same tokens, same look. */
 
 /* ---------- try-it demo ---------- */
 .demo { position: relative; margin-top: clamp(36px, 5vw, 64px); display: grid; gap: 26px; padding: clamp(20px, 3.4vw, 44px); border-radius: 38px; overflow: hidden; isolation: isolate; border: 1px solid color-mix(in srgb, var(--primary) 36%, transparent); background: linear-gradient(150deg, color-mix(in srgb, var(--primary) 10%, var(--card)), var(--card) 50%, color-mix(in srgb, var(--violet) 12%, var(--card))); box-shadow: 0 50px 120px -50px var(--primary); text-align: left; }

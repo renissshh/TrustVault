@@ -192,12 +192,19 @@ async function signIn(b, secret, n) {
   }
   const tracker = await b.run(`document.querySelectorAll('.st li.done').length`);
   await typeInto('[role=group] input', await totp(secret));
-  const doors = await b.until(`!!document.querySelector('.vd-in')`, 3000);
-  if (!(await b.until(`location.pathname === '/' && !document.querySelector('.vd-in')`, 9000))) return ok(false, `sign-in ${n}: reaches the dashboard`, await b.run(`document.querySelector('[role=alert]')?.innerText`));
+  // "Hold to enter vault": a short press drains back, a full hold opens the vault
+  if (!(await b.until(`!!document.querySelector('.hb')`, 6000))) return ok(false, `sign-in ${n}: hold-to-enter button shows`, await b.run(`document.querySelector('[role=alert]')?.innerText`));
+  const [hx, hy] = await b.run(`(() => { const r = document.querySelector('.hb').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; })()`);
+  const mouse = (type) => b.send('Input.dispatchMouseEvent', { type, x: hx, y: hy, button: 'left', clickCount: 1 });
+  await mouse('mousePressed'); await sleep(300); await mouse('mouseReleased'); await sleep(700);
+  const early = await b.run(`!document.querySelector('.hb.is-done') && !document.querySelector('.ag')`);
+  await mouse('mousePressed'); await sleep(1300); await mouse('mouseReleased');
+  const doors = await b.until(`!!document.querySelector('.ag')`, 3000);
+  if (!(await b.until(`location.pathname === '/' && !document.querySelector('.ag')`, 9000))) return ok(false, `sign-in ${n}: reaches the dashboard`, await b.run(`document.querySelector('[role=alert]')?.innerText`));
   if (await b.until(says('Unlock your vault'), 2500)) { await typeInto('[aria-label="Unlock your vault"] [role=group] input', PIN); await b.until(`!${says('Unlock your vault')}`, 6000); }
   const home = await b.until(`!!document.querySelector('.wl-card, .wl-empty') && !!document.querySelector('.topnav-bar')`, 8000);
-  ok(tracker >= 1 && doors && home && !b.problems.length, `sign-in ${n}: password -> email code -> Authenticator -> doors -> PIN -> dashboard`,
-    [tracker < 1 && 'step tracker did not advance', !doors && 'doors did not show', !home && 'dashboard did not load', ...new Set(b.problems)].filter(Boolean).join(' | '));
+  ok(tracker >= 1 && early && doors && home && !b.problems.length, `sign-in ${n}: password -> email code -> Authenticator -> hold to enter -> Access granted -> PIN -> dashboard`,
+    [tracker < 1 && 'step tracker did not advance', !early && 'a short press already entered', !doors && 'Access granted did not show', !home && 'dashboard did not load', ...new Set(b.problems)].filter(Boolean).join(' | '));
 }
 
 // ---------- run ----------

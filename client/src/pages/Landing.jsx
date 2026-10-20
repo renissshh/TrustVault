@@ -253,6 +253,24 @@ export default function Landing() {
           </div>
         </div>
 
+        <section className="lp-sec">
+          <div className="rv">
+            <span className="lp-eyebrow">How it works</span>
+            <h2 className="lp-h2">Three steps. That's it.</h2>
+          </div>
+          <ApprovalZoom />
+          <ol className="lp-steps">
+            {STEPS.map(([Icon, title, text, tone], i) => (
+              <li key={title} className={`lp-step rv ${tone}`} style={{ '--d': i * 150 }}>
+                <span className="no" aria-hidden="true">0{i + 1}</span>
+                <span className="ico"><Icon className="size-7" /></span>
+                <h3>{title}</h3>
+                <p>{text}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
+
         <section className="lp-sec lp-center">
           <p className="lp-say" aria-label={SAY.join(' ')}>
             {SAY.map((w, i) => <span key={i} aria-hidden="true" className={HI.includes(w) ? 'hi' : undefined}>{w} </span>)}
@@ -356,23 +374,6 @@ export default function Landing() {
           </div>
         </section>
 
-        <section className="lp-sec">
-          <div className="rv">
-            <span className="lp-eyebrow">How it works</span>
-            <h2 className="lp-h2">Three steps. That's it.</h2>
-          </div>
-          <ApprovalZoom />
-          <ol className="lp-steps">
-            {STEPS.map(([Icon, title, text, tone], i) => (
-              <li key={title} className={`lp-step rv ${tone}`} style={{ '--d': i * 150 }}>
-                <span className="no" aria-hidden="true">0{i + 1}</span>
-                <span className="ico"><Icon className="size-7" /></span>
-                <h3>{title}</h3>
-                <p>{text}</p>
-              </li>
-            ))}
-          </ol>
-        </section>
 
         <section className="lp-sec lp-center" id="tour">
           <div className="rv lp-center">

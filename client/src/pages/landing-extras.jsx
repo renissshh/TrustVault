@@ -1,40 +1,23 @@
-// Landing extras: vault-door intro, try-it demo, product preview. Styles in ../landing-extras.css.
-import { useEffect, useRef, useState } from 'react';
+// Landing extras: Access granted intro, try-it demo, product preview. Styles in ../landing-extras.css.
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { BadgeCheck, Check, FolderLock, History, LayoutDashboard, Link2, Play, RotateCcw, ShieldCheck, User } from 'lucide-react';
 import { sfx } from '@/lib/sound';
 import { burst } from '@/lib/burst';
+import { AccessGranted } from '@/components/app/access-granted';
 import '../landing-extras.css';
 
 const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-// ---------- Vault-door intro: once per tab, click to skip, never shown with reduced motion ----------
+// ---------- First-visit intro: the Access granted animation, once per tab, never with reduced motion ----------
 export function VaultIntro() {
   const [show, setShow] = useState(() => {
     try { return !reduced() && !sessionStorage.getItem('tv-intro'); } catch { return false; }
   });
   useEffect(() => {
-    if (!show) return undefined;
-    try { sessionStorage.setItem('tv-intro', '1'); } catch { /* private mode: fine */ }
-    const t = setTimeout(() => setShow(false), 2750); // doors are fully open by then
-    return () => clearTimeout(t);
+    if (show) try { sessionStorage.setItem('tv-intro', '1'); } catch { /* private mode: fine */ }
   }, [show]);
-  if (!show) return null;
-  return (
-    <div className="vd" onClick={() => setShow(false)} role="presentation" aria-hidden="true">
-      <div className="door l" /><div className="door r" />
-      <div className="dial">
-        <svg viewBox="0 0 100 100" fill="none">
-          <circle cx="50" cy="50" r="46" stroke="rgb(255 255 255 / 0.12)" strokeWidth="1.5" />
-          <circle className="arc" cx="50" cy="50" r="46" stroke="var(--primary)" strokeWidth="2.5" strokeLinecap="round" pathLength="100" transform="rotate(-90 50 50)" />
-          <g className="ticks" stroke="var(--violet)" strokeWidth="1.6" strokeLinecap="round">
-            {Array.from({ length: 24 }, (_, i) => <line key={i} x1="50" y1="9" x2="50" y2={i % 6 === 0 ? 17 : 13} transform={`rotate(${i * 15} 50 50)`} />)}
-          </g>
-        </svg>
-        <span className="core"><ShieldCheck className="size-1/2" /></span>
-      </div>
-      <p className="msg"><b>Unlocking vault</b><b>Access granted</b></p>
-    </div>
-  );
+  const done = useCallback(() => setShow(false), []);
+  return show ? <AccessGranted subtitle="Welcome to TrustVault" onDone={done} /> : null;
 }
 
 // ---------- Try-it demo: a sample card gets scanned, checked and stamped ----------

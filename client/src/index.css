@@ -317,16 +317,6 @@
 .wb { display: flex; align-items: center; gap: 14px; padding: 14px; border-radius: 22px; border: 1px solid color-mix(in srgb, var(--primary) 40%, transparent); background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 12%, transparent), color-mix(in srgb, var(--violet) 12%, transparent)); animation: pop 0.5s var(--ease-spring) both; }
 .wb-avatar { display: grid; place-items: center; flex: none; width: 60px; height: 60px; border-radius: 50%; font: 800 22px/1 var(--font-mono); color: #00131a; background: linear-gradient(135deg, var(--primary), var(--violet) 60%, var(--pink)); box-shadow: 0 0 0 3px var(--background), 0 0 0 5px var(--primary), 0 0 30px -2px var(--primary); }
 
-/* ---------- vault doors after sign-in: slide shut, then the usual opening ---------- */
-.vd-in .door { animation: vd-shut 0.34s cubic-bezier(0.7, 0, 0.3, 1) both, vd-open 0.9s cubic-bezier(0.7, 0, 0.2, 1) 1.2s forwards; }
-.vd-in .door.l { --from: -102%; } .vd-in .door.r { --from: 102%; }
-.vd-in .dial { animation: pop 0.4s var(--ease-spring) 0.3s both, vd-dial-out 0.4s ease-in 1.05s forwards; }
-.vd-in .arc { animation: vd-arc 0.6s ease-out 0.35s forwards; filter: drop-shadow(0 0 12px var(--success)); }
-.vd-in .core { animation: none; background: linear-gradient(135deg, var(--success), var(--primary)); box-shadow: 0 0 60px 0 var(--success); }
-.vd-in .msg { color: var(--success); text-shadow: 0 0 18px var(--success); animation: pop 0.4s var(--ease-spring) 0.4s both, vd-dial-out 0.35s ease-in 1.05s forwards; }
-.vd-in .msg b { animation: none; }
-@keyframes vd-shut { from { transform: translateX(var(--from)); } }
-
 /* ---------- after sign-in: while you were away, next best step ---------- */
 .away { display: grid; gap: 14px; padding: 22px; border-radius: 28px; border: 1px solid color-mix(in srgb, var(--violet) 45%, transparent); background: linear-gradient(135deg, color-mix(in srgb, var(--violet) 14%, var(--card)), var(--card) 60%); box-shadow: 0 0 70px -30px var(--violet); animation: rise 0.7s var(--ease-out-expo) both; }
 .away-list { display: grid; gap: 10px; }
