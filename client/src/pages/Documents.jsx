@@ -41,7 +41,7 @@ const TYPE_TILE = {
   certificate: [Award, 'Bonafide, course and college certificates', '#fbbf24'],
   other: [FileText, 'Anything else. Stored safely, not verified', 'var(--pink)'],
 };
-const TYPE_TONE = { pan: 'bg-linear-to-r from-primary to-success', aadhaar: 'bg-linear-to-r from-violet to-info', license: 'bg-info', class10: 'bg-sky-400', class12: 'bg-violet-400', marksheet: 'bg-linear-to-r from-success to-primary', certificate: 'bg-success', other: 'bg-muted' };
+const TYPE_TONE = { pan: 'bg-linear-to-r from-primary to-success', aadhaar: 'bg-linear-to-r from-violet to-info', license: 'bg-info', class10: 'bg-info', class12: 'bg-pink', marksheet: 'bg-linear-to-r from-success to-primary', certificate: 'bg-success', other: 'bg-muted' };
 
 // Plain-language advice for each failed automatic check.
 const TIPS = [

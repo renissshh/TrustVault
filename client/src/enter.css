@@ -15,7 +15,7 @@
 .hb-labels { display: grid; flex: 1; text-align: center; margin-right: 32px; }
 .hb-label { grid-area: 1 / 1; transition: transform 0.45s var(--ease-spring), opacity 0.3s; }
 .hb-done { transform: translateY(120%); opacity: 0; }
-.hb.is-done { border-color: var(--success); background: var(--success); color: #05060a; box-shadow: 0 0 40px -6px var(--success); }
+.hb.is-done { border-color: var(--success); background: var(--success); color: var(--on-accent); box-shadow: 0 0 40px -6px var(--success); }
 .hb.is-done .hb-fill { opacity: 0; }
 .hb.is-done .hb-icon { color: var(--success); background: #05060a; }
 .hb.is-done .hb-ring { stroke: var(--success); }

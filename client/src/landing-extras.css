@@ -18,7 +18,7 @@
 .demo-steps li.now { color: var(--foreground); border-color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, transparent); transform: translateX(8px); box-shadow: 0 0 30px -12px var(--primary); }
 .demo-steps li.now .dot { border-color: var(--primary); border-top-color: transparent; animation: lp-spin 0.7s linear infinite; }
 .demo-steps li.ok { color: var(--foreground); }
-.demo-steps li.ok .dot { border-color: var(--success); background: var(--success); color: #00131a; box-shadow: 0 0 16px -2px var(--success); animation: pop 0.4s var(--ease-spring); }
+.demo-steps li.ok .dot { border-color: var(--success); background: var(--success); color: var(--on-accent); box-shadow: 0 0 16px -2px var(--success); animation: pop 0.4s var(--ease-spring); }
 .demo-steps li small { margin-left: auto; font: 600 11px/1 var(--font-mono); color: var(--success); opacity: 0; transition: opacity 0.3s; }
 .demo-steps li.ok small { opacity: 1; }
 .demo-score { display: flex; align-items: baseline; gap: 10px; font: 800 clamp(3rem, 6vw, 4.6rem)/1 var(--font-display); letter-spacing: -0.04em; }
@@ -37,7 +37,7 @@
 @media (max-width: 700px) { .pv-app { grid-template-columns: 1fr; } .pv-side { display: none !important; } }
 .pv-side { display: grid; align-content: start; gap: 6px; padding: 14px 10px; border-right: 1px solid #1c1c2e; background: #07070d; }
 .pv-side span { display: flex; align-items: center; gap: 8px; padding: 7px 9px; border-radius: 9px; color: #a1a1b5; font-weight: 600; }
-.pv-side span.on { color: #00131a; background: linear-gradient(100deg, var(--primary), var(--violet)); box-shadow: 0 0 24px -6px var(--primary); }
+.pv-side span.on { color: var(--on-accent); background: linear-gradient(100deg, var(--primary), var(--violet)); box-shadow: 0 0 24px -6px var(--primary); }
 .pv-main { display: grid; align-content: start; gap: 12px; padding: clamp(12px, 1.8vw, 22px); }
 .pv-hero { position: relative; overflow: hidden; border-radius: 16px; padding: clamp(14px, 2vw, 24px); border: 1px solid color-mix(in srgb, var(--primary) 40%, transparent); background: radial-gradient(ellipse at 0% 0%, color-mix(in srgb, var(--primary) 34%, transparent), transparent 60%), radial-gradient(ellipse at 100% 100%, color-mix(in srgb, var(--violet) 40%, transparent), transparent 60%), #0b0b12; }
 .pv-hero b { display: block; font: 800 clamp(16px, 2.6vw, 34px)/1.05 var(--font-display); letter-spacing: -0.03em; }

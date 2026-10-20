@@ -57,7 +57,7 @@
 /* ---------- neon button ---------- */
 .lp-btn {
   position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 56px; padding: 0 30px;
-  border-radius: 999px; font-weight: 700; font-size: 17px; color: #00131a; white-space: nowrap;
+  border-radius: 999px; font-weight: 700; font-size: 17px; color: var(--on-accent); white-space: nowrap;
   background: linear-gradient(100deg, var(--cyan), var(--purple) 55%, var(--hot)); background-size: 200% 100%;
   box-shadow: 0 0 0 1px rgb(255 255 255 / 0.25) inset, 0 0 34px -2px color-mix(in srgb, var(--cyan) 70%, transparent), 0 0 80px -10px color-mix(in srgb, var(--purple) 80%, transparent);
   transition: transform 0.3s var(--ease-spring), box-shadow 0.3s, background-position 0.6s;
@@ -125,7 +125,7 @@
 .lp-photo { width: clamp(54px, 9vw, 92px); aspect-ratio: 0.82; border-radius: 14px; background: linear-gradient(160deg, var(--cyan), var(--purple)); display: grid; place-items: center; box-shadow: 0 0 30px -6px var(--cyan); }
 .lp-stamp { position: absolute; right: 6%; bottom: 14%; padding: 8px 16px; border-radius: 12px; border: 2.5px solid var(--success); color: var(--success); font: 800 clamp(15px, 2.4vw, 24px)/1 var(--font-mono); letter-spacing: 0.18em; transform: translateZ(60px) rotate(-10deg); background: color-mix(in srgb, var(--success) 14%, transparent); box-shadow: 0 0 40px -4px var(--success), inset 0 0 20px -6px var(--success); text-shadow: 0 0 16px var(--success); animation: lp-stamp 0.7s var(--ease-spring) 1.5s both; }
 .lp-sat { position: absolute; display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 18px; font-weight: 700; font-size: 14px; white-space: nowrap; color: #fff; border: 1px solid rgb(255 255 255 / 0.2); background: rgb(12 12 22 / 0.7); backdrop-filter: blur(14px); animation: lp-bob 5s ease-in-out infinite; }
-.lp-sat b { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 12px; color: #00131a; }
+.lp-sat b { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 12px; color: var(--on-accent); }
 .lp-sat.s1 { left: max(2%, calc(50% - 520px)); top: 16%; box-shadow: 0 0 40px -10px var(--cyan); } .lp-sat.s1 b { background: var(--cyan); }
 .lp-sat.s2 { right: max(2%, calc(50% - 540px)); top: 26%; animation-delay: -1.6s; box-shadow: 0 0 40px -10px var(--hot); } .lp-sat.s2 b { background: var(--hot); }
 .lp-sat.s3 { left: max(3%, calc(50% - 470px)); bottom: 20%; animation-delay: -3s; box-shadow: 0 0 40px -10px var(--success); } .lp-sat.s3 b { background: var(--success); }
@@ -196,7 +196,7 @@
 .viz-checks { display: grid; gap: 10px; width: 100%; }
 .viz-checks li { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 16px; font-weight: 600; background: color-mix(in srgb, var(--foreground) 5%, transparent); border: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent); opacity: 0; transform: translateX(-30px); transition: opacity 0.5s, transform 0.6s var(--ease-spring); transition-delay: calc(500ms + var(--i) * 170ms); }
 .rv.in .viz-checks li, .lp:not(.js) .viz-checks li { opacity: 1; transform: none; }
-.viz-checks i { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--success); color: #00131a; box-shadow: 0 0 16px -2px var(--success); flex: none; }
+.viz-checks i { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--success); color: var(--on-accent); box-shadow: 0 0 16px -2px var(--success); flex: none; }
 /* viz: phone + QR */
 .viz-phone { position: relative; width: min(230px, 60vw); aspect-ratio: 0.5; border-radius: 40px; padding: 12px; background: linear-gradient(160deg, #2a2a3c, #0a0a12); border: 1px solid rgb(255 255 255 / 0.25); box-shadow: 0 0 0 2px #000, 0 0 70px -14px var(--c), 0 40px 80px -30px #000; transform: rotate(-6deg); animation: lp-bob 6s ease-in-out infinite; }
 .viz-phone .screen { position: relative; height: 100%; border-radius: 30px; overflow: hidden; background: radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--c) 40%, #05050a), #05050a 70%); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 18px; color: #fff; text-align: center; }
@@ -205,7 +205,7 @@
 .viz-qr svg { display: block; width: 100%; height: 100%; }
 .viz-qr::after { content: ""; position: absolute; left: 0; right: 0; height: 3px; background: var(--c); box-shadow: 0 0 18px 4px var(--c); animation: lp-qrscan 2.2s ease-in-out infinite; }
 .viz-batch { font: 800 clamp(30px, 4vw, 44px)/1 var(--font-mono); letter-spacing: 0.08em; color: var(--c); text-shadow: 0 0 22px var(--c); }
-.viz-ok { display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border-radius: 999px; font: 800 13px/1 var(--font-mono); letter-spacing: 0.12em; color: #00131a; background: var(--success); box-shadow: 0 0 30px -4px var(--success); animation: lp-pop-loop 2.2s var(--ease-spring) infinite; }
+.viz-ok { display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border-radius: 999px; font: 800 13px/1 var(--font-mono); letter-spacing: 0.12em; color: var(--on-accent); background: var(--success); box-shadow: 0 0 30px -4px var(--success); animation: lp-pop-loop 2.2s var(--ease-spring) infinite; }
 /* viz: chain */
 .viz-chain { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px; width: 100%; }
 .viz-chain .blk { padding: 16px 18px; border-radius: 18px; text-align: left; font: 600 13px/1.5 var(--font-mono); background: rgb(0 0 0 / 0.5); border: 1px solid color-mix(in srgb, var(--c) 45%, transparent); box-shadow: 0 0 30px -12px var(--c), inset 0 0 30px -18px var(--c); opacity: 0; transform: scale(0.5) rotate(-12deg); transition: opacity 0.4s, transform 0.7s var(--ease-spring); transition-delay: calc(300ms + var(--i) * 220ms); }
@@ -221,10 +221,10 @@
 /* viz: consent toggle */
 .viz-consent { width: 100%; display: grid; gap: 12px; }
 .viz-consent .req { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 18px; text-align: left; background: rgb(0 0 0 / 0.45); border: 1px solid color-mix(in srgb, var(--foreground) 12%, transparent); }
-.viz-consent .req > b { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(140deg, var(--c), var(--purple)); color: #00131a; font-weight: 800; flex: none; }
+.viz-consent .req > b { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(140deg, var(--c), var(--purple)); color: var(--on-accent); font-weight: 800; flex: none; }
 .viz-consent .acts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .viz-consent .acts span { padding: 12px; border-radius: 14px; text-align: center; font-weight: 700; font-size: 14px; }
-.viz-consent .yes { background: var(--success); color: #00131a; box-shadow: 0 0 30px -6px var(--success); animation: lp-pop-loop 2.6s var(--ease-spring) infinite; }
+.viz-consent .yes { background: var(--success); color: var(--on-accent); box-shadow: 0 0 30px -6px var(--success); animation: lp-pop-loop 2.6s var(--ease-spring) infinite; }
 .viz-consent .no { border: 1px solid color-mix(in srgb, var(--foreground) 22%, transparent); }
 
 /* numbers */
@@ -243,7 +243,7 @@
 .lp-step:hover { transform: translateY(-10px); border-color: var(--c); box-shadow: 0 0 60px -16px var(--c); }
 .lp-step .no { font: 800 clamp(5rem, 10vw, 8rem)/0.8 var(--font-display); letter-spacing: -0.07em; color: transparent; -webkit-text-stroke: 1.5px color-mix(in srgb, var(--c) 80%, transparent); filter: drop-shadow(0 0 16px color-mix(in srgb, var(--c) 60%, transparent)); transition: color 0.4s; }
 .lp-step:hover .no { color: var(--c); }
-.lp-step .ico { position: absolute; top: 28px; right: 28px; display: grid; place-items: center; width: 56px; height: 56px; border-radius: 18px; background: var(--c); color: #00131a; box-shadow: 0 0 34px -4px var(--c); transition: transform 0.6s var(--ease-spring); }
+.lp-step .ico { position: absolute; top: 28px; right: 28px; display: grid; place-items: center; width: 56px; height: 56px; border-radius: 18px; background: var(--c); color: var(--on-accent); box-shadow: 0 0 34px -4px var(--c); transition: transform 0.6s var(--ease-spring); }
 .lp-step:hover .ico { transform: rotate(-12deg) scale(1.18); }
 .lp-step h3 { margin-top: 22px; font-size: 1.9rem; font-weight: 800; }
 .lp-step p { margin-top: 10px; color: var(--muted-foreground); line-height: 1.5; }
@@ -304,7 +304,7 @@
   .lp-side { position: absolute; display: flex; align-items: center; gap: 10px; padding: 10px 14px 10px 10px; border-radius: 18px; text-align: left; white-space: nowrap;
     color: var(--foreground); border: 1px solid color-mix(in srgb, var(--c) 45%, transparent); background: color-mix(in srgb, var(--background) 60%, transparent); backdrop-filter: blur(12px);
     box-shadow: 0 0 40px -14px var(--c); opacity: 0; animation: lp-side-in 0.9s var(--ease-spring) forwards, lp-bob 6s ease-in-out infinite; }
-  .lp-side b { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 11px; color: #00131a; background: var(--c); box-shadow: 0 0 20px -4px var(--c); }
+  .lp-side b { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 11px; color: var(--on-accent); background: var(--c); box-shadow: 0 0 20px -4px var(--c); }
   .lp-side strong { display: block; font-size: 13px; line-height: 1.2; }
   .lp-side small { display: block; font: 600 10px/1.3 var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted-foreground); }
   .lp-side.s0 { left: 3vw; top: 22vh; rotate: -5deg; animation-delay: 0.9s, 0s; }
