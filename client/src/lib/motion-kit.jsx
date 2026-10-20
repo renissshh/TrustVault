@@ -55,7 +55,7 @@ export function useMotionKit() {
 // Colours come from the theme tokens, so the shield matches dark and light mode.
 const tokens = () => {
   const css = getComputedStyle(document.documentElement);
-  const hex = (n) => css.getPropertyValue(n).trim() || '#19e6ff';
+  const hex = (n) => css.getPropertyValue(n).trim() || '#4cc9f0';
   return { a: hex('--primary'), b: hex('--violet'), c: hex('--pink'), ok: hex('--success'), dark: document.documentElement.classList.contains('dark') };
 };
 const rgb = (h) => { const n = parseInt(h.replace('#', '').slice(0, 6), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };

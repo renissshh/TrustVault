@@ -317,10 +317,10 @@
 @keyframes lp-side-in { from { opacity: 0; scale: 0.6; } to { opacity: 1; scale: 1; } }
 
 /* ---------- light theme overrides: text gets deeper tones, the dark "screens" stay dark ---------- */
-:root:not(.dark) .lp-eyebrow, :root:not(.dark) .lp-chip { color: #0062d1; text-shadow: none; }
+:root:not(.dark) .lp-eyebrow, :root:not(.dark) .lp-chip { color: #0e7490; text-shadow: none; }
 :root:not(.dark) .lp-chip { box-shadow: 0 0 30px -12px var(--cyan); }
-:root:not(.dark) .lp-say span.on.hi { color: #0062d1; text-shadow: 0 0 30px color-mix(in srgb, var(--cyan) 45%, transparent); }
-:root:not(.dark) .lp-neon { background-image: linear-gradient(100deg, #0062d1, #7c3aed 45%, #d61f9b 75%, #0062d1); }
+:root:not(.dark) .lp-say span.on.hi { color: #0e7490; text-shadow: 0 0 30px color-mix(in srgb, var(--cyan) 45%, transparent); }
+:root:not(.dark) .lp-neon { background-image: linear-gradient(100deg, #0891b2, #6366f1 45%, #4f46e5 75%, #0891b2); }
 :root:not(.dark) .lp :is(.viz-cipher, .viz-chain .blk, .viz-code span, .viz-consent .req) { background: #0b0b12; color: #f5f5f7; }
 :root:not(.dark) .lp .viz-consent .req span { color: #f5f5f7; }
 :root:not(.dark) .lp .viz-cipher { color: #5fd4ff; --c: #5fd4ff; }

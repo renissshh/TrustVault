@@ -15,11 +15,11 @@ import '../landing-zoom.css';
 
 // [step of the three, icon, title, text, camera {x, y, zoom} in stage pixels, dot colour]
 const CHAPTERS = [
-  [1, UploadCloud, 'Upload', 'Drop in a PAN, Aadhaar or marksheet. It is encrypted with AES-256 before it is saved.', [350, 515, 1.25], [25, 230, 255]],
-  [2, ScanLine, 'Checked in seconds', 'Number format, checksum, the text on the card, signs of editing and your other documents.', [520, 515, 1.02], [120, 170, 255]],
+  [1, UploadCloud, 'Upload', 'Drop in a PAN, Aadhaar or marksheet. It is encrypted with AES-256 before it is saved.', [350, 515, 1.25], [76, 201, 240]],
+  [2, ScanLine, 'Checked in seconds', 'Number format, checksum, the text on the card, signs of editing and your other documents.', [520, 515, 1.02], [67, 97, 238]],
   [2, FileCheck2, 'Approved automatically', 'Every check passed, so it is verified. No queue, no waiting. Sealed in the ledger.', [350, 515, 1.6], [57, 255, 156]],
-  [3, Users, 'Faculty ask', 'A faculty member asks one student, or a whole batch like 26MX, for the documents they need.', [1290, 255, 1.28], [181, 107, 255]],
-  [3, KeyRound, 'You approve', 'You tick what to share and leave the rest. Nothing moves without your yes.', [1210, 740, 1.42], [255, 79, 216]],
+  [3, Users, 'Faculty ask', 'A faculty member asks one student, or a whole batch like 26MX, for the documents they need.', [1290, 255, 1.28], [67, 97, 238]],
+  [3, KeyRound, 'You approve', 'You tick what to share and leave the rest. Nothing moves without your yes.', [1210, 740, 1.42], [255, 0, 127]],
   [3, Eye, 'Opened once', 'They open each file one time, watermarked and logged. Then it locks.', [860, 525, 0.72], [57, 255, 156]],
 ];
 const STEP_NAMES = ['', 'Upload', 'Get verified', 'Share with faculty'];

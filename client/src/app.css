@@ -24,7 +24,7 @@
 .wl-inner { position: absolute; inset: 0; transform-style: preserve-3d; transition: transform 0.8s var(--ease-spring); }
 .wl-card.flipped .wl-inner { transform: rotateY(180deg); }
 .wl-face { position: absolute; inset: 0; border-radius: 22px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; backface-visibility: hidden; -webkit-backface-visibility: hidden; border: 1px solid rgb(255 255 255 / 0.28); background: linear-gradient(135deg, var(--a, #0e7490), var(--b, #6d28d9)); box-shadow: 0 0 0 1px rgb(255 255 255 / 0.06) inset, 0 24px 60px -24px #000, 0 0 50px -16px var(--a, #19e6ff); }
-.wl-card.front .wl-face { box-shadow: 0 0 0 1px rgb(255 255 255 / 0.1) inset, 0 30px 70px -24px #000, 0 0 70px -10px var(--a, #19e6ff); }
+.wl-card.front .wl-face { box-shadow: 0 0 0 1px rgb(255 255 255 / 0.1) inset, 0 30px 70px -24px #000, 0 0 70px -10px var(--a, var(--primary)); }
 .wl-back { transform: rotateY(180deg); flex-direction: row; align-items: center; justify-content: flex-start; gap: 16px; background: linear-gradient(135deg, #12121e, #05050a); }
 .wl-back small { opacity: 0.75; font-size: 12px; line-height: 1.35; }
 .wl-sheen { position: absolute; inset: -40%; background: linear-gradient(115deg, transparent 42%, rgb(255 255 255 / 0.3) 50%, transparent 58%); transform: translateX(-60%); pointer-events: none; }

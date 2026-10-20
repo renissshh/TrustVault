@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { sfx } from './sound';
 import { store } from './theme';
 
-const COLORS = ['#19e6ff', '#b56bff', '#ff4fd8', '#39ff9c', '#ffffff', '#ffd166'];
+const COLORS = ['#4cc9f0', '#4361ee', '#ff007f', '#39ff9c', '#ffffff', '#ffd166'];
 
 export function confetti(x = innerWidth / 2, y = innerHeight / 3, count = 170) {
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;

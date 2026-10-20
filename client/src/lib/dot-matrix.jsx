@@ -18,7 +18,7 @@ export function DotMatrix({ view, className, gap = 20, size = 3 }) {
     const ctx = canvas.getContext('2d');
     const still = reduced();
     let W = 0, H = 0, raf = 0, on = false, start = 0, last = 0, dots = null;
-    let color = [25, 230, 255];
+    let color = [76, 201, 240];
     const resize = () => {
       const r = canvas.getBoundingClientRect();
       W = r.width; H = r.height;

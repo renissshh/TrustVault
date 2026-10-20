@@ -3,62 +3,64 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* "Aurora" interface: dark-first, vault navy + secure teal, soft depth, motion everywhere.
+/* "Aurora" interface: dark-first. Dark = "Electric Night", light = "Neural Network"; soft depth, motion everywhere.
    Dark is the default; removing .dark from <html> switches to light. */
 :root {
-  --background: #f4f5fb;
-  --foreground: #0a0a14;
+  /* light: "Neural Network" - slate ink, cyan + indigo */
+  --background: #f8fafc;
+  --foreground: #0f172a;
   --card: #ffffff;
-  --card-foreground: #0a0a14;
+  --card-foreground: #0f172a;
   --popover: #ffffff;
-  --popover-foreground: #0a0a14;
-  --primary: #0a84ff;
-  --primary-foreground: #04141c;
-  --secondary: #0a0a14;
-  --secondary-foreground: #f4f5fb;
-  --muted: #eceef6;
-  --muted-foreground: #4f566b;
-  --accent: #e6ebff;
-  --accent-foreground: #0a0a14;
-  --violet: #9d6bff;
-  --pink: #ff3fc8;
-  --destructive: #ff5470;
-  --success: #19d38a;
-  --info: #4db4ff;
-  --border: #dde1ee;
-  --input: #c3c9dc;
-  --ring: #6d28d9;
-  --shadow-color: rgb(30 30 80 / 0.14);
-  --glow: rgb(124 58 237 / 0.3);
+  --popover-foreground: #0f172a;
+  --primary: #0891b2;
+  --primary-foreground: #ffffff;
+  --secondary: #0f172a;
+  --secondary-foreground: #f8fafc;
+  --muted: #eef2f8;
+  --muted-foreground: #475569;
+  --accent: #e8efff;
+  --accent-foreground: #0f172a;
+  --violet: #6366f1;
+  --pink: #4f46e5;
+  --destructive: #e11d48;
+  --success: #059669;
+  --info: #0ea5e9;
+  --border: #dbe2ee;
+  --input: #cbd5e1;
+  --ring: #0891b2;
+  --shadow-color: rgb(15 23 42 / 0.12);
+  --glow: rgb(99 102 241 / 0.25);
   --radius: 1.125rem;
 }
 
 .dark {
+  /* dark: "Electric Night" - deep indigo, sky cyan, royal blue, hot pink */
   color-scheme: dark;
-  --background: #000000;
+  --background: #06031a;
   --foreground: #f5f5f7;
-  --card: #0b0b12;
+  --card: #100830;
   --card-foreground: #f5f5f7;
-  --popover: #0e0e17;
+  --popover: #120a36;
   --popover-foreground: #f5f5f7;
-  --primary: #19e6ff;
-  --primary-foreground: #00131a;
+  --primary: #4cc9f0;
+  --primary-foreground: #04131c;
   --secondary: #f5f5f7;
-  --secondary-foreground: #000000;
-  --muted: #14141f;
-  --muted-foreground: #a1a1b5;
-  --accent: #161a2e;
-  --accent-foreground: #e8faff;
-  --violet: #b56bff;
-  --pink: #ff4fd8;
+  --secondary-foreground: #06031a;
+  --muted: #160c3d;
+  --muted-foreground: #b3aed6;
+  --accent: #1c1250;
+  --accent-foreground: #e8f7ff;
+  --violet: #4361ee;
+  --pink: #ff007f;
   --destructive: #ff4d6d;
   --success: #39ff9c;
-  --info: #6cc7ff;
-  --border: #24243a;
-  --input: #34344d;
-  --ring: #19e6ff;
+  --info: #4cc9f0;
+  --border: #2a1f5c;
+  --input: #3a2d78;
+  --ring: #4cc9f0;
   --shadow-color: rgb(0 0 0 / 0.7);
-  --glow: rgb(25 230 255 / 0.38);
+  --glow: rgb(76 201 240 / 0.38);
 }
 
 @theme inline {
@@ -333,12 +335,12 @@
 .neon-fill { color: #04141c; background-image: linear-gradient(100deg, var(--primary), var(--violet) 62%, var(--pink)); }
 
 /* ---------- light theme: same design, crisp white stage. Coloured TEXT needs deeper tones than coloured fills. ---------- */
-:root:not(.dark) .text-primary { color: #0062d1; }
+:root:not(.dark) .text-primary { color: #0e7490; }
 :root:not(.dark) .text-success { color: #047857; }
 :root:not(.dark) .text-destructive { color: #d11a3d; }
-:root:not(.dark) .text-violet { color: #6d28d9; }
+:root:not(.dark) .text-violet { color: #4f46e5; }
 :root:not(.dark) .text-info { color: #0369a1; }
-:root:not(.dark) .text-gradient { background-image: linear-gradient(100deg, #0062d1, #7c3aed 45%, #d61f9b 70%, #0062d1); }
+:root:not(.dark) .text-gradient { background-image: linear-gradient(100deg, #0891b2, #6366f1 45%, #4f46e5 70%, #0891b2); }
 :root:not(.dark) [data-slot="card"], :root:not(.dark) [data-slot="table-container"] { box-shadow: 0 1px 2px rgb(30 30 80 / 0.06), 0 18px 40px -22px rgb(30 30 80 / 0.28); }
 :root:not(.dark) .glass { background: color-mix(in srgb, #fff 78%, transparent); }
 
