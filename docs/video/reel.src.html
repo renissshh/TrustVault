@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>TrustVault - 15 second reel</title>
+<style>
+/*FONTS*/
+* { box-sizing: border-box; margin: 0; }
+html, body { background: #000; overflow: hidden; }
+#stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; }
+canvas { display: block; }
+/* make sure every face is requested so the canvas can use it */
+.preload { position: absolute; opacity: 0; pointer-events: none; }
+#ui { position: fixed; left: 0; right: 0; bottom: 0; height: 50px; display: flex; gap: 12px; align-items: center; padding: 0 14px; background: #111; color: #ccc; font: 13px monospace; }
+#ui input { flex: 1; }
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="c" width="1920" height="1080"></canvas></div>
+<span class="preload" style="font: 800 20px 'Inter Tight'">a</span><span class="preload" style="font: 500 20px 'JetBrains Mono'">a</span><span class="preload" style="font: 600 20px Inter">a</span>
+<div id="ui"><button id="playBtn">Play</button><input id="scrub" type="range" min="0" max="15" step="0.01" value="0"><span id="clock">0.00</span></div>
+
+<script>
+/* TrustVault 15-second reel. One canvas, every frame a pure function of t (seek), 120 BPM, cuts on the beat.
+   0.0 ignition  1.5 shield  3.5 ENCRYPT  5.5 card + stamp  7.5 batch  10.0 ledger  12.5 logo */
+const VIDEO = { w: 1920, h: 1080, duration: 15 };
+window.VIDEO = VIDEO;
+const W = 1920, H = 1080, CX = 960, CY = 540;
+const cv = document.getElementById('c'), x = cv.getContext('2d');
+const $ = (id) => document.getElementById(id);
+
+// ---------- helpers ----------
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const seg = (t, a, b) => clamp((t - a) / (b - a));
+const lerp = (a, b, k) => a + (b - a) * k;
+const outExpo = (k) => (k >= 1 ? 1 : 1 - Math.pow(2, -10 * k));
+const outCubic = (k) => 1 - Math.pow(1 - k, 3);
+const inOut = (k) => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
+const outBack = (k) => { const c = 1.9; return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2); };
+function rng(seed) { let s = seed >>> 0; return () => { s = (s + 0x6d2b79f5) >>> 0; let t = s; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+const hash = (n) => { const v = Math.sin(n * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
+const C = { cyan: [25, 230, 255], violet: [181, 107, 255], pink: [255, 79, 216], green: [57, 255, 156], red: [255, 70, 90], white: [244, 246, 251] };
+const rgba = (c, a) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+const mixc = (a, b, k) => a.map((v, i) => Math.round(v + (b[i] - v) * k));
+const BEAT = 0.5;
+const HEX = '0123456789ABCDEF';
+
+// ---------- shapes sampled once ----------
+const SHIELD = 'M32 5c7 3.4 14 5.4 21 6v18c0 13.6-8.6 24.2-21 30-12.4-5.8-21-16.4-21-30V11c7-.6 14-2.6 21-6z';
+const TICK = 'M22 31l7.5 7.5L43 24';
+function samplePath(d, n) {
+  const p = document.createElementNS('http://www.w3.org/2000/svg', 'path'); p.setAttribute('d', d);
+  const len = p.getTotalLength();
+  return Array.from({ length: n }, (_, i) => { const q = p.getPointAtLength((i / n) * len); return [q.x, q.y]; });
+}
+const N = 420;
+const R = rng(7);
+const P = Array.from({ length: N }, (_, i) => ({
+  a: R() * Math.PI * 2, r: 140 + R() * 330, spin: 0.6 + R() * 1.4, size: 1.2 + R() * 2.6,
+  col: R() < 0.55 ? C.cyan : R() < 0.6 ? C.violet : C.pink, d: R(), ox: (R() - 0.5) * 2, oy: (R() - 0.5) * 2,
+}));
+// shield outline (340) + tick (80), in a 64-unit box
+const SH = [...samplePath(SHIELD, 340), ...samplePath(TICK, 80)];
+const shieldPt = (i, cx, cy, size) => { const [u, v] = SH[i % SH.length]; return [cx + (u - 32) * size / 64, cy + (v - 32) * size / 64]; };
+
+// ---------- drawing primitives ----------
+function glowDot(px, py, r, col, a) {
+  x.fillStyle = rgba(col, a * 0.18); x.beginPath(); x.arc(px, py, r * 3.2, 0, 6.283); x.fill();
+  x.fillStyle = rgba(mixc(col, C.white, 0.35), a); x.beginPath(); x.arc(px, py, r, 0, 6.283); x.fill();
+}
+function rrect(px, py, w, h, r) { x.beginPath(); x.roundRect(px, py, w, h, r); }
+function text(s, px, py, font, fill, align = 'center', base = 'middle', spacing = '0px') {
+  x.font = font; x.textAlign = align; x.textBaseline = base; x.letterSpacing = spacing; x.fillStyle = fill; x.fillText(s, px, py); x.letterSpacing = '0px';
+}
+function shieldPath(cx, cy, size) {
+  x.save(); x.translate(cx - size / 2, cy - size / 2); x.scale(size / 64, size / 64);
+  const p = new Path2D(SHIELD); x.restore(); return p;
+}
+function drawShield(cx, cy, size, fillA, tickK, strokeA = 1) {
+  x.save(); x.translate(cx - size / 2, cy - size / 2); x.scale(size / 64, size / 64);
+  const sp = new Path2D(SHIELD);
+  if (fillA > 0) {
+    const g = x.createLinearGradient(10, 5, 54, 60); g.addColorStop(0, rgba(C.cyan, fillA)); g.addColorStop(0.55, rgba(C.violet, fillA)); g.addColorStop(1, rgba(C.pink, fillA));
+    x.fillStyle = g; x.fill(sp);
+  }
+  if (strokeA > 0) { x.lineWidth = 1.6; x.strokeStyle = rgba(C.cyan, strokeA); x.shadowColor = rgba(C.cyan, 0.9); x.shadowBlur = 18; x.stroke(sp); x.shadowBlur = 0; }
+  if (tickK > 0) {
+    const tp = new Path2D(TICK); x.lineWidth = 5; x.lineCap = 'round'; x.lineJoin = 'round';
+    x.setLineDash([40, 40]); x.lineDashOffset = 40 - 40 * tickK;
+    x.strokeStyle = fillA > 0.5 ? '#05060a' : rgba(C.green, 1); x.shadowColor = rgba(C.green, 0.9); x.shadowBlur = fillA > 0.5 ? 0 : 20;
+    x.stroke(tp); x.setLineDash([]); x.shadowBlur = 0;
+  }
+  x.restore();
+}
+function background(t, tint = C.violet, k = 1) {
+  const pulse = 1 - seg((t % BEAT), 0, 0.22); // a soft flash on every beat
+  const g = x.createRadialGradient(CX, CY, 0, CX, CY, 1100);
+  g.addColorStop(0, rgba(mixc([10, 10, 22], tint, 0.18 + 0.06 * pulse * k), 1)); g.addColorStop(1, '#030308');
+  x.fillStyle = g; x.fillRect(0, 0, W, H);
+}
+function vignette() {
+  const g = x.createRadialGradient(CX, CY, 500, CX, CY, 1250); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,0.75)');
+  x.fillStyle = g; x.fillRect(0, 0, W, H);
+}
+function hud(t, label, n) {
+  const a = seg(t, 0, 0.15);
+  text(`${String(n).padStart(2, '0')} / ${label}`, 70, 70, "500 20px 'JetBrains Mono'", rgba(C.white, 0.75 * a), 'left', 'middle', '4px');
+  text('TRUSTVAULT · REEL 2026', W - 70, 70, "500 20px 'JetBrains Mono'", rgba(C.cyan, 0.75 * a), 'right', 'middle', '4px');
+  x.fillStyle = rgba(C.white, 0.18); x.fillRect(70, H - 70, W - 140, 2);
+  x.fillStyle = rgba(C.cyan, 0.9); x.fillRect(70, H - 70, (W - 140) * (t / VIDEO.duration), 2);
+}
+
+// ---------- 1. ignition (0 - 1.5) ----------
+function ringPos(p, t) {
+  const grow = outExpo(seg(t, 0.12 + p.d * 0.25, 1.05));
+  const ang = p.a + t * p.spin * 1.8 + (1 - grow) * 4;
+  const r = p.r * grow * (1 + 0.04 * Math.sin(t * 9 + p.a * 5));
+  return [CX + Math.cos(ang) * r, CY + Math.sin(ang) * r * 0.86];
+}
+function scene1(t) {
+  background(t, C.cyan, 0.5);
+  x.globalCompositeOperation = 'lighter';
+  const core = seg(t, 0.02, 0.12) * (1 - seg(t, 0.9, 1.3));
+  if (core > 0) { // a soft flare, not a disc
+    const g = x.createRadialGradient(CX, CY, 0, CX, CY, 40 + 160 * core); g.addColorStop(0, `rgba(255,255,255,${core})`); g.addColorStop(0.25, rgba(C.cyan, 0.5 * core)); g.addColorStop(1, 'rgba(0,0,0,0)');
+    x.fillStyle = g; x.fillRect(CX - 220, CY - 220, 440, 440);
+  }
+  for (const p of P) {
+    for (let k = 4; k >= 0; k--) { // trails: the same particle a few hundredths earlier
+      const [px, py] = ringPos(p, t - k * 0.018);
+      glowDot(px, py, p.size * (1 - k * 0.15), p.col, (k ? 0.12 : 0.9) * seg(t, 0.1, 0.3));
+    }
+  }
+  const sw = seg(t, 1.0, 1.5); // shockwave
+  if (sw > 0 && sw < 1) { x.lineWidth = 6 * (1 - sw); x.strokeStyle = rgba(C.cyan, 1 - sw); x.beginPath(); x.arc(CX, CY, 80 + 1100 * outCubic(sw), 0, 6.283); x.stroke(); }
+  x.globalCompositeOperation = 'source-over';
+  const flick = hash(Math.floor(t * 30)) > 0.25 ? 1 : 0.3;
+  text('IGNITION', CX, CY + 430, "500 22px 'JetBrains Mono'", rgba(C.white, 0.6 * seg(t, 0.4, 0.6) * flick), 'center', 'middle', '12px');
+  hud(t, 'IGNITION', 1);
+}
+
+// ---------- 2. shield (1.5 - 3.5) ----------
+function scene2(t) {
+  const lt = t - 1.5;
+  const zoom = 1 + 5 * Math.pow(seg(lt, 1.55, 2.0), 3); // punch through at the end
+  background(t, C.violet);
+  x.save(); x.translate(CX, CY); x.scale(zoom, zoom); x.translate(-CX, -CY);
+  x.globalCompositeOperation = 'lighter';
+  P.forEach((p, i) => {
+    const [sx, sy] = ringPos(p, 1.5);
+    const [tx, ty] = shieldPt(i, CX, CY, 560);
+    const k = inOut(seg(lt, p.d * 0.45, p.d * 0.45 + 0.65));
+    const bend = Math.sin(k * Math.PI) * 140; // fly in on a curve
+    const nx = -(ty - sy), ny = tx - sx, nl = Math.hypot(nx, ny) || 1;
+    const px = lerp(sx, tx, k) + (nx / nl) * bend * p.ox, py = lerp(sy, ty, k) + (ny / nl) * bend * p.ox;
+    const col = i >= 340 ? mixc(p.col, C.green, k) : p.col;
+    glowDot(px, py, p.size * (0.8 + 0.4 * k), col, 0.9);
+  });
+  x.globalCompositeOperation = 'source-over';
+  const fill = seg(lt, 1.05, 1.35);
+  drawShield(CX, CY, 560, fill * 0.95, seg(lt, 0.8, 1.15), seg(lt, 0.7, 1.0));
+  x.restore();
+  if (lt > 1.15) text('PROTECTED', CX, CY + 380, "800 34px 'Inter Tight'", rgba(C.white, seg(lt, 1.15, 1.3) * (1 - seg(lt, 1.55, 1.7))), 'center', 'middle', '18px');
+  const white = seg(lt, 1.75, 2.0);
+  if (white > 0) { x.fillStyle = `rgba(255,255,255,${white})`; x.fillRect(0, 0, W, H); }
+  hud(t, 'SHIELD', 2);
+}
+
+// ---------- 3. ENCRYPT (3.5 - 5.5) ----------
+const WORD = 'ENCRYPT';
+function scene3(t) {
+  const lt = t - 3.5;
+  background(t, C.cyan, 0.6);
+  // a rain of ciphertext
+  x.font = "500 22px 'JetBrains Mono'"; x.textAlign = 'center'; x.textBaseline = 'middle';
+  for (let c = 0; c < 48; c++) {
+    const speed = 160 + hash(c) * 220, off = (lt * speed + hash(c + 9) * H) % (H + 200);
+    for (let r = 0; r < 26; r++) {
+      const y = ((r * 44 + off) % (H + 200)) - 100, ch = HEX[Math.floor(hash(c * 31 + r + Math.floor(lt * 12)) * 16)];
+      const head = r === 25 ? 1 : 0.1 + 0.5 * hash(c + r * 7);
+      x.fillStyle = rgba(r === 25 ? C.white : C.cyan, 0.35 * head * (1 - seg(lt, 1.6, 2.0)));
+      x.fillText(ch, 20 + c * 40, y);
+    }
+  }
+  // the word decodes letter by letter, with a colour split
+  const slice = seg(lt, 1.5, 2.0);
+  const size = 250, letterW = 190, x0 = CX - (WORD.length - 1) * letterW / 2;
+  const bands = 8;
+  for (let b = 0; b < bands; b++) { // exit: horizontal slices slide apart
+    const by = CY - size * 0.6 + (b * size * 1.2) / bands, bh = (size * 1.2) / bands;
+    const dx = (b % 2 ? 1 : -1) * Math.pow(slice, 2) * 1400 * (0.6 + hash(b) * 0.8);
+    x.save(); x.beginPath(); x.rect(0, by, W, bh + 1); x.clip(); x.translate(dx, 0);
+    [...WORD].forEach((ch, i) => {
+      const lock = 0.12 + i * 0.09, locked = lt >= lock;
+      const glyph = locked ? ch : HEX[Math.floor(hash(i * 13 + Math.floor(lt / 0.045)) * 16)];
+      const pop = locked ? outBack(seg(lt, lock, lock + 0.18)) : 0.85;
+      const px = x0 + i * letterW, a = seg(lt, i * 0.05, i * 0.05 + 0.1);
+      x.save(); x.translate(px, CY); x.scale(pop, pop);
+      x.globalCompositeOperation = 'lighter';
+      const split = locked ? 10 * (1 - seg(lt, lock, lock + 0.3)) + 3 : 14;
+      text(glyph, -split, 0, `800 ${size}px 'Inter Tight'`, rgba(C.pink, 0.75 * a));
+      text(glyph, split, 0, `800 ${size}px 'Inter Tight'`, rgba(C.cyan, 0.75 * a));
+      x.globalCompositeOperation = 'source-over';
+      text(glyph, 0, 0, `800 ${size}px 'Inter Tight'`, rgba(locked ? C.white : C.cyan, a));
+      x.restore();
+    });
+    x.restore();
+  }
+  const sub = 'AES-256-GCM · BEFORE IT TOUCHES THE DISK';
+  const n = Math.floor(seg(lt, 0.8, 1.3) * sub.length);
+  text(sub.slice(0, n) + (n < sub.length && n > 0 ? '▌' : ''), CX, CY + 230, "500 26px 'JetBrains Mono'", rgba(C.cyan, 1 - slice), 'center', 'middle', '6px');
+  hud(t, 'ENCRYPT', 3);
+}
+
+// ---------- 4. card + stamp (5.5 - 7.5) ----------
+const SPARKS = Array.from({ length: 90 }, (_, i) => { const r = rng(100 + i); return { a: r() * 6.283, v: 500 + r() * 1300, s: 2 + r() * 4, col: [C.green, C.cyan, C.white, C.violet][i % 4] }; });
+function drawCard(cx, cy, w, h, verified, scan) {
+  x.save(); x.translate(cx, cy);
+  rrect(-w / 2, -h / 2, w, h, 34);
+  const g = x.createLinearGradient(-w / 2, -h / 2, w / 2, h / 2); g.addColorStop(0, '#19e6ff'); g.addColorStop(0.55, '#b56bff'); g.addColorStop(1, '#ff4fd8');
+  x.fillStyle = g; x.shadowColor = rgba(verified ? C.green : C.violet, 0.8); x.shadowBlur = 60; x.fill(); x.shadowBlur = 0;
+  x.save(); x.clip();
+  x.strokeStyle = 'rgba(255,255,255,0.12)'; x.lineWidth = 1;
+  for (let i = -20; i < 40; i++) { x.beginPath(); x.moveTo(-w / 2 + i * 26, -h / 2); x.lineTo(-w / 2 + i * 26 - 200, h / 2); x.stroke(); }
+  if (scan > 0 && scan < 1) { const sx = -w / 2 + scan * w; const sg = x.createLinearGradient(sx - 120, 0, sx, 0); sg.addColorStop(0, 'rgba(255,255,255,0)'); sg.addColorStop(1, 'rgba(255,255,255,0.85)'); x.fillStyle = sg; x.fillRect(sx - 120, -h / 2, 122, h); }
+  x.restore();
+  text('TrustVault', -w / 2 + 60, -h / 2 + 64, "800 40px 'Inter Tight'", '#fff', 'left');
+  rrect(w / 2 - 230, -h / 2 + 40, 170, 48, 24); x.fillStyle = verified ? rgba(C.green, 1) : 'rgba(5,6,10,0.4)'; x.fill();
+  text(verified ? 'VERIFIED' : 'CHECKING', w / 2 - 145, -h / 2 + 65, "700 20px 'JetBrains Mono'", verified ? '#05060a' : '#fff', 'center', 'middle', '3px');
+  rrect(-w / 2 + 60, -h / 2 + 130, 150, 190, 22); x.fillStyle = 'rgba(255,255,255,0.22)'; x.fill();
+  [['NAME', 'XXXXX XXXXX'], ['ID NUMBER', 'XXXX XXXX 4F'], ['DATE OF BIRTH', 'XX / XX / XXXX']].forEach(([k, v], i) => {
+    text(k, -w / 2 + 250, -h / 2 + 150 + i * 70, "600 17px 'JetBrains Mono'", 'rgba(255,255,255,0.75)', 'left', 'middle', '3px');
+    text(v, -w / 2 + 250, -h / 2 + 180 + i * 70, "700 32px 'JetBrains Mono'", '#fff', 'left', 'middle', '3px');
+    if (scan > 0.35 + i * 0.15) { x.fillStyle = rgba(C.green, 1); x.beginPath(); x.arc(-w / 2 + 600, -h / 2 + 180 + i * 70, 15, 0, 6.283); x.fill(); text('✓', -w / 2 + 600, -h / 2 + 181 + i * 70, "800 20px Inter", '#05060a'); }
+  });
+  const chip = x.createLinearGradient(w / 2 - 170, 0, w / 2 - 70, 70); chip.addColorStop(0, '#ffe7a3'); chip.addColorStop(0.5, '#d4a73c'); chip.addColorStop(1, '#fff1c7');
+  rrect(w / 2 - 170, -20, 100, 76, 14); x.fillStyle = chip; x.fill();
+  x.restore();
+}
+function scene4(t) {
+  const lt = t - 5.5;
+  background(t, C.violet);
+  // rotating light rays
+  x.save(); x.translate(CX, CY); x.rotate(lt * 0.35); x.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < 14; i++) { x.rotate(6.283 / 14); const g = x.createLinearGradient(0, 0, 1200, 0); g.addColorStop(0, rgba(C.violet, 0.10)); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.beginPath(); x.moveTo(0, 0); x.lineTo(1300, -70); x.lineTo(1300, 70); x.fill(); }
+  x.restore(); x.globalCompositeOperation = 'source-over';
+  const stampT = 1.15, shake = lt > stampT ? Math.max(0, 1 - (lt - stampT) / 0.35) : 0;
+  const sx = (hash(Math.floor(t * 60)) - 0.5) * 34 * shake, sy = (hash(Math.floor(t * 60) + 5) - 0.5) * 34 * shake;
+  x.save(); x.translate(sx, sy);
+  const k = outExpo(seg(lt, 0, 0.6));
+  const rotY = (1 - k) * 1.25; // fake 3D: squash horizontally while turning in
+  x.save(); x.translate(CX, CY + (1 - k) * 240); x.rotate((1 - k) * -0.4); x.scale(Math.cos(rotY) * (0.25 + 0.75 * k) * (1 + 0.04 * Math.sin(lt * 3)), 0.25 + 0.75 * k); x.translate(-CX, -CY);
+  x.globalAlpha = seg(lt, 0, 0.12);
+  drawCard(CX, CY, 900, 568, lt > stampT, seg(lt, 0.55, 1.05));
+  x.globalAlpha = 1; x.restore();
+  // the stamp
+  if (lt > stampT - 0.02) {
+    const s = 1 + 2.2 * (1 - outBack(seg(lt, stampT - 0.02, stampT + 0.13)));
+    x.save(); x.translate(CX + 40, CY + 40); x.rotate(-0.17); x.scale(s, s);
+    rrect(-250, -62, 500, 124, 22); x.fillStyle = 'rgba(5,6,10,0.85)'; x.fill();
+    x.lineWidth = 9; x.strokeStyle = rgba(C.green, 1); x.shadowColor = rgba(C.green, 1); x.shadowBlur = 40; x.stroke(); x.shadowBlur = 0;
+    text('✓ VERIFIED', 0, 4, "900 76px 'Inter Tight'", rgba(C.green, 1), 'center', 'middle', '6px');
+    x.restore();
+  }
+  // sparks + shockwave
+  const e = lt - stampT;
+  if (e > 0 && e < 1) {
+    x.globalCompositeOperation = 'lighter';
+    for (const p of SPARKS) { const d = p.v * e * (1 - e * 0.45); glowDot(CX + 40 + Math.cos(p.a) * d, CY + 40 + Math.sin(p.a) * d + 400 * e * e, p.s * (1 - e), p.col, 1 - e); }
+    x.lineWidth = 10 * (1 - e); x.strokeStyle = rgba(C.green, 1 - e); x.beginPath(); x.arc(CX + 40, CY + 40, 120 + 900 * outCubic(e), 0, 6.283); x.stroke();
+    x.globalCompositeOperation = 'source-over';
+  }
+  x.restore();
+  text('CHECKED IN SECONDS · APPROVED AUTOMATICALLY', CX, CY + 420, "500 24px 'JetBrains Mono'", rgba(C.white, 0.7 * seg(lt, 1.3, 1.5)), 'center', 'middle', '6px');
+  const flash = Math.max(0, 1 - Math.abs(lt - stampT) / 0.08) * 0.6;
+  if (flash > 0) { x.fillStyle = `rgba(255,255,255,${flash})`; x.fillRect(0, 0, W, H); }
+  hud(t, 'VERIFY', 4);
+}
+
+// ---------- 5. batch (7.5 - 10) ----------
+const NODES = Array.from({ length: 58 }, (_, i) => { const a = i * 2.39996, r = 70 * Math.sqrt(i + 1.4); return { x: Math.cos(a) * r, y: Math.sin(a) * r, r, ok: hash(i + 3) < 0.78, at: 1.15 + hash(i + 11) * 0.75 }; });
+function scene5(t) {
+  const lt = t - 7.5;
+  background(t, C.violet);
+  text('26MX', CX, CY, "900 520px 'Inter Tight'", rgba(C.violet, 0.07 + 0.03 * Math.sin(lt * 4)), 'center', 'middle', '-10px');
+  const rot = lt * 0.12, zoom = 0.72 + 0.16 * outCubic(seg(lt, 0, 2.5));
+  x.save(); x.translate(CX, CY); x.rotate(rot); x.scale(zoom, zoom);
+  // requests shoot out from the faculty member in the centre
+  x.globalCompositeOperation = 'lighter';
+  NODES.forEach((n, i) => {
+    const start = 0.15 + n.r / 600 * 0.6, k = outCubic(seg(lt, start, start + 0.25));
+    if (k <= 0) return;
+    x.strokeStyle = rgba(C.violet, 0.5 * (1 - seg(lt, 1.8, 2.4)) + 0.1); x.lineWidth = 2;
+    x.beginPath(); x.moveTo(0, 0); x.lineTo(n.x * k, n.y * k); x.stroke();
+    if (k < 1) glowDot(n.x * k, n.y * k, 4, C.white, 1);
+  });
+  x.globalCompositeOperation = 'source-over';
+  NODES.forEach((n, i) => {
+    const reached = lt > 0.15 + n.r / 600 * 0.6 + 0.25;
+    const decided = lt > n.at;
+    const col = !reached ? [60, 64, 90] : !decided ? C.violet : n.ok ? C.green : C.pink;
+    const pop = decided ? outBack(seg(lt, n.at, n.at + 0.2)) : reached ? 1 : 0.7;
+    x.fillStyle = rgba(col, 1); x.shadowColor = rgba(col, 0.9); x.shadowBlur = reached ? 22 : 0;
+    x.beginPath(); x.arc(n.x, n.y, 15 * pop, 0, 6.283); x.fill(); x.shadowBlur = 0;
+    if (decided) text(n.ok ? '✓' : '×', n.x, n.y + 1, "800 16px Inter", '#05060a');
+  });
+  const pulse = 1 + 0.15 * Math.sin(lt * 10);
+  const g = x.createLinearGradient(-40, -40, 40, 40); g.addColorStop(0, '#19e6ff'); g.addColorStop(1, '#b56bff');
+  x.fillStyle = g; x.shadowColor = rgba(C.cyan, 1); x.shadowBlur = 40; x.beginPath(); x.arc(0, 0, 34 * pulse, 0, 6.283); x.fill(); x.shadowBlur = 0;
+  x.restore();
+  const lineA = lt < 1.2 ? seg(lt, 0.1, 0.3) * (1 - seg(lt, 1.0, 1.15)) : seg(lt, 1.2, 1.35);
+  text(lt < 1.15 ? 'ASK A WHOLE BATCH' : 'EACH STUDENT DECIDES', CX, 120, "800 54px 'Inter Tight'", rgba(C.white, lineA), 'center', 'middle', '10px');
+  const yes = NODES.filter((n) => lt > n.at && n.ok).length;
+  text(`${yes} SHARED · OPENS ONCE`, CX, H - 140, "500 26px 'JetBrains Mono'", rgba(C.green, seg(lt, 1.2, 1.4)), 'center', 'middle', '6px');
+  hud(t, 'CONSENT', 5);
+}
+
+// ---------- 6. ledger (10 - 12.5) ----------
+function scene6(t) {
+  const lt = t - 10;
+  background(t, C.cyan, 0.5);
+  const cam = inOut(seg(lt, 0, 2.3)) * 2300;
+  // parallax star dust
+  x.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < 160; i++) { const depth = 0.2 + hash(i) * 0.6, px = ((hash(i + 40) * 3200 - cam * depth) % 3200 + 3200) % 3200 - 600; glowDot(px, hash(i + 80) * H, 1 + depth * 2, C.cyan, 0.35 * depth); }
+  x.globalCompositeOperation = 'source-over';
+  const tilt = Math.sin(lt * 1.3) * 0.05;
+  x.save(); x.translate(CX, CY); x.rotate(tilt); x.translate(-CX, -CY);
+  for (let i = 0; i < 12; i++) {
+    const bx = 260 + i * 330 - cam, by = CY;
+    if (bx < -400 || bx > W + 400) continue;
+    const tamper = i === 7, glitch = tamper && lt > 1.35 && lt < 1.8;
+    const col = glitch ? C.red : tamper && lt >= 1.8 ? C.green : C.cyan;
+    if (i < 11) { // the link to the next block
+      x.strokeStyle = rgba(glitch && i >= 6 ? C.red : C.violet, 0.9); x.lineWidth = 5; x.shadowColor = rgba(C.violet, 1); x.shadowBlur = 16;
+      x.beginPath(); x.moveTo(bx + 110, by); x.lineTo(bx + 220, by); x.stroke(); x.shadowBlur = 0;
+    }
+    const jx = glitch ? (hash(Math.floor(t * 40) + i) - 0.5) * 40 : 0;
+    x.save(); x.translate(bx + jx, by);
+    rrect(-110, -110, 220, 220, 30); x.fillStyle = 'rgba(12,14,24,0.95)'; x.fill();
+    x.lineWidth = 3; x.strokeStyle = rgba(col, 1); x.shadowColor = rgba(col, 1); x.shadowBlur = glitch ? 50 : 24; x.stroke(); x.shadowBlur = 0;
+    text(`#${480 + i}`, 0, -40, "800 48px 'Inter Tight'", '#fff');
+    const h1 = Array.from({ length: 8 }, (_, k) => HEX[Math.floor(hash(i * 50 + k + (glitch ? Math.floor(t * 30) : 0)) * 16)]).join('');
+    text(h1, 0, 20, "500 24px 'JetBrains Mono'", rgba(col, 0.9), 'center', 'middle', '3px');
+    text(glitch ? 'TAMPERED' : 'SHA-256', 0, 62, "700 16px 'JetBrains Mono'", rgba(col, 0.75), 'center', 'middle', '4px');
+    x.restore();
+  }
+  x.restore();
+  const label = lt < 1.35 ? 'EVERY STEP, CHAINED' : lt < 1.8 ? 'CHANGE ONE BYTE...' : 'THE CHAIN TELLS YOU.';
+  const lc = lt >= 1.35 && lt < 1.8 ? C.red : C.white;
+  text(label, CX, 190, "800 54px 'Inter Tight'", rgba(lc, seg(lt, 0.05, 0.25)), 'center', 'middle', '8px');
+  if (lt > 1.35 && lt < 1.8) { // glitch bars
+    for (let b = 0; b < 6; b++) { const gy = hash(Math.floor(t * 25) + b) * H; x.fillStyle = rgba(b % 2 ? C.red : C.cyan, 0.12); x.fillRect(0, gy, W, 8 + hash(b) * 30); }
+  }
+  hud(t, 'LEDGER', 6);
+}
+
+// ---------- 7. logo (12.5 - 15) ----------
+function scene7(t) {
+  const lt = t - 12.5;
+  background(t, C.violet, 0.4);
+  const sx = 640, sy = CY - 20, size = 300;
+  x.globalCompositeOperation = 'lighter';
+  P.forEach((p, i) => { // particles rush in from everywhere and become the shield
+    const from = [CX + p.ox * 1500, CY + p.oy * 900];
+    const [tx, ty] = shieldPt(i, sx, sy, size);
+    const k = outExpo(seg(lt, p.d * 0.3, p.d * 0.3 + 0.55));
+    glowDot(lerp(from[0], tx, k), lerp(from[1], ty, k), p.size * 0.8, i >= 340 ? C.green : p.col, (1 - seg(lt, 0.75, 1.0)) * 0.9);
+  });
+  x.globalCompositeOperation = 'source-over';
+  drawShield(sx, sy, size, seg(lt, 0.7, 0.95), seg(lt, 0.85, 1.15), seg(lt, 0.6, 0.8));
+  // wordmark, letter by letter
+  const word = 'TrustVault';
+  x.font = "800 170px 'Inter Tight'"; x.letterSpacing = '-4px';
+  let wx = 830;
+  [...word].forEach((ch, i) => {
+    const k = outCubic(seg(lt, 0.75 + i * 0.045, 1.15 + i * 0.045));
+    const w = x.measureText(ch).width;
+    x.save(); x.translate(wx, sy + (1 - k) * 60); x.globalAlpha = k;
+    if (i < 5) { x.fillStyle = '#f4f6fb'; } else { const g = x.createLinearGradient(0, -80, w, 80); g.addColorStop(0, '#19e6ff'); g.addColorStop(0.6, '#b56bff'); g.addColorStop(1, '#ff4fd8'); x.fillStyle = g; }
+    x.textAlign = 'left'; x.textBaseline = 'middle'; x.fillText(ch, 0, 0); x.restore();
+    wx += w - 4;
+  });
+  x.letterSpacing = '0px';
+  // light sweep over the wordmark
+  const sw = seg(lt, 1.45, 1.95);
+  if (sw > 0 && sw < 1) {
+    x.save(); x.globalCompositeOperation = 'lighter'; const lx = 800 + sw * 1000;
+    x.translate(lx, sy); x.scale(0.6, 1.3); // an elliptical glint, so it has no edges
+    const g = x.createRadialGradient(0, 0, 0, 0, 0, 160); g.addColorStop(0, 'rgba(255,255,255,0.4)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+    x.fillStyle = g; x.fillRect(-160, -160, 320, 320); x.restore();
+  }
+  text('Your identity. Verified. Vaulted.', 836, sy + 140, "500 40px Inter", rgba(C.white, 0.85 * seg(lt, 1.25, 1.5)), 'left');
+  text('ENCRYPTED · VERIFIED · SHARED ONCE', 836, sy + 200, "500 22px 'JetBrains Mono'", rgba(C.cyan, seg(lt, 1.45, 1.7)), 'left', 'middle', '6px');
+  const flash = Math.max(0, 1 - Math.abs(lt - 0.9) / 0.07) * 0.22;
+  if (flash > 0) { x.fillStyle = `rgba(255,255,255,${flash})`; x.fillRect(0, 0, W, H); }
+  hud(t, 'TRUSTVAULT', 7);
+}
+
+// ---------- seek ----------
+const SCENES = [[0, scene1], [1.5, scene2], [3.5, scene3], [5.5, scene4], [7.5, scene5], [10, scene6], [12.5, scene7]];
+function seek(t) {
+  t = clamp(t, 0, VIDEO.duration - 1e-4);
+  x.setTransform(1, 0, 0, 1, 0, 0); x.globalAlpha = 1; x.globalCompositeOperation = 'source-over';
+  let fn = SCENES[0][1]; for (const [s, f] of SCENES) if (t >= s) fn = f;
+  fn(t);
+  vignette();
+  // a quick flash on every cut, fade out at the very end
+  const cut = SCENES.slice(1).map(([s]) => s).reduce((m, s) => Math.min(m, Math.abs(t - s)), 9);
+  if (cut < 0.06) { x.fillStyle = `rgba(255,255,255,${0.35 * (1 - cut / 0.06)})`; x.fillRect(0, 0, W, H); }
+  const end = seg(t, 14.55, 15);
+  if (end > 0) { x.fillStyle = `rgba(0,0,0,${end})`; x.fillRect(0, 0, W, H); }
+}
+window.seek = seek;
+
+// ---------- soundtrack: 120 BPM, synthesised on the same timeline ----------
+window.buildAudio = async function (ctx) {
+  const out = ctx.createGain(); out.gain.value = 0.9;
+  const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -16; comp.ratio.value = 4;
+  out.connect(comp); comp.connect(ctx.destination);
+  const r = rng(9), nb = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate), nd = nb.getChannelData(0);
+  for (let i = 0; i < nd.length; i++) nd[i] = r() * 2 - 1;
+  const env = (g, t, a, peak, d) => { g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(peak, t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + a + d); };
+  const tone = (f, t, d, type, peak, a = 0.004, dest = out, f2) => {
+    const o = ctx.createOscillator(), g = ctx.createGain(); o.type = type; o.frequency.setValueAtTime(f, t);
+    if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d);
+    env(g, t, a, peak, d); o.connect(g); g.connect(dest); o.start(t); o.stop(t + a + d + 0.05);
+  };
+  const noise = (t, d, peak, type, freq, q = 1, f2) => {
+    const s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+    s.buffer = nb; f.type = type; f.frequency.setValueAtTime(freq, t); f.Q.value = q;
+    if (f2) f.frequency.exponentialRampToValueAtTime(f2, t + d);
+    env(g, t, 0.004, peak, d); s.connect(f); f.connect(g); g.connect(out); s.start(t, r() * 0.5); s.stop(t + d + 0.05);
+  };
+  const mtof = (m) => 440 * Math.pow(2, (m - 69) / 12);
+  // intro swell and sparkle
+  tone(55, 0.0, 1.5, 'sawtooth', 0.05, 1.2, out, 110);
+  for (let i = 0; i < 10; i++) tone(mtof(84 + [0, 3, 7, 10, 12][i % 5]), 0.15 + i * 0.09, 0.25, 'sine', 0.03);
+  // drums + bass from the shield onward (bar = 2 s); a breakdown under the logo
+  const roots = [45, 45, 41, 43, 45, 48, 41];
+  for (let b = 0; b < 27; b++) {
+    const t = 1.5 + b * BEAT; if (t >= 14.6) break;
+    const logo = t >= 12.5;
+    tone(140, t, 0.32, 'sine', logo ? 0.18 : 0.42, 0.002, out, 40);            // kick
+    if (t >= 3.5) noise(t + BEAT / 2, 0.05, logo ? 0.02 : 0.05, 'highpass', 8000); // open hat
+    if (t >= 3.5 && b % 2 === 1 && !logo) noise(t, 0.16, 0.07, 'bandpass', 1900, 0.7); // clap
+    const root = roots[Math.min(roots.length - 1, Math.floor((t - 1.5) / 2))];
+    tone(mtof(root), t, 0.42, 'sawtooth', logo ? 0.03 : 0.07, 0.01);           // bass
+    if (t >= 5.5) tone(mtof(root + 24 + [0, 7, 12, 7][b % 4]), t + 0.25, 0.2, 'triangle', 0.03); // arp
+  }
+  // whooshes into every cut
+  [1.5, 3.5, 5.5, 7.5, 10, 12.5].forEach((t) => noise(t - 0.35, 0.4, 0.09, 'bandpass', 300, 0.8, 4000));
+  // shield punch-through
+  tone(200, 3.05, 0.45, 'sawtooth', 0.04, 0.3, out, 1600);
+  // decoding ticks
+  for (let i = 0; i < 7; i++) { noise(3.62 + i * 0.09, 0.02, 0.06, 'highpass', 4000); tone(1200 + i * 90, 3.62 + i * 0.09, 0.06, 'square', 0.015); }
+  // the stamp: impact
+  tone(70, 6.65, 0.6, 'sine', 0.55, 0.002, out, 30); noise(6.65, 0.35, 0.16, 'lowpass', 1400); tone(1568, 6.75, 0.6, 'sine', 0.05); tone(2093, 6.8, 0.6, 'sine', 0.04);
+  // approvals: little pings
+  NODES.forEach((n) => { if (n.ok) tone(mtof(84 + (n.r % 5) * 2), 7.5 + n.at, 0.12, 'sine', 0.018); });
+  // glitch
+  for (let i = 0; i < 6; i++) noise(11.35 + i * 0.07, 0.05, 0.08, 'bandpass', 600 + i * 400, 4);
+  tone(880, 11.8, 0.3, 'sine', 0.05);
+  // riser into the logo, then the final chord
+  noise(11.9, 0.6, 0.06, 'highpass', 800, 1, 9000);
+  [57, 64, 69, 73, 76].forEach((m, i) => tone(mtof(m), 13.4 + i * 0.03, 1.6, i < 2 ? 'sawtooth' : 'sine', i < 2 ? 0.025 : 0.04, 0.02));
+  tone(55, 13.4, 1.6, 'sine', 0.25, 0.01);
+};
+
+// ---------- preview (no ?render) ----------
+const RENDER = location.search.includes('render');
+if (RENDER) { $('ui').remove(); }
+else {
+  const fit = () => { const k = Math.min(innerWidth / 1920, (innerHeight - 50) / 1080); $('stage').style.transform = `scale(${k})`; };
+  addEventListener('resize', fit); fit();
+  let buf, ac, src, startAt = 0, offset = 0, playing = false;
+  async function play() {
+    ac ??= new AudioContext();
+    if (!buf) { const off = new OfflineAudioContext(2, Math.ceil(48000 * VIDEO.duration), 48000); await buildAudio(off); buf = await off.startRendering(); }
+    src = ac.createBufferSource(); src.buffer = buf; src.connect(ac.destination);
+    src.start(0, offset % VIDEO.duration); startAt = ac.currentTime; playing = true; $('playBtn').textContent = 'Pause';
+  }
+  function pause() { if (!playing) return; offset += ac.currentTime - startAt; src.stop(); playing = false; $('playBtn').textContent = 'Play'; }
+  const now = () => (playing ? (offset + ac.currentTime - startAt) % VIDEO.duration : offset);
+  $('playBtn').onclick = () => (playing ? pause() : play());
+  $('scrub').oninput = (e) => { const was = playing; pause(); offset = +e.target.value; if (was) play(); };
+  (function loop() { const t = now(); seek(t); $('scrub').value = t; $('clock').textContent = t.toFixed(2); requestAnimationFrame(loop); })();
+}
+seek(0);
+</script>
+</body>
+</html>

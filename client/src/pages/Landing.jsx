@@ -10,7 +10,7 @@ import { ThemeToggle } from '@/components/app/account';
 import { useAsync, CountUp } from '@/components/app/kit';
 import { SoundToggle } from '@/components/app/fx-global';
 import { VaultIntro, TryDemo, ProductPreview } from './landing-extras';
-import { TourVideo } from '@/components/app/tour-video';
+import { TourVideo, ReelVideo } from '@/components/app/tour-video';
 import { ParticleShield } from '@/lib/motion-kit';
 import { StoryScroll } from './landing-story';
 import { ApprovalZoom } from './landing-zoom';
@@ -374,6 +374,15 @@ export default function Landing() {
           </div>
         </section>
 
+
+        <section className="lp-sec lp-center" id="reel">
+          <div className="rv lp-center">
+            <span className="lp-eyebrow">The reel</span>
+            <h2 className="lp-h2" style={{ maxWidth: '16ch' }}>15 seconds. <span className="lp-neon" style={{ animation: 'shimmer 5s linear infinite' }}>All of it.</span></h2>
+            <p className="lp-lead">Encrypt, verify, share once, and a ledger that tells you if anything changed.</p>
+          </div>
+          <div className="rv zoom mt-10 w-full max-w-5xl"><ReelVideo /></div>
+        </section>
 
         <section className="lp-sec lp-center" id="tour">
           <div className="rv lp-center">
