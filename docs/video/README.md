@@ -27,12 +27,12 @@ node_modules/ffmpeg-static/ffmpeg -i tour.mp4 -vf scale=1280:-2 -c:v libx264 -cr
 
 `render.mjs` expects Chrome at `C:/Program Files/Google/Chrome/Application/chrome.exe`; change `executablePath` on other systems.
 
-## 15-second reel
+## 24-second showreel
 
-`client/public/media/trustvault-reel.mp4` (shown on the landing page, muted on a loop with a sound toggle) is rendered the same way from `reel.src.html`: one canvas, every frame drawn from the time, 120 BPM with cuts on the beat, soundtrack synthesised in `buildAudio`.
+`client/public/media/trustvault-showreel.mp4` (the main page video: muted on a loop while on screen, with a sound toggle) is rendered the same way from `showreel.src.html`. It combines the tour and the earlier 15-second reel into one product showreel, in the format of the "showreel" prompts on prompt-motion.com: product UI, kinetic type and a 120 BPM soundtrack with every cut on the beat. One canvas, every frame drawn from the time; colours are the site's dark palette, Electric Night.
 
 ```bash
-node -e "const fs=require('fs');fs.writeFileSync('reel.html',fs.readFileSync('reel.src.html','utf8').replace('/*FONTS*/',fs.readFileSync('fonts.css','utf8')))"
-node render.mjs reel.html reel.mp4 30 3 8
-node_modules/ffmpeg-static/ffmpeg -i reel.mp4 -vf scale=1280:-2 -c:v libx264 -crf 23 -preset slow -pix_fmt yuv420p -c:a aac -b:a 128k -movflags +faststart trustvault-reel.mp4
+node -e "const fs=require('fs');fs.writeFileSync('showreel.html',fs.readFileSync('showreel.src.html','utf8').replace('/*FONTS*/',fs.readFileSync('fonts.css','utf8')))"
+node render.mjs showreel.html showreel.mp4 30 3 8
+node_modules/ffmpeg-static/ffmpeg -i showreel.mp4 -vf scale=1280:-2 -c:v libx264 -crf 23 -preset slow -pix_fmt yuv420p -c:a aac -b:a 128k -movflags +faststart trustvault-showreel.mp4
 ```

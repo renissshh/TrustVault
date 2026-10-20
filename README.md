@@ -20,11 +20,11 @@ MCA students keep their ID and academic documents in an encrypted vault. Documen
 
 </div>
 
-## 60-second tour
+## Showreel and tour
 
-[![Watch the TrustVault tour](client/public/media/trustvault-tour.jpg)](client/public/media/trustvault-tour.mp4)
+[![Watch the TrustVault showreel](client/public/media/trustvault-showreel.jpg)](client/public/media/trustvault-showreel.mp4)
 
-Sign in with three locks, upload and encrypt, automatic checks, and sharing with faculty once. Made from code with the [motion-graphics](https://github.com/Barty-Bart/motion-graphics) explainer skill ([how](docs/video/README.md)). New here? Follow the [step-by-step tutorial](https://trustvault-5lgg.onrender.com/tutorial), which includes demo documents to try.
+The 24-second showreel on the main page: three-lock sign-in, upload and encryption, automatic checks, a faculty batch request, a file that opens once, and the tamper-evident ledger, cut to a 120 BPM soundtrack. The full [60-second tour](client/public/media/trustvault-tour.mp4) (sign in, upload, automatic checks, sharing with faculty) plays on the tutorial page. Made from code with the [motion-graphics](https://github.com/Barty-Bart/motion-graphics) explainer skill ([how](docs/video/README.md)). New here? Follow the [step-by-step tutorial](https://trustvault-5lgg.onrender.com/tutorial), which includes demo documents to try.
 
 ## What it does
 

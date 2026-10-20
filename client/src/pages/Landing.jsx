@@ -10,7 +10,7 @@ import { ThemeToggle } from '@/components/app/account';
 import { useAsync, CountUp } from '@/components/app/kit';
 import { SoundToggle } from '@/components/app/fx-global';
 import { VaultIntro, TryDemo, ProductPreview } from './landing-extras';
-import { TourVideo, ReelVideo } from '@/components/app/tour-video';
+import { ShowreelVideo } from '@/components/app/tour-video';
 import { ParticleShield } from '@/lib/motion-kit';
 import { StoryScroll } from './landing-story';
 import { ApprovalZoom } from './landing-zoom';
@@ -375,23 +375,14 @@ export default function Landing() {
         </section>
 
 
-        <section className="lp-sec lp-center" id="reel">
+        <section className="lp-sec lp-center" id="showreel">
           <div className="rv lp-center">
-            <span className="lp-eyebrow">The reel</span>
-            <h2 className="lp-h2" style={{ maxWidth: '16ch' }}>15 seconds. <span className="lp-neon" style={{ animation: 'shimmer 5s linear infinite' }}>All of it.</span></h2>
-            <p className="lp-lead">Encrypt, verify, share once, and a ledger that tells you if anything changed.</p>
+            <span className="lp-eyebrow">The showreel</span>
+            <h2 className="lp-h2" style={{ maxWidth: '16ch' }}>24 seconds. <span className="lp-neon" style={{ animation: 'shimmer 5s linear infinite' }}>All of it.</span></h2>
+            <p className="lp-lead">Three locks, automatic checks, a whole batch asked at once, files that open once, and a ledger that tells you if anything changed.</p>
           </div>
-          <div className="rv zoom mt-10 w-full max-w-5xl"><ReelVideo /></div>
-        </section>
-
-        <section className="lp-sec lp-center" id="tour">
-          <div className="rv lp-center">
-            <span className="lp-eyebrow">60-second tour</span>
-            <h2 className="lp-h2" style={{ maxWidth: '16ch' }}>Watch it <span className="lp-neon" style={{ animation: 'shimmer 5s linear infinite' }}>work.</span></h2>
-            <p className="lp-lead">Sign in, upload, automatic checks and sharing with faculty, start to finish.</p>
-          </div>
-          <div className="rv zoom mt-10 w-full max-w-5xl"><TourVideo /></div>
-          <div className="lp-cta rv mt-8"><Link to="/tutorial" className="lp-btn ghost">Step-by-step tutorial <ArrowRight className="size-5" /></Link></div>
+          <div className="rv zoom mt-10 w-full max-w-5xl"><ShowreelVideo /></div>
+          <div className="lp-cta rv mt-8"><Link to="/tutorial" className="lp-btn ghost">Full 60-second tour and tutorial <ArrowRight className="size-5" /></Link></div>
         </section>
 
         <section className="lp-final rv zoom">
