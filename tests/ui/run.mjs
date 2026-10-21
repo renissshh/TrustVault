@@ -109,7 +109,10 @@ async function browser() {
   const exe = findChrome();
   if (!exe) throw new Error('Chrome or Edge not found. Set CHROME_PATH to its location.');
   const port = 9600 + Math.floor(Math.random() * 300);
-  const proc = spawn(exe, ['--headless=new', `--remote-debugging-port=${port}`, `--user-data-dir=${path.join(DATA, 'chrome')}`, '--hide-scrollbars', '--no-first-run', ...(process.env.CI ? ['--no-sandbox'] : []), 'about:blank'], { stdio: 'ignore' }); // CI machines often lack Chrome's sandbox
+  const proc = spawn(exe, ['--headless=new', `--remote-debugging-port=${port}`, `--user-data-dir=${path.join(DATA, 'chrome')}`, '--hide-scrollbars', '--no-first-run', ...(process.env.CI ? ['--no-sandbox', '--disable-3d-apis'] : []), 'about:blank'], { stdio: 'ignore' });
+  // ponytail: CI machines lack Chrome's sandbox and a GPU. Without a GPU the 3D vault is drawn in software and starves the
+  // whole page, so CI turns WebGL off: the main page then starts with the hero, as it does for any visitor without WebGL.
+  // The 3D section and the kinetic heading are covered by the local runs (Chrome and Edge with a GPU). Upgrade: a GPU runner.
   children.push(proc);
   let target;
   for (let i = 0; i < 60 && !target; i++) { await sleep(250); target = await fetch(`http://127.0.0.1:${port}/json`).then((r) => r.json()).then((l) => l.find((t) => t.type === 'page'), () => null); }
@@ -166,7 +169,7 @@ const GUEST_CLICKS = {
   'sign-up asks for the faculty code': ['/register?as=faculty', `(async () => { ${wait(300)} return !!document.querySelector('input[name=code]') && !document.querySelector('input[name=studentId]'); })()`],
   // without WebGL 2 the page starts with the hero instead; with it the 3D vault comes first and its controls work
   '3D vault opens the page and answers its controls': ['/welcome', `(async () => { const s = document.querySelector('.lp-3d'); if (!s) return document.querySelector('main').firstElementChild.classList.contains('lp-hero'); for (let i = 0; i < 100 && !s.querySelector('.tv-loading.done'); i++) ${wait(200)} if (document.querySelector('main').firstElementChild !== s || !s.querySelector('.tv-loading.done')) return false; s.querySelector('[data-mode=document]').click(); ${wait(300)} const followed = s.querySelector('[data-mode=document]').getAttribute('aria-pressed') === 'true' && s.querySelector('.tv-journey').classList.contains('visible'); s.querySelector('[data-camera=top]').click(); const top = window.__trustvaultDebug.getState().camera === 'top'; s.querySelector('[data-tv=tamper]').click(); window.__trustvaultDebug.advance(1); ${wait(600)} const broken = s.querySelector('[data-tv=status-text]').textContent.startsWith('Chain broken'); const wheel = new WheelEvent('wheel', { deltaY: 120, bubbles: true, cancelable: true }); s.querySelector('canvas').dispatchEvent(wheel); return followed && top && broken && !wheel.defaultPrevented; })()`],
-  'the heading shows each check one by one in its pill': ['/welcome', `(async () => { const h = document.querySelector('.kt'); for (let i = 0; i < 200 && !h.classList.contains('kt-live'); i++) ${wait(100)} if (!h.seekForTest) return false; const shown = () => [...h.querySelectorAll('.kt-label')].filter((l) => getComputedStyle(l).visibility === 'visible').map((l) => l.textContent); h.seekForTest(1); const w = h.querySelector('.kt-word'); const rest = Math.abs(w.getBoundingClientRect().width - w.offsetWidth) < 1 && !shown().length; h.seekForTest(5.9); const one = shown().join() === 'Number match' && h.querySelector('.kt-pill').offsetWidth > 3 * h.querySelector('.kt-slot').offsetWidth; h.seekForTest(7.6); const done = shown().join() === 'Verified'; return rest && one && done && h.querySelector('.sr-only').textContent === 'Every check, one by one.'; })()`],
+  'the heading shows each check one by one in its pill': ['/welcome', `(async () => { const h = document.querySelector('.kt'); if (!h) return !document.querySelector('.lp-3d'); for (let i = 0; i < 200 && !h.classList.contains('kt-live'); i++) ${wait(100)} if (!h.seekForTest) return false; const shown = () => [...h.querySelectorAll('.kt-label')].filter((l) => getComputedStyle(l).visibility === 'visible').map((l) => l.textContent); h.seekForTest(1); const w = h.querySelector('.kt-word'); const rest = Math.abs(w.getBoundingClientRect().width - w.offsetWidth) < 1 && !shown().length; h.seekForTest(5.9); const one = shown().join() === 'Number match' && h.querySelector('.kt-pill').offsetWidth > 3 * h.querySelector('.kt-slot').offsetWidth; h.seekForTest(7.6); const done = shown().join() === 'Verified'; return rest && one && done && h.querySelector('.sr-only').textContent === 'Every check, one by one.'; })()`],
   'landing demo runs to VERIFIED': ['/welcome', `(async () => { [...document.querySelectorAll('button')].find((x) => x.textContent.includes('Scan the sample'))?.click(); for (let i = 0; i < 100 && !document.querySelector('.demo[data-state=done] .demo-stamp'); i++) ${wait(200)} return !!document.querySelector('.demo[data-state=done] .demo-stamp'); })()`],
 };
 
@@ -190,7 +193,7 @@ async function crawl(b, who, cookies, theme, pages, clicks) {
     }
   }
   ok(!bad.length, `${who}, ${theme}: ${count} page loads clean`, bad.join(' ;; '));
-  for (const [label, [p, script]] of Object.entries(clicks)) { await open(p, SIZES[0]); ok(await b.run(script) === true && !b.problems.length, `${who}, ${theme}: ${label}`, [...new Set(b.problems)].join(' | ')); }
+  for (const [label, [p, script]] of Object.entries(clicks)) { await open(p, SIZES[0]); const v = await b.run(script); ok(v === true && !b.problems.length, `${who}, ${theme}: ${label}`, [v === true ? '' : `returned ${JSON.stringify(v)}`, ...new Set(b.problems)].filter(Boolean).join(' | ')); }
   await b.send('Page.removeScriptToEvaluateOnNewDocument', { identifier });
 }
 
