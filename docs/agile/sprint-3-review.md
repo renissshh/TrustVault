@@ -2,7 +2,7 @@
 
 Backlog and acceptance criteria: [sprint-3-backlog.md](sprint-3-backlog.md).
 
-**Result:** all 4 stories done. 10 problems found while checking frames in a real browser, all fixed before release.
+**Result:** all 5 stories and the CI bug done. 10 problems found while checking frames in a real browser, all fixed before release.
 
 ## Story by story
 
@@ -11,6 +11,8 @@ Backlog and acceptance criteria: [sprint-3-backlog.md](sprint-3-backlog.md).
 | US-1 | 3D vault, first screen | Done | `client/src/components/ui/trustvault-3d.jsx` (three.js, from the owner's brief) is the first section of the main page: the headline "Every check, one by one." and *Create free account* on the left, the machine on the right (stacked on phones). Modes, views, Top, One document and Tamper test all work; the chain-status pill stays in view. Changes to the brief's `embed` mode for a first screen: the mode bar, journey and status stay visible, the wheel and a vertical swipe scroll the page while a sideways drag turns the machine, and the camera sits a little further back so the plate is not cut off. three.js is its own 173 KB (gzipped) download, fetched only by the main page; the main bundle is unchanged at 102 KB. No WebGL 2 → the page starts with the hero, no error box. |
 | US-2 | Hero card show | Done | `client/src/pages/landing-hero.jsx`: flies in from the left with motion streaks, ten slot-machine reels lock on ABCPS1234F while the score flickers, the three checks tick on as the score counts to 96%, VERIFIED slams down with a spark burst, then one 360° turn shows a TrustVault back. Starts when the card is in view (after the first-visit intro). Scrolling past slides it left and back. Reduced motion: the finished card. |
 | US-4 | Kinetic heading | Done | `client/src/pages/landing-headline.jsx`, after the owner's prompt-motion reference film (@twoclipping): "Every check, one by one." in Archivo at width 125 and weight 800 rises out of a mask line; *one by one* squeezes like an accordion into its full stop with a horizontal motion blur; the stop grows into a pill that shows OCR ✓, Checksum ✓, Number match ✓, Score counting to 96% with a bar, then paints green for Verified; it shrinks back into the stop and the letters spring out. A 12-second loop that rests long enough to read. Every style is computed from the clock with closed-form springs (no video, no CSS transitions), it pauses off screen, screen readers hear the plain sentence, reduced motion shows the still heading. |
+| US-5 | Scanner cursor | Done | `client/src/components/app/fx-global.jsx` (`ScanCursor`, replaces the glowing ring): a dot sits on the pointer and four corner brackets trail it; over a button, link or chip they snap around it like a scanner framing a document and one scan line sweeps across; on press they squeeze in. Larger clickable areas only widen the reticle (violet). Text fields and embedded documents keep the normal cursor; mouse only; off with reduced motion. |
+| BUG-1 | CI browser job | Fixed | `ubuntu-latest` moved to Ubuntu 26 on 19 Oct and the browser job stopped starting, so Render (which deploys only after the checks pass) kept the old site. Runners are pinned to Ubuntu 24.04 (ships Chrome), Chrome runs without its sandbox on CI, and every failure is now an annotation readable without signing in. That showed two checks with fixed waits that were too short on a 2-core machine drawing the 3D scene in software; they now wait for the result. The seed step also reports each step's status. |
 | US-3 | Ship | Done | New browser check for the 3D section; all suites green on Chrome, Edge and Firefox; pushed to GitHub (CI runs the suites again and deploys only when they pass). |
 
 ## Before and after
@@ -23,6 +25,9 @@ After - the 3D vault comes first:
 
 Phone, light theme - One document, Tamper test, Top view, Assembled:
 ![3D vault on a phone](screens/vault3d-phone-light.jpg)
+
+The scanner cursor (idle, framing a button, framing Sign in; dark and light):
+![Scanner cursor](screens/scanner-cursor.jpg)
 
 The kinetic heading (rest, accordion squeeze, the stop, the pill, Checksum, Number match, Score, Verified painted green, shrinking, letters springing back):
 ![Kinetic heading](screens/kinetic-heading.jpg)

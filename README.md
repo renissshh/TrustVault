@@ -28,6 +28,10 @@ The main page opens on a 3D model of the whole journey, drawn live in the browse
 
 <img src="docs/screenshots/landing-2-card.jpg" alt="The hero ID card stamped VERIFIED after its checks" width="100%">
 
+Across the site the cursor is a scanner reticle: a dot on the pointer and four corner brackets that snap around a button or link like a scanner framing a document (text fields keep the normal caret).
+
+<img src="docs/agile/screens/scanner-cursor.jpg" alt="The scanner cursor: idle reticle, framing Create free account, framing Sign in, in the dark and light themes" width="100%">
+
 ## Showreel and tour
 
 [![The TrustVault showreel](docs/screenshots/showreel.jpg)](https://trustvault-5lgg.onrender.com/welcome#showreel)

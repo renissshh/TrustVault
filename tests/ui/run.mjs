@@ -85,19 +85,21 @@ async function seed() {
   await signUp(admin, 'Asha Admin', ADMIN, { role: 'admin', code: 'ADM-TEST-CODE-XYZ' });
   await signUp(faculty, 'Priya Raman', FACULTY, { role: 'faculty', code: 'FAC-TEST-CODE' });
   // vault PIN needs the security check: password -> email code -> Authenticator
-  let r = await student.call('/auth/step-up/password', { method: 'POST', body: { password: PASSWORD } });
-  r = await student.call('/auth/step-up/otp', { method: 'POST', body: { ticket: r.data.ticket, code: lastCode(STUDENT) } });
-  await student.call('/auth/step-up/totp', { method: 'POST', body: { ticket: r.data.ticket, code: await totp(secrets[STUDENT]) } });
-  await student.call('/auth/vault-pin', { method: 'POST', body: { pin: PIN } });
-  await upload(student, { type: 'pan', number: 'ABCPS1234F', title: 'PAN Card' }, await card([['INCOME TAX DEPARTMENT', 48, 110], ['Permanent Account Number Card', 36, 300], ['ABCPS1234F', 64, 390], ['RAHUL SHARMA', 44, 500], ['DEMO SAMPLE - NOT A REAL CARD', 32, 580]]), 'pan.png');
-  await upload(student, { type: 'marksheet', number: '22CS101', title: 'Semester 6 marksheet' }, await card([['STATEMENT OF MARKS', 44, 150], ['RAHUL SHARMA', 44, 300], ['Roll No 22CS101', 40, 380], ['DEMO SAMPLE', 32, 580]]), 'marks.png');
-  await upload(student, { type: 'other', title: 'Hostel receipt' }, await card([['HOSTEL FEE RECEIPT', 48, 110], ['RAHUL SHARMA', 44, 300]]), 'receipt.png');
+  const steps = []; // every answer's status, so a failed seed says which step broke
+  let r = await student.call('/auth/step-up/password', { method: 'POST', body: { password: PASSWORD } }); steps.push(r.status);
+  r = await student.call('/auth/step-up/otp', { method: 'POST', body: { ticket: r.data.ticket, code: lastCode(STUDENT) } }); steps.push(r.status);
+  steps.push((await student.call('/auth/step-up/totp', { method: 'POST', body: { ticket: r.data.ticket, code: await totp(secrets[STUDENT]) } })).status);
+  steps.push((await student.call('/auth/vault-pin', { method: 'POST', body: { pin: PIN } })).status);
+  const up = async (...a) => { const u = await upload(...a); steps.push(u.status === 201 || u.status === 200 ? u.status : `${u.status} ${u.data?.error ?? ''}`); };
+  await up(student, { type: 'pan', number: 'ABCPS1234F', title: 'PAN Card' }, await card([['INCOME TAX DEPARTMENT', 48, 110], ['Permanent Account Number Card', 36, 300], ['ABCPS1234F', 64, 390], ['RAHUL SHARMA', 44, 500], ['DEMO SAMPLE - NOT A REAL CARD', 32, 580]]), 'pan.png');
+  await up(student, { type: 'marksheet', number: '22CS101', title: 'Semester 6 marksheet' }, await card([['STATEMENT OF MARKS', 44, 150], ['RAHUL SHARMA', 44, 300], ['Roll No 22CS101', 40, 380], ['DEMO SAMPLE', 32, 580]]), 'marks.png');
+  await up(student, { type: 'other', title: 'Hostel receipt' }, await card([['HOSTEL FEE RECEIPT', 48, 110], ['RAHUL SHARMA', 44, 300]]), 'receipt.png');
   for (let i = 0; i < 60; i++) { const d = (await student.call('/documents')).data; if (d.every((x) => x.autoCheck.state !== 'running')) break; await sleep(2000); }
   const docs = (await student.call('/documents')).data;
   r = await faculty.call('/records/batch-request', { method: 'POST', body: { group: '23MX', types: ['pan', 'class10', 'class12'], reason: 'Placement document check for campus drive' } });
   await student.call('/auth/vault/unlock', { method: 'POST', body: { pin: PIN } });
   const roles = [(await admin.call('/auth/me')).data.user?.role, (await faculty.call('/auth/me')).data.user?.role];
-  ok(docs.length === 3 && r.data.sent === 1 && roles.join() === 'admin,verifier', 'demo data seeded (student with 3 documents, faculty batch request, admin)', JSON.stringify({ roles, r: r.data }));
+  ok(docs.length === 3 && r.data.sent === 1 && roles.join() === 'admin,verifier', 'demo data seeded (student with 3 documents, faculty batch request, admin)', JSON.stringify({ roles, r: r.data, steps, docs: Array.isArray(docs) ? docs.map((d) => `${d.type}:${d.status}`) : docs }));
   ok(docs.find((d) => d.type === 'pan')?.status === 'verified', 'PAN verified automatically (every check passed)', docs.find((d) => d.type === 'pan')?.status);
   return { secrets, studentCookies: student.jar, adminCookies: admin.jar, facultyCookies: faculty.jar };
 }
@@ -159,12 +161,13 @@ const FACULTY_CLICKS = {
   'a batch with nobody in it says so and suggests real batches': ['/records?batch=26', `(async () => { ${wait(900)} return document.body.innerText.includes('No students in 26MX yet') && [...document.querySelectorAll('button')].some((b) => b.textContent.includes('23MX')); })()`],
   'All shows every student and no ask form': ['/records', `(async () => { ${wait(900)} return document.querySelector('.rc-chip.on')?.textContent.includes('All') && document.querySelectorAll('.rc-card').length >= 1 && !document.querySelector('.rc-ask'); })()`],
 };
+// waits poll for the result: on CI (no GPU) the 3D scene is drawn in software and slows timers on the main page
 const GUEST_CLICKS = {
   'sign-up asks for the faculty code': ['/register?as=faculty', `(async () => { ${wait(300)} return !!document.querySelector('input[name=code]') && !document.querySelector('input[name=studentId]'); })()`],
   // without WebGL 2 the page starts with the hero instead; with it the 3D vault comes first and its controls work
   '3D vault opens the page and answers its controls': ['/welcome', `(async () => { const s = document.querySelector('.lp-3d'); if (!s) return document.querySelector('main').firstElementChild.classList.contains('lp-hero'); for (let i = 0; i < 100 && !s.querySelector('.tv-loading.done'); i++) ${wait(200)} if (document.querySelector('main').firstElementChild !== s || !s.querySelector('.tv-loading.done')) return false; s.querySelector('[data-mode=document]').click(); ${wait(300)} const followed = s.querySelector('[data-mode=document]').getAttribute('aria-pressed') === 'true' && s.querySelector('.tv-journey').classList.contains('visible'); s.querySelector('[data-camera=top]').click(); const top = window.__trustvaultDebug.getState().camera === 'top'; s.querySelector('[data-tv=tamper]').click(); window.__trustvaultDebug.advance(1); ${wait(600)} const broken = s.querySelector('[data-tv=status-text]').textContent.startsWith('Chain broken'); const wheel = new WheelEvent('wheel', { deltaY: 120, bubbles: true, cancelable: true }); s.querySelector('canvas').dispatchEvent(wheel); return followed && top && broken && !wheel.defaultPrevented; })()`],
-  'the heading shows each check one by one in its pill': ['/welcome', `(async () => { const h = document.querySelector('.kt'); for (let i = 0; i < 50 && !h.classList.contains('kt-live'); i++) ${wait(100)} if (!h.seekForTest) return false; const shown = () => [...h.querySelectorAll('.kt-label')].filter((l) => getComputedStyle(l).visibility === 'visible').map((l) => l.textContent); h.seekForTest(1); const w = h.querySelector('.kt-word'); const rest = Math.abs(w.getBoundingClientRect().width - w.offsetWidth) < 1 && !shown().length; h.seekForTest(5.9); const one = shown().join() === 'Number match' && h.querySelector('.kt-pill').offsetWidth > 3 * h.querySelector('.kt-slot').offsetWidth; h.seekForTest(7.6); const done = shown().join() === 'Verified'; return rest && one && done && h.querySelector('.sr-only').textContent === 'Every check, one by one.'; })()`],
-  'landing demo runs to VERIFIED': ['/welcome', `(async () => { [...document.querySelectorAll('button')].find((x) => x.textContent.includes('Scan the sample'))?.click(); ${wait(5600)} return !!document.querySelector('.demo[data-state=done] .demo-stamp'); })()`],
+  'the heading shows each check one by one in its pill': ['/welcome', `(async () => { const h = document.querySelector('.kt'); for (let i = 0; i < 200 && !h.classList.contains('kt-live'); i++) ${wait(100)} if (!h.seekForTest) return false; const shown = () => [...h.querySelectorAll('.kt-label')].filter((l) => getComputedStyle(l).visibility === 'visible').map((l) => l.textContent); h.seekForTest(1); const w = h.querySelector('.kt-word'); const rest = Math.abs(w.getBoundingClientRect().width - w.offsetWidth) < 1 && !shown().length; h.seekForTest(5.9); const one = shown().join() === 'Number match' && h.querySelector('.kt-pill').offsetWidth > 3 * h.querySelector('.kt-slot').offsetWidth; h.seekForTest(7.6); const done = shown().join() === 'Verified'; return rest && one && done && h.querySelector('.sr-only').textContent === 'Every check, one by one.'; })()`],
+  'landing demo runs to VERIFIED': ['/welcome', `(async () => { [...document.querySelectorAll('button')].find((x) => x.textContent.includes('Scan the sample'))?.click(); for (let i = 0; i < 100 && !document.querySelector('.demo[data-state=done] .demo-stamp'); i++) ${wait(200)} return !!document.querySelector('.demo[data-state=done] .demo-stamp'); })()`],
 };
 
 async function crawl(b, who, cookies, theme, pages, clicks) {

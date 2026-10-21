@@ -13,6 +13,8 @@
 | US-1 | As a **visitor**, I want the first screen to show the document's whole journey as a 3D machine I can turn, so I can watch every check happen one by one. | 5 | Must |
 | US-2 | As a **visitor**, I want the hero ID card to come alive (fly in, numbers roll and lock, checks tick, VERIFIED, a full turn), so "verified automatically" is obvious in seconds. | 3 | Must |
 | US-4 | As a **visitor**, I want the heading "Every check, one by one." to move like the prompt-motion film the owner picked (wide heavy type, an accordion squeeze into the full stop, a pill that shows each check), as live script, not a video. | 2 | Must |
+| US-5 | As a **visitor**, I want a cursor that suits a document vault, not a generic glow. | 1 | Should |
+| BUG-1 | The browser tests stopped starting on GitHub (the runner image moved to Ubuntu 26), so the live site was not updated. | 1 | Must |
 | US-3 | As the **team**, we want both checked by the browser suite and shipped through CI/CD to the live site. | 1 | Must |
 
 ## Acceptance criteria
@@ -39,6 +41,15 @@
 - The pill shows OCR ✓, Checksum ✓, Number match ✓, Score counting to 96% with a bar, then paints green for Verified; each label rises in and out through its own mask.
 - The pill shrinks back into the stop and the letters spring back out; it rests long enough to read, then loops. Pauses off screen.
 - Every frame is computed from the clock (closed-form springs), no video. Screen readers hear the plain sentence; reduced motion shows the still heading; fits 360-1900 px on two lines.
+
+**US-5 Scanner cursor**
+- A precise dot on the pointer and four corner brackets that trail it (a scanner reticle).
+- Over a button, link or chip the brackets snap around it like a scanner framing a document, and one scan line sweeps across; on press they squeeze in.
+- Larger clickable areas widen the reticle (violet) instead of being framed; text fields and embedded documents keep the normal cursor.
+- Mouse only; off with reduced motion; dark and light.
+
+**BUG-1 CI browser job**
+- The browser job runs to the end on GitHub again, and a failure is readable without signing in.
 
 **US-3 Ship**
 - A browser check for the 3D section (first on the page, modes, Top view, tamper, wheel not captured; falls back cleanly without WebGL).

@@ -282,17 +282,28 @@
   }
 }
 
-/* ---------- glowing cursor (components/app/fx-global.jsx) ---------- */
-.gc-dot, .gc-ring { position: fixed; left: 0; top: 0; z-index: 200; pointer-events: none; border-radius: 50%; opacity: 0; transition: opacity 0.2s; }
-.gc-dot { width: 8px; height: 8px; margin: -4px 0 0 -4px; background: var(--primary); box-shadow: 0 0 14px 3px var(--primary); }
-.gc-ring { width: 38px; height: 38px; margin: -19px 0 0 -19px; }
-.gc-ring::before { content: ""; position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid var(--primary); box-shadow: 0 0 22px -4px var(--primary), inset 0 0 14px -6px var(--primary); transition: transform 0.25s var(--ease-spring), border-color 0.2s, background-color 0.2s; }
-.glow-cursor .gc-dot, .glow-cursor .gc-ring { opacity: 1; }
+/* ---------- scanner cursor (components/app/fx-global.jsx): a dot on the pointer, corner brackets that frame what you can click ---------- */
+.gc-dot, .gc-ret { position: fixed; left: 0; top: 0; z-index: 200; pointer-events: none; opacity: 0; transition: opacity 0.2s; }
+.gc-dot { width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: var(--primary); box-shadow: 0 0 10px 2px color-mix(in srgb, var(--primary) 70%, transparent); transition: opacity 0.2s, scale 0.25s var(--ease-spring); }
+.gc-ret { --c: var(--primary); width: 28px; height: 28px; }
+.gc-ret i { position: absolute; width: 8px; height: 8px; border: 0 solid var(--c); filter: drop-shadow(0 0 3px var(--c)); transition: translate 0.2s var(--ease-spring), width 0.25s var(--ease-spring), height 0.25s var(--ease-spring), border-color 0.2s; }
+.gc-ret i:nth-child(1) { left: 0; top: 0; border-width: 2px 0 0 2px; border-top-left-radius: 3px; }
+.gc-ret i:nth-child(2) { right: 0; top: 0; border-width: 2px 2px 0 0; border-top-right-radius: 3px; }
+.gc-ret i:nth-child(3) { left: 0; bottom: 0; border-width: 0 0 2px 2px; border-bottom-left-radius: 3px; }
+.gc-ret i:nth-child(4) { right: 0; bottom: 0; border-width: 0 2px 2px 0; border-bottom-right-radius: 3px; }
+.gc-ret b { position: absolute; left: 3px; right: 3px; top: 0; height: 2px; border-radius: 2px; background: linear-gradient(90deg, transparent, var(--c), transparent); box-shadow: 0 0 8px var(--c); opacity: 0; } /* the scan line */
+.glow-cursor .gc-dot, .glow-cursor .gc-ret { opacity: 1; }
 .glow-cursor, .glow-cursor * { cursor: none !important; }
-.gc-hot .gc-ring::before { transform: scale(1.7); border-color: var(--pink); background: color-mix(in srgb, var(--pink) 14%, transparent); box-shadow: 0 0 30px -4px var(--pink); }
-.gc-down .gc-ring::before { transform: scale(0.7); }
-.gc-text .gc-dot, .gc-text .gc-ring { opacity: 0; }
+.gc-hot:not(.gc-lock) .gc-ret { --c: var(--violet); } /* a clickable card: wider reticle, violet */
+.gc-lock .gc-ret i { width: 12px; height: 12px; }
+.gc-lock .gc-dot { scale: 0.5; }
+.gc-down .gc-ret i:nth-child(1) { translate: 3px 3px; } .gc-down .gc-ret i:nth-child(2) { translate: -3px 3px; }
+.gc-down .gc-ret i:nth-child(3) { translate: 3px -3px; } .gc-down .gc-ret i:nth-child(4) { translate: -3px -3px; }
+.gc-down .gc-dot { scale: 1.8; }
+.gc-text .gc-dot, .gc-text .gc-ret { opacity: 0; }
 .glow-cursor.gc-text, .glow-cursor.gc-text * { cursor: text !important; }
+:root:not(.dark) .gc-ret i { filter: none; }
+:root:not(.dark) .gc-dot { box-shadow: none; }
 
 /* ---------- 404 ---------- */
 .nf-code { display: flex; align-items: center; justify-content: center; gap: 0.04em; font: 800 clamp(7rem, 26vw, 18rem)/0.85 var(--font-display); letter-spacing: -0.06em; background: linear-gradient(100deg, var(--primary), var(--violet) 50%, var(--pink)); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 40px color-mix(in srgb, var(--violet) 60%, transparent)); animation: float 6s ease-in-out infinite; }
