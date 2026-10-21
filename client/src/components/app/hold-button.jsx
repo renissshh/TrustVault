@@ -17,7 +17,7 @@ export function HoldButton({ label = 'Hold to enter', doneLabel = 'Access grante
 
   const tick = (now) => {
     const s = state.current, el = ref.current;
-    const dt = Math.min(64, now - (s.last || now));
+    const dt = Math.min(200, now - (s.last || now)); // real time, so a slow device still fills in `duration`; capped for tab switches
     s.last = now;
     s.p = Math.min(1, Math.max(0, s.p + (s.holding ? dt / duration : -dt / (duration * 0.45))));
     el?.style.setProperty('--p', s.p.toFixed(4));

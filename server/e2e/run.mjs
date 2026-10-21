@@ -26,6 +26,8 @@ let skipped = 0;
 const ok = (cond, label, extra = '') => {
   cond ? pass++ : fail++;
   console.log(`${cond ? 'PASS' : 'FAIL'}  ${label}${extra ? `  -> ${extra}` : ''}`);
+  // on GitHub a failure is also an annotation, readable on the run page and through the public API without signing in
+  if (!cond && process.env.GITHUB_ACTIONS) console.log(`::error title=E2E check failed::${label}${extra ? ` - ${extra}` : ''}`.replace(/\s+/g, ' '));
 };
 // A check that depends on an outside service is skipped (not failed) when that service cannot be reached.
 const skip = (label, why) => { skipped++; console.log(`SKIP  ${label}  -> ${why}`); };
@@ -530,6 +532,7 @@ try {
 } catch (e) {
   fail++;
   console.error('Test crashed:', e);
+  if (process.env.GITHUB_ACTIONS) console.log(`::error title=E2E test crashed::${String(e?.stack ?? e).replace(/\s+/g, ' ').slice(0, 600)}`);
 } finally {
   console.log(`\n${pass} passed, ${fail} failed${skipped ? `, ${skipped} skipped (outside service unavailable)` : ''}`);
   await db.dropDatabase();
