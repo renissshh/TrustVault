@@ -15,6 +15,7 @@ import { ParticleShield } from '@/lib/motion-kit';
 import { StoryScroll } from './landing-story';
 import { ApprovalZoom } from './landing-zoom';
 import { HeroCard } from './landing-hero';
+import { CheckHeadline } from './landing-headline';
 
 // three.js is large, so the 3D vault loads on its own after the page.
 // ponytail: if that chunk fails to load, the stage stays empty beside the headline; a retry button is the upgrade.
@@ -199,7 +200,7 @@ function Vault3D() {
     <section className="lp-3d" aria-labelledby="lp-3d-title">
       <div className="lp-3d-copy">
         <span className="lp-eyebrow lp-in">Live 3D · 7 stations · 1 chain</span>
-        <h2 id="lp-3d-title" className="lp-in" style={{ animationDelay: '0.1s' }}>Every check, <span className="lp-neon whitespace-nowrap">one by one.</span></h2>
+        <CheckHeadline id="lp-3d-title" />
         <p className="lp-in" style={{ animationDelay: '0.2s' }}>
           A document passes the sign-in gate, upload, the encrypted vault, the automatic checks and a person&apos;s approval, then gets a QR proof,
           while the ledger chains every step. Drag to turn it, or pick <b>Top</b> or <b>One document</b> below.

@@ -1,10 +1,10 @@
 # Sprint 3 - main page motion sprint (20 Oct 2026)
 
-**Sprint goal:** make the main page show, not tell, how a document is checked: a 3D model of the whole journey as the first screen, and a hero ID card that verifies itself, without slowing the page or changing the approved neon look.
+**Sprint goal:** make the main page show, not tell, how a document is checked: a 3D model of the whole journey as the first screen, a heading that moves like the reference film, and a hero ID card that verifies itself, without slowing the page or changing the approved neon look.
 
 **Status:** completed 20 Oct 2026 - see the [sprint review](sprint-3-review.md).
 
-**Process:** one-day Scrum-style sprint. Product owner: SriNithish J K. Developer: Claude (pair). Input: the owner's idea for the hero card (fly in, rolling numbers, checked, approved, spin, slide away on scroll; trigger and spin chosen by the owner) and a 3D component brief (`TrustVault-3D-prompt.txt`, three.js, built for this repo).
+**Process:** one-day Scrum-style sprint. Product owner: SriNithish J K. Developer: Claude (pair). Input: the owner's idea for the hero card (fly in, rolling numbers, checked, approved, spin, slide away on scroll; trigger and spin chosen by the owner), a 3D component brief (`TrustVault-3D-prompt.txt`, three.js, built for this repo) and a reference film for the heading's type (prompt-motion, @twoclipping).
 
 ## Product backlog for this sprint
 
@@ -12,6 +12,7 @@
 |---|---|---|---|
 | US-1 | As a **visitor**, I want the first screen to show the document's whole journey as a 3D machine I can turn, so I can watch every check happen one by one. | 5 | Must |
 | US-2 | As a **visitor**, I want the hero ID card to come alive (fly in, numbers roll and lock, checks tick, VERIFIED, a full turn), so "verified automatically" is obvious in seconds. | 3 | Must |
+| US-4 | As a **visitor**, I want the heading "Every check, one by one." to move like the prompt-motion film the owner picked (wide heavy type, an accordion squeeze into the full stop, a pill that shows each check), as live script, not a video. | 2 | Must |
 | US-3 | As the **team**, we want both checked by the browser suite and shipped through CI/CD to the live site. | 1 | Must |
 
 ## Acceptance criteria
@@ -31,6 +32,13 @@
 - VERIFIED slams down (spark burst, sound if sound is on), then the card makes one full 360° turn showing a TrustVault back.
 - Scrolling on past the card slides it away to the left; scrolling back brings it back.
 - Plays once when the card comes into view, after the first-visit "Access granted" intro; with "reduce motion" the finished card is shown.
+
+**US-4 Kinetic heading**
+- Archivo at its widest (125) and boldest (800), lowercase second line ending in a full stop, rising out of a mask line on load.
+- "one by one" squeezes like an accordion into its full stop with a horizontal motion blur; the stop grows into a pill.
+- The pill shows OCR ✓, Checksum ✓, Number match ✓, Score counting to 96% with a bar, then paints green for Verified; each label rises in and out through its own mask.
+- The pill shrinks back into the stop and the letters spring back out; it rests long enough to read, then loops. Pauses off screen.
+- Every frame is computed from the clock (closed-form springs), no video. Screen readers hear the plain sentence; reduced motion shows the still heading; fits 360-1900 px on two lines.
 
 **US-3 Ship**
 - A browser check for the 3D section (first on the page, modes, Top view, tamper, wheel not captured; falls back cleanly without WebGL).

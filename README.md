@@ -22,7 +22,9 @@ MCA students keep their ID and academic documents in an encrypted vault. Documen
 
 ## The 3D vault (first screen)
 
-The main page opens on a 3D model of the whole journey, drawn live in the browser with [three.js](https://threejs.org) (no models or images): a specimen document rides a ring conveyor through the sign-in gate, upload, the AES-256-GCM vault, the automatic checks, the human verifier and the QR proof, while the ledger in the middle chains every step. Switch between Assembled, X-ray, Exploded and One document, look from the Top or follow one document, or press **Tamper test** to watch the chain break and heal. Below it, the hero ID card verifies itself: it flies in, the number rolls and locks, the checks tick, VERIFIED stamps down and the card turns, then slides away as you scroll.
+The main page opens on a 3D model of the whole journey, drawn live in the browser with [three.js](https://threejs.org) (no models or images): a specimen document rides a ring conveyor through the sign-in gate, upload, the AES-256-GCM vault, the automatic checks, the human verifier and the QR proof, while the ledger in the middle chains every step. Switch between Assembled, X-ray, Exploded and One document, look from the Top or follow one document, or press **Tamper test** to watch the chain break and heal. Its heading is kinetic type, after a [prompt-motion](https://prompt-motion.com/twoclipping-221cab) launch film: *one by one* squeezes like an accordion into its full stop, the stop grows into a pill that shows each check in turn (OCR, Checksum, Number match, Score 96%, Verified), then the letters spring back out. It is script-driven motion graphics, not a video. Below it, the hero ID card verifies itself: it flies in, the number rolls and locks, the checks tick, VERIFIED stamps down and the card turns, then slides away as you scroll.
+
+<img src="docs/agile/screens/kinetic-heading.jpg" alt="The kinetic heading frame by frame: one by one folds into its full stop, which becomes a pill showing each check, then Verified" width="100%">
 
 <img src="docs/screenshots/landing-2-card.jpg" alt="The hero ID card stamped VERIFIED after its checks" width="100%">
 
@@ -163,6 +165,7 @@ The app is a small shell in [`mobile/`](mobile) that opens the live site full sc
 | [shadcn/ui](https://ui.shadcn.com) + [Tailwind CSS](https://tailwindcss.com) | Component primitives and styling; the design rules are written down in [DESIGN.md](DESIGN.md) |
 | [ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) · [21st.dev](https://21st.dev) | Design system (palette, type, UX checklist) and the theme, bento grid and hero the landing page is adapted from |
 | [three.js](https://github.com/mrdoob/three.js) | The interactive 3D vault on the main page (loaded only there, on its own) |
+| [prompt-motion](https://prompt-motion.com/twoclipping-221cab) (film by @twoclipping) · [Archivo](https://fonts.google.com/specimen/Archivo) | The motion style and the wide typeface of the kinetic heading on the main page |
 | [ponytail](https://github.com/DietrichGebert/ponytail) | Minimal-code rules in [AGENTS.md](AGENTS.md), which every change follows |
 
 ---
