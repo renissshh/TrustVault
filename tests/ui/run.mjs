@@ -23,7 +23,12 @@ const STUDENT = 'rahul@demo.test'; const ADMIN = 'admin@demo.test'; const FACULT
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const children = [];
 let pass = 0; let fail = 0;
-const ok = (cond, label, extra = '') => { cond ? pass++ : fail++; console.log(`${cond ? 'PASS' : 'FAIL'}  ${label}${extra ? `  -> ${extra}` : ''}`); };
+const ok = (cond, label, extra = '') => {
+  cond ? pass++ : fail++;
+  console.log(`${cond ? 'PASS' : 'FAIL'}  ${label}${extra ? `  -> ${extra}` : ''}`);
+  // on GitHub a failure is also an annotation, readable on the run page and through the public API without signing in
+  if (!cond && process.env.GITHUB_ACTIONS) console.log(`::error title=UI check failed::${label}${extra ? ` - ${extra}` : ''}`.replace(/\s+/g, ' '));
+};
 
 function findChrome() {
   const guesses = [process.env.CHROME_PATH,
@@ -102,7 +107,7 @@ async function browser() {
   const exe = findChrome();
   if (!exe) throw new Error('Chrome or Edge not found. Set CHROME_PATH to its location.');
   const port = 9600 + Math.floor(Math.random() * 300);
-  const proc = spawn(exe, ['--headless=new', `--remote-debugging-port=${port}`, `--user-data-dir=${path.join(DATA, 'chrome')}`, '--hide-scrollbars', '--no-first-run', 'about:blank'], { stdio: 'ignore' });
+  const proc = spawn(exe, ['--headless=new', `--remote-debugging-port=${port}`, `--user-data-dir=${path.join(DATA, 'chrome')}`, '--hide-scrollbars', '--no-first-run', ...(process.env.CI ? ['--no-sandbox'] : []), 'about:blank'], { stdio: 'ignore' }); // CI machines often lack Chrome's sandbox
   children.push(proc);
   let target;
   for (let i = 0; i < 60 && !target; i++) { await sleep(250); target = await fetch(`http://127.0.0.1:${port}/json`).then((r) => r.json()).then((l) => l.find((t) => t.type === 'page'), () => null); }
@@ -241,6 +246,7 @@ try {
 } catch (e) {
   fail++;
   console.error('UI test crashed:', e);
+  if (process.env.GITHUB_ACTIONS) console.log(`::error title=UI test crashed::${String(e?.stack ?? e).replace(/\s+/g, ' ').slice(0, 600)}`);
 } finally {
   console.log(`\n${pass} passed, ${fail} failed`);
   b?.close();

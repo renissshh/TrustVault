@@ -4,6 +4,8 @@
 #   CD  - pushes to main, only when all three jobs are green: trigger a Render deploy.
 #         Set the repository secret RENDER_DEPLOY_HOOK (Render > service > Settings > Deploy hook) to turn it on;
 #         without it the deploy job explains how and stops, so forks and pull requests never deploy.
+# ponytail: runners pinned to ubuntu-24.04 - ubuntu-latest moved to Ubuntu 26 on 19 Oct 2026 and the Chrome job
+#   stopped starting there; 24.04 ships Google Chrome. Move up once the browser job is green on the new image.
 name: CI/CD
 
 on:
@@ -18,7 +20,7 @@ concurrency:
 jobs:
   unit-build:
     name: Unit tests + build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -40,7 +42,7 @@ jobs:
 
   e2e:
     name: End-to-end API tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     services:
       mongo:
         image: mongo:7
@@ -58,7 +60,7 @@ jobs:
 
   ui:
     name: Browser tests (Chrome)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     services:
       mongo:
         image: mongo:7
@@ -81,7 +83,7 @@ jobs:
     name: Deploy to Render
     needs: [unit-build, e2e, ui]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     environment: production
     steps:
       - name: Trigger the Render deploy hook
