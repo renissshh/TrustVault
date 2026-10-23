@@ -18,8 +18,9 @@ export async function locate(ip = '') {
   }
 }
 
+// Mobile Chrome, Firefox and Edge use their own tokens (CriOS, FxiOS, EdgiOS, EdgA) and also say "Safari".
 export function describeDevice(ua = '') {
-  const browser = /edg\//i.test(ua) ? 'Edge' : /chrome\//i.test(ua) ? 'Chrome' : /firefox\//i.test(ua) ? 'Firefox' : /safari\//i.test(ua) ? 'Safari' : 'Browser';
+  const browser = /edg(a|ios)?\//i.test(ua) ? 'Edge' : /(chrome|crios)\//i.test(ua) ? 'Chrome' : /(firefox|fxios)\//i.test(ua) ? 'Firefox' : /safari\//i.test(ua) ? 'Safari' : 'Browser';
   const os = /windows/i.test(ua) ? 'Windows' : /android/i.test(ua) ? 'Android' : /iphone|ipad/i.test(ua) ? 'iOS' : /mac os/i.test(ua) ? 'macOS' : /linux/i.test(ua) ? 'Linux' : 'Unknown OS';
   return `${browser} on ${os}`;
 }

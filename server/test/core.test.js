@@ -63,3 +63,15 @@ test('roll number: 2-digit year, MX, 3 digits, year not in the future', async ()
   const next = String((new Date().getFullYear() + 1) % 100).padStart(2, '0');
   assert.throws(() => rollNumber(`${next}MX001`), /future/);
 });
+
+test('device names, including Chrome, Firefox and Edge on iPhone', async () => {
+  const { describeDevice } = await import('../src/lib/security.js');
+  const iphone = (app) => `Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) ${app} Mobile/15E148 Safari/604.1`;
+  assert.equal(describeDevice(iphone('CriOS/130.0.6723.90')), 'Chrome on iOS');
+  assert.equal(describeDevice(iphone('FxiOS/132.0')), 'Firefox on iOS');
+  assert.equal(describeDevice(iphone('EdgiOS/130.0.2849.80')), 'Edge on iOS');
+  assert.equal(describeDevice(iphone('Version/18.0')), 'Safari on iOS');
+  assert.equal(describeDevice('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0'), 'Edge on Windows');
+  assert.equal(describeDevice('Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36 EdgA/130.0.0.0'), 'Edge on Android');
+  assert.equal(describeDevice(''), 'Browser on Unknown OS');
+});
