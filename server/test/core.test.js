@@ -75,3 +75,16 @@ test('device names, including Chrome, Firefox and Edge on iPhone', async () => {
   assert.equal(describeDevice('Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36 EdgA/130.0.0.0'), 'Edge on Android');
   assert.equal(describeDevice(''), 'Browser on Unknown OS');
 });
+
+test('private addresses are never sent to the geolocation API', async () => {
+  const { locate } = await import('../src/lib/security.js');
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = () => assert.fail('private address was looked up');
+  try {
+    for (const ip of ['::1', '127.0.0.1', '10.0.0.4', '192.168.1.9', '172.20.0.5', '169.254.1.1', '::ffff:172.20.0.5', '::ffff:10.1.2.3', 'fd12:3456::1', 'fe80::1']) {
+      assert.equal(await locate(ip), 'Local network', ip);
+    }
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});

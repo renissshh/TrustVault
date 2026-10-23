@@ -4,11 +4,12 @@ import { sendMail } from './mail.js';
 import { sha256, randomCode } from './crypto.js';
 import { esc } from './util.js';
 
-const PRIVATE_IP = /^(::1$|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|::ffff:(127|10|192\.168)\.)/;
+// Loopback, private, link-local (IPv4 and IPv6) and unique-local IPv6; IPv4-mapped addresses are unwrapped first.
+const PRIVATE_IP = /^(::1$|127\.|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.|f[cd]|fe[89ab])/i;
 
 // Free geolocation API from the public-apis list (ip-api.com, no key needed).
 export async function locate(ip = '') {
-  if (PRIVATE_IP.test(ip)) return 'Local network';
+  if (PRIVATE_IP.test(ip.replace(/^::ffff:/i, ''))) return 'Local network';
   try {
     const res = await fetch(`http://ip-api.com/json/${ip}?fields=status,city,country`, { signal: AbortSignal.timeout(2500) });
     const j = await res.json();
