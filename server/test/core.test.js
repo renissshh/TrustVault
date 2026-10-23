@@ -53,3 +53,13 @@ test('file type is detected from content, not the name', () => {
   assert.equal(sniffType(Buffer.from('%PDF-1.7 hello world')), 'application/pdf');
   assert.equal(sniffType(Buffer.from('MZ fake.exe renamed.pdf')), null);
 });
+
+test('roll number: 2-digit year, MX, 3 digits, year not in the future', async () => {
+  const { rollNumber } = await import('../src/lib/util.js');
+  assert.equal(rollNumber(' 23mx-347 '), '23MX347');
+  assert.throws(() => rollNumber('23MX34'), { status: 400 });
+  assert.throws(() => rollNumber('MX23347'), { status: 400 });
+  assert.throws(() => rollNumber(undefined), { status: 400 });
+  const next = String((new Date().getFullYear() + 1) % 100).padStart(2, '0');
+  assert.throws(() => rollNumber(`${next}MX001`), /future/);
+});
