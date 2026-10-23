@@ -17,9 +17,14 @@ import { ApprovalZoom } from './landing-zoom';
 import { HeroCard } from './landing-hero';
 import { CheckHeadline } from './landing-headline';
 
-// three.js is large, so the 3D vault loads on its own after the page.
-// ponytail: if that chunk fails to load, the stage stays empty beside the headline; a retry button is the upgrade.
-const TrustVault3D = lazy(() => import('@/components/ui/trustvault-3d').catch(() => ({ default: () => null })));
+// three.js is large, so the 3D vault loads on its own after the page. React caches a failed lazy load,
+// so a retry needs a fresh lazy component; the failure view offers one.
+const Failed3D = ({ onRetry }) => (
+  <div className="lp-3d-wait" role="status">
+    <p>The 3D view did not load. <button type="button" className="lp-btn ghost sm" onClick={onRetry}>Try again</button></p>
+  </div>
+);
+const load3D = () => lazy(() => import('@/components/ui/trustvault-3d').catch(() => ({ default: Failed3D })));
 import '../landing-story.css';
 import '../landing.css';
 
@@ -195,6 +200,7 @@ function hasWebGL() {
 // First screen: the document's journey as a 3D machine (copy above it on phones, beside it on wide screens).
 function Vault3D() {
   const [ok] = useState(hasWebGL);
+  const [TrustVault3D, setTrustVault3D] = useState(load3D);
   if (!ok) return null;
   return (
     <section className="lp-3d" aria-labelledby="lp-3d-title">
@@ -209,7 +215,7 @@ function Vault3D() {
       </div>
       <div className="lp-3d-stage">
         <Suspense fallback={<div className="lp-3d-wait" aria-hidden="true"><i /></div>}>
-          <TrustVault3D embed height="100%" />
+          <TrustVault3D embed height="100%" onRetry={() => setTrustVault3D(() => load3D())} />
         </Suspense>
       </div>
     </section>
