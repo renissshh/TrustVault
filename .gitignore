@@ -1,6 +1,5 @@
 node_modules/
 client/dist/
-client-classic/dist/
 server/.env
 server/storage/
 server/dev-mail/

@@ -6,9 +6,9 @@
 
 MCA students keep their ID and academic documents in an encrypted vault. Documents are checked and verified automatically, and faculty can open only what a student chooses to share, one time.
 
-**[Live demo: trustvault-5lgg.onrender.com](https://trustvault-5lgg.onrender.com)** · **[Android app (APK)](https://github.com/SriNithish-JK/TrustVault/releases/latest/download/TrustVault.apk)** (free hosting: the first visit can take a minute to wake up; use sample documents only)
+**[Live demo: trustvault-5lgg.onrender.com](https://trustvault-5lgg.onrender.com)** · **[Android app (APK)](https://github.com/renissshh/TrustVault/releases/latest/download/TrustVault.apk)** (free hosting: the first visit can take a minute to wake up; use sample documents only)
 
-[![CI](https://github.com/SriNithish-JK/TrustVault/actions/workflows/ci.yml/badge.svg)](https://github.com/SriNithish-JK/TrustVault/actions/workflows/ci.yml)
+[![CI](https://github.com/renissshh/TrustVault/actions/workflows/ci.yml/badge.svg)](https://github.com/renissshh/TrustVault/actions/workflows/ci.yml)
 ![End-to-end checks](https://img.shields.io/badge/end--to--end_checks-140-19e6ff)
 ![License](https://img.shields.io/badge/license-MIT-b56bff)
 ![React](https://img.shields.io/badge/React-19-61dafb?logo=react&logoColor=white)
@@ -84,7 +84,7 @@ More in [`docs/screenshots`](docs/screenshots).
 You need **Node.js 24+** and **MongoDB** running locally.
 
 ```bash
-git clone https://github.com/SriNithish-JK/TrustVault.git
+git clone https://github.com/renissshh/TrustVault.git
 cd TrustVault
 npm run setup     # installs everything and creates server/.env with fresh secret keys
 npm run dev       # API on :5000, site on http://localhost:5173
@@ -95,7 +95,7 @@ Without email settings the app runs in dev mode: sign-in codes are printed in th
 | Command | What it does |
 |---|---|
 | `npm test` | Unit tests |
-| `npm run test:e2e` | 105-check end-to-end test against its own server and database |
+| `npm run test:e2e` | 140-check end-to-end test against its own server and database |
 | `npm run test:ui` | Opens every page in headless Chrome and signs in through the real screens |
 | `npm run build` | Production build of the site |
 
@@ -103,7 +103,7 @@ To put it on the internet for free, follow [DEPLOY.md](DEPLOY.md).
 
 ### Android app
 
-[**Download TrustVault.apk**](https://github.com/SriNithish-JK/TrustVault/releases/latest/download/TrustVault.apk) on an Android phone and tap it to install (Android asks once to allow installing from your browser).
+[**Download TrustVault.apk**](https://github.com/renissshh/TrustVault/releases/latest/download/TrustVault.apk) on an Android phone and tap it to install (Android asks once to allow installing from your browser).
 
 The app is a small shell in [`mobile/`](mobile) that opens the live site full screen, so it always shows the latest version. GitHub builds it: pushing a tag such as `app-v1.1` publishes a new APK. If the site's address changes, update it in `mobile/capacitor.config.json` and `mobile/www/`.
 
@@ -178,8 +178,7 @@ The app is a small shell in [`mobile/`](mobile) that opens the live site full sc
 
 The site in `client/` is the neon interface (Apple-clean layout, dark neon stage, animated) described in [DESIGN.md](DESIGN.md).
 
-The first interface (neo-brutalist) is kept as files in `client-classic/` and is not part of the run commands. To look at it:
-`npm install --prefix client-classic` once, then `npm run dev --prefix client-classic` while the API is running (stop the main site first, both use port 5173).
+The first interface (neo-brutalist) was removed; it is still in the git history before the repository cleanup.
 
 ---
 
@@ -241,7 +240,7 @@ To send real emails:
 | `npm run dev` | Run the website (5173) and API (5000) with auto-reload |
 | `npm run build` then `npm start` | Production mode – everything on http://localhost:5000 (set `APP_URL=http://localhost:5000` in `.env`) |
 | `npm test` | Unit tests (PAN / Aadhaar / licence validation, type detection, encryption, tamper detection, file-type check) |
-| `npm run test:e2e` | **105-check end-to-end test** of every feature. Starts its own isolated server + database and cleans up – safe to run any time |
+| `npm run test:e2e` | **140-check end-to-end test** of every feature. Starts its own isolated server + database and cleans up – safe to run any time |
 | `npm run make-admin -- email` | Give an account the admin role |
 
 ---
@@ -257,7 +256,6 @@ content games/
 │       ├── components/app/ layout, kit, secure (vault lock), wallet, charts, command (Ctrl+K), tour, insights, signin-extras
 │       ├── lib/            api.js, auth.jsx, theme.js, fx.jsx (motion helpers), sound.js, confetti.js
 │       └── index.css       Tailwind + design tokens (landing.css, app.css hold the bigger pieces)
-├── client-classic/         the first interface, kept as files (not run by default)
 └── server/                 Express API
     ├── src/
     │   ├── routes/         auth, documents, shares, records, admin, public
@@ -266,7 +264,7 @@ content games/
     │   └── models.js       MongoDB collections
     ├── storage/            encrypted files (*.enc) – never committed
     ├── test/               unit tests
-    └── e2e/run.mjs         end-to-end test (105 checks)
+    └── e2e/run.mjs         end-to-end test (140 checks)
 .github/workflows/ci.yml    GitHub Actions: runs all tests on every push
 ```
 

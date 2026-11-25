@@ -6,7 +6,7 @@ Direction: Apple-clean layout on a dark neon stage, chosen with the
 [UI/UX Pro Max skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) and 21st.dev (theme, bento grid; the aurora
 backdrop, cursor spotlight and sliding tab pill follow patterns from its catalog, written here by hand).
 
-The first interface (neo-brutalist) is kept, unused, in `client-classic/` with its own `DESIGN.md`.
+The first interface (neo-brutalist) was removed; it is still in the git history.
 
 ## Look
 - **Apple-clean layout on a dark neon stage.** Pure black background, huge tight headings, lots of space, one idea per section.
