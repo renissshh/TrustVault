@@ -325,8 +325,10 @@ try {
   ok(r.data.documents.length === 1 && r.data.documents[0].type === 'pan' && r.data.documents[0].canOpen, 'faculty sees only the approved PAN, ready to open once');
   r = await faculty.call(`/documents/${otherId}/view`, { method: 'POST', body: { pin: '135790' } });
   ok(r.status === 403, 'a document type the student did not approve stays closed');
-  r = await faculty.call(`/documents/${panId}/view`, { method: 'POST', body: { pin: '135790' } });
-  ok(r.status === 200, 'faculty views the verified PAN with consent');
+  // two parallel opens of a one-time grant: exactly one may succeed
+  const both = await Promise.all([1, 2].map(() => faculty.call(`/documents/${panId}/view`, { method: 'POST', body: { pin: '135790' } })));
+  ok(both.some((x) => x.status === 200), 'faculty views the verified PAN with consent');
+  ok(both.filter((x) => x.status === 200).length === 1 && both.some((x) => x.status === 403), 'two parallel opens of a one-time grant: only one succeeds');
   r = await faculty.call(`/documents/${panId}/view`, { method: 'POST', body: { pin: '135790' } });
   ok(r.status === 403 && /one time|once/i.test(r.data.error), 'second view of the same document refused (one-time access)');
   mine = (await student.call('/access')).data.find((a) => a.id === reqId);

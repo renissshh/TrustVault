@@ -133,7 +133,7 @@ r.post('/:id/view', async (req, res) => {
   const buf = await openDocument(doc);
   const label = `${req.user.email} | ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC | TrustVault`;
   const out = await watermark(buf, doc.mime, label);
-  if (grant) await useGrant(grant, doc); // one-time access: this document is now used up for this request
+  if (grant) await useGrant(grant, doc); // atomic one-time claim: a parallel second open gets 403 here, before anything is sent
   await audit(req, own ? 'document.view' : 'record.view', doc.title, doc.owner._id);
   if (!own) {
     sendMail({

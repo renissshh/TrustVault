@@ -6,7 +6,7 @@ Full reasoning for each item: the review doc of 25 Nov 2026.
 
 ## Phase 1: Real bugs
 - [x] Repository cleanup: links to renissshh, remove `client-classic/`, fix stale comments and counts (PR #2)
-- [ ] One-time faculty view can be opened twice: claim the grant atomically before sending (`routes/documents.js`, `lib/access.js`) + e2e test
+- [x] One-time faculty view can be opened twice: claim the grant atomically before sending (`routes/documents.js`, `lib/access.js`) + e2e test
 - [ ] OTP can be used twice: `checkOtp` uses `findOneAndDelete({ key, codeHash })` (`lib/security.js`) + test
 - [ ] Share link can exceed `maxViews`: atomic `$inc` with a `views < maxViews` condition (`routes/public.js`) + test
 - [ ] **[YOU]** TOTP replay and backup-code reuse: make `checkSecondFactor` atomic (`routes/auth.js`)
