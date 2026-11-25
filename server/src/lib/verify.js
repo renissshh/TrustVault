@@ -1,7 +1,7 @@
 // Automatic document checks: number formats, Aadhaar checksum, OCR text matching,
 // originality (editing-software traces, PDF edits, digital signatures) and type detection.
-// Real PAN/Aadhaar/DL lookups need licensed government APIs (NSDL / UIDAI / Parivahan), so a
-// verifier still approves each identity document after reading this report.
+// Real PAN/Aadhaar/DL lookups need licensed government APIs (NSDL / UIDAI / Parivahan), so these checks
+// test format, checksum, OCR text and originality only; they do not prove the document is genuine.
 import path from 'node:path';
 import sharp from 'sharp';
 import { createWorker } from 'tesseract.js';
