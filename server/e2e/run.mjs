@@ -418,6 +418,13 @@ try {
   await guest.call(`/public/share/${token}/otp`, { method: 'POST' });
   r = await guest.call(`/public/share/${token}/view`, { method: 'POST', body: { code: lastCode('hr@company.test') } });
   ok(r.status === 200 && r.type === 'image/png', 'recipient views it after the email code');
+  // Last view left, two valid codes in flight at once: exactly one gets the file, the other a 410.
+  const shareRow = await db.collection('shares').findOne({ recipient: 'hr@company.test' });
+  await db.collection('shares').updateOne({ _id: shareRow._id }, { $set: { views: shareRow.maxViews - 1 } });
+  await db.collection('otps').insertMany(['111111', '222222'].map((code) => ({ key: `share:${shareRow._id}`, codeHash: crypto.createHash('sha256').update(code).digest('hex'), attempts: 0, expiresAt: new Date(Date.now() + 60e3) })));
+  const lastTwo = await Promise.all(['111111', '222222'].map((code) => guest.call(`/public/share/${token}/view`, { method: 'POST', body: { code } })));
+  ok(lastTwo.map((x) => x.status).sort().join() === '200,410', 'two parallel views of the last one: one 200, one 410', lastTwo.map((x) => x.status).join());
+  ok((await db.collection('shares').findOne({ _id: shareRow._id })).views === shareRow.maxViews, 'view count stops at maxViews');
 
   // ===== Ledger & tamper detection =====
   r = await admin.call('/admin/integrity', { method: 'POST' });
