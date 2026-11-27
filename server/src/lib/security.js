@@ -61,14 +61,12 @@ export async function sendOtp({ key, to, name }) {
   });
 }
 
+// Atomic: the code is deleted in the same query that matches it, so two parallel requests
+// with the right code cannot both pass (findOne + deleteOne left a gap between read and delete).
 export async function checkOtp(key, code) {
-  const otp = await Otp.findOne({ key });
-  if (!otp || otp.expiresAt < new Date()) return false;
-  if (otp.codeHash === sha256(String(code ?? '').trim())) {
-    await otp.deleteOne();
-    return true;
-  }
-  otp.attempts += 1;
-  await (otp.attempts >= 5 ? otp.deleteOne() : otp.save()); // 5 wrong guesses kills the code
+  const codeHash = sha256(String(code ?? '').trim());
+  if (await Otp.findOneAndDelete({ key, codeHash, expiresAt: { $gt: new Date() } })) return true;
+  const otp = await Otp.findOneAndUpdate({ key }, { $inc: { attempts: 1 } }, { new: true });
+  if (otp && otp.attempts >= 5) await Otp.deleteOne({ _id: otp._id }); // 5 wrong guesses kills the code
   return false;
 }

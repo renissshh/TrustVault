@@ -50,8 +50,15 @@ r.post('/share/:token/view', async (req, res) => {
   if (!(await checkOtp(`share:${s.id}`, req.body?.code))) throw httpError(400, 'Wrong or expired code.');
   const buf = await openDocument(s.doc);
   const out = await watermark(buf, s.doc.mime, `Shared with ${s.recipient} | ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC`);
-  s.views += 1;
-  await s.save();
+  // Claim one view atomically just before sending: the update only matches while views < maxViews, so parallel
+  // requests that all passed findShare cannot push the count past the limit (views += 1 + save() could).
+  const claimed = await Share.findOneAndUpdate(
+    { _id: s._id, revoked: false, expiresAt: { $gt: new Date() }, $expr: { $lt: ['$views', '$maxViews'] } },
+    { $inc: { views: 1 } },
+    { new: true },
+  );
+  if (!claimed) throw httpError(410, 'This share link reached its view limit.');
+  s.views = claimed.views;
   await audit(req, 'share.view', `${s.doc.title} viewed by ${s.recipient}`, s.owner._id);
   sendMail({ to: s.owner.email, subject: 'Your shared document was opened', title: 'Shared document opened',
     body: `<p>${esc(s.recipient)} opened <b>${esc(s.doc.title)}</b> (${s.views}/${s.maxViews} views).</p>` }).catch((e) => console.error(e.message));

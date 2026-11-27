@@ -88,3 +88,38 @@ test('private addresses are never sent to the geolocation API', async () => {
     globalThis.fetch = realFetch;
   }
 });
+
+test('an OTP passes once, even for two parallel requests with the right code', async () => {
+  const { checkOtp } = await import('../src/lib/security.js');
+  const { Otp } = await import('../src/models.js');
+  const { sha256 } = await import('../src/lib/crypto.js');
+  // ponytail: in-memory stand-in for the three Otp queries checkOtp uses; the e2e suite covers real MongoDB.
+  let rows = [];
+  const tick = () => new Promise((r) => setImmediate(r)); // a DB round trip, so requests interleave
+  const matches = (row, q) => row.key === q.key && (!q.codeHash || row.codeHash === q.codeHash)
+    && (!q.expiresAt || row.expiresAt > q.expiresAt.$gt);
+  const real = { findOneAndDelete: Otp.findOneAndDelete, findOneAndUpdate: Otp.findOneAndUpdate, deleteOne: Otp.deleteOne };
+  Object.assign(Otp, {
+    findOneAndDelete: async (q) => { await tick(); const row = rows.find((r) => matches(r, q)); rows = rows.filter((r) => r !== row); return row ?? null; },
+    findOneAndUpdate: async (q, u) => { await tick(); const row = rows.find((r) => matches(r, q)); if (row) row.attempts += u.$inc.attempts; return row ?? null; },
+    deleteOne: async (q) => { await tick(); rows = rows.filter((r) => r._id !== q._id); },
+  });
+  const issue = (expiresAt = new Date(Date.now() + 60e3)) => { rows = [{ _id: 1, key: 'k', codeHash: sha256('123456'), attempts: 0, expiresAt }]; };
+  try {
+    issue();
+    const both = await Promise.all([checkOtp('k', '123456'), checkOtp('k', ' 123456 ')]);
+    assert.deepEqual(both.sort(), [false, true]);
+    assert.equal(await checkOtp('k', '123456'), false, 'used code is gone');
+
+    issue();
+    for (let i = 0; i < 5; i++) assert.equal(await checkOtp('k', '000000'), false);
+    assert.equal(rows.length, 0, '5 wrong guesses delete the code');
+    assert.equal(await checkOtp('k', '123456'), false);
+
+    issue(new Date(Date.now() - 1000));
+    assert.equal(await checkOtp('k', '123456'), false, 'expired code refused');
+    assert.equal(await checkOtp('missing', '123456'), false);
+  } finally {
+    Object.assign(Otp, real);
+  }
+});

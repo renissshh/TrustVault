@@ -26,10 +26,16 @@ export async function assertDocAccess(viewer, doc) {
   throw httpError(403, 'The student has not given you access to this document. Send a request for it.');
 }
 
-// After a document was shown: remember it, and close the request once every approved document was opened.
+// Claim this document on the grant just before it is sent. The claim is one atomic update that only matches while
+// the document is not yet in `opened`, so two parallel requests cannot both pass: the loser gets a 403.
+// Then close the request once every approved document was opened.
 export async function useGrant(grant, doc) {
-  grant.opened.push(doc._id);
-  const left = await Document.countDocuments({ owner: grant.student, type: { $in: grant.granted }, _id: { $nin: grant.opened } });
-  if (!left) grant.status = 'used';
-  await grant.save();
+  const claimed = await AccessRequest.findOneAndUpdate(
+    { _id: grant._id, status: 'approved', expiresAt: { $gt: new Date() }, opened: { $ne: doc._id } },
+    { $push: { opened: doc._id } },
+    { new: true },
+  );
+  if (!claimed) throw httpError(403, 'You already opened this document once. Send a new request to see it again.');
+  const left = await Document.countDocuments({ owner: claimed.student, type: { $in: claimed.granted }, _id: { $nin: claimed.opened } });
+  if (!left) await AccessRequest.updateOne({ _id: claimed._id, status: 'approved' }, { status: 'used' });
 }
