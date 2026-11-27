@@ -9,7 +9,7 @@ Full reasoning for each item: the review doc of 25 Nov 2026.
 - [x] One-time faculty view can be opened twice: claim the grant atomically before sending (`routes/documents.js`, `lib/access.js`) + e2e test
 - [x] OTP can be used twice: `checkOtp` uses `findOneAndDelete({ key, codeHash })` (`lib/security.js`) + test
 - [x] Share link can exceed `maxViews`: atomic `$inc` with a `views < maxViews` condition (`routes/public.js`) + test
-- [ ] **[YOU]** TOTP replay and backup-code reuse: make `checkSecondFactor` atomic (`routes/auth.js`)
+- [~] **[YOU]** TOTP replay and backup-code reuse: make `checkSecondFactor` atomic (`routes/auth.js`) – exercise written – waiting for SriNithish ([docs/exercises/01-totp-replay-backup-code-reuse.md](exercises/01-totp-replay-backup-code-reuse.md))
 - [ ] Documents stuck in "running" after a restart: re-run stale checks from `jobs.js` + test
 
 ## Phase 2: Security hardening
